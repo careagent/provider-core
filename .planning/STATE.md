@@ -33,7 +33,7 @@
 | 1 | 06 | 202s | 2 | 3 |
 | 2 | 01 | 160s | 7 | 7 |
 | 2 | 02 | 203s | 5 | 5 |
-| 2 | 03 | - | - | - |
+| 2 | 03 | 219s | 4 | 4 |
 | 2 | 04 | 210s | 4 | 4 |
 
 ## Accumulated Context
@@ -75,6 +75,11 @@
 | Stage dispatch via STAGE_HANDLERS record (not switch) | 2-02 | O(1) lookup; adding stages requires only a new handler + record entry |
 | state.philosophy separate from state.data | 2-02 | Philosophy is prose, not CANS YAML; stored separately for CANS.md generation in Plan 03 |
 | Mandatory re-prompt loops for welcome/consent | 2-02 | Non-negotiable acknowledgments -- cannot skip; safety requirement |
+| Validate before YAML stringify in generateCANSContent | 2-03 | TypeBox errors are structured (path + message); YAML parse errors are less useful for onboarding UX |
+| Philosophy in markdown body only, not YAML frontmatter | 2-03 | Philosophy is prose context for LLM, not a structured data field; keeps CANS.md schema clean |
+| updateKnownGoodHash called atomically after writeFileSync | 2-03 | Integrity hash must match the file on disk; seeded immediately to prevent false tamper alerts |
+| MENU_TO_STAGE record for review menu dispatch | 2-03 | O(1) lookup from menu choice to InterviewStage; adding edit sections requires only a new entry |
+| toggleHardeningLoop as inner async function with onUpdate callback | 2-03 | Separate function is testable; callback pattern avoids direct mutation through shared state reference |
 | HTML comment markers for workspace supplementation | 2-04 | Round-trip idempotency: BEGIN/END markers let supplementFile replace without corrupting user content |
 | Atomic write via .tmp rename | 2-04 | Prevents partial-write corruption if process interrupted during SOUL/AGENTS/USER.md writes |
 | Pure function generators with conditional omission | 2-04 | Optional fields (subspecialty, clinical_voice, NPI) omitted entirely -- never rendered empty |
@@ -121,4 +126,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 Plan 04 complete -- workspace supplementation system)*
+*Last updated: 2026-02-18 (Phase 2 Plan 03 complete -- CANS.md generator and review loop; 293 tests total)*
