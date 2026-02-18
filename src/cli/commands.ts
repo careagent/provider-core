@@ -1,24 +1,28 @@
 import type { CareAgentPluginAPI } from '../adapter/types.js';
 import type { AuditPipeline } from '../audit/pipeline.js';
+import { createTerminalIO } from './io.js';
+import { runInitCommand } from './init-command.js';
+import { runStatusCommand } from './status-command.js';
 
 export function registerCLI(
   adapter: CareAgentPluginAPI,
-  _workspacePath: string,
-  _audit: AuditPipeline,
+  workspacePath: string,
+  audit: AuditPipeline,
 ): void {
   adapter.registerCliCommand({
     name: 'careagent init',
     description: 'Initialize CareAgent with a clinical onboarding interview',
     handler: async () => {
-      console.log('[CareAgent] careagent init — not yet wired. Coming in Plan 06.');
+      const io = createTerminalIO();
+      await runInitCommand(io, workspacePath, audit);
     },
   });
 
   adapter.registerCliCommand({
     name: 'careagent status',
     description: 'Show CareAgent activation state and system health',
-    handler: async () => {
-      console.log('[CareAgent] careagent status — not yet wired. Coming in Plan 06.');
+    handler: () => {
+      runStatusCommand(workspacePath);
     },
   });
 }
