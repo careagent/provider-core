@@ -46,11 +46,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Onboarding
 
-- [ ] **ONBD-01**: `careagent init` CLI command initiates an interactive conversation that discovers clinical role, specialty, scope, philosophy, documentation voice, and autonomy preferences
-- [ ] **ONBD-02**: Onboarding generates personalized CANS.md from interview responses with provider approval before finalizing
-- [ ] **ONBD-03**: Onboarding writes clinical content into SOUL.md, AGENTS.md, and USER.md — supplementing (not replacing) existing content
-- [ ] **ONBD-04**: `careagent status` CLI command shows activation state, CANS.md summary, hardening layer status, loaded clinical skills, and audit stats
-- [ ] **ONBD-05**: Onboarding supports iterative refinement — provider can review and adjust generated CANS.md before activation
+- [x] **ONBD-01**: `careagent init` CLI command initiates an interactive conversation that discovers clinical role, specialty, scope, philosophy, documentation voice, and autonomy preferences
+- [x] **ONBD-02**: Onboarding generates personalized CANS.md from interview responses with provider approval before finalizing
+- [x] **ONBD-03**: Onboarding writes clinical content into SOUL.md, AGENTS.md, and USER.md — supplementing (not replacing) existing content
+- [x] **ONBD-04**: `careagent status` CLI command shows activation state, CANS.md summary, hardening layer status, loaded clinical skills, and audit stats
+- [x] **ONBD-05**: Onboarding supports iterative refinement — provider can review and adjust generated CANS.md before activation
 
 ### Clinical Skills
 
@@ -146,11 +146,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDT-04 | Phase 1 | Complete |
 | AUDT-05 | Phase 1 | Complete |
 | AUDT-06 | Phase 1 | Complete |
-| ONBD-01 | Phase 2 | Pending |
-| ONBD-02 | Phase 2 | Pending |
-| ONBD-03 | Phase 2 | Pending |
-| ONBD-04 | Phase 2 | Pending |
-| ONBD-05 | Phase 2 | Pending |
+| ONBD-01 | Phase 2 | Complete |
+| ONBD-02 | Phase 2 | Complete |
+| ONBD-03 | Phase 2 | Complete |
+| ONBD-04 | Phase 2 | Complete |
+| ONBD-05 | Phase 2 | Complete |
 | HARD-01 | Phase 3 | Pending |
 | HARD-02 | Phase 3 | Pending |
 | HARD-03 | Phase 3 | Pending |
