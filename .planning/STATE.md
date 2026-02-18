@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 2 in progress. Plan 02 (Interview Engine) complete.
+**Current Focus:** Phase 2 in progress. Plan 04 (Workspace Supplementation) complete.
 
 ## Current Position
 
 **Phase:** 2 - Onboarding and CLI
-**Plan:** 02 (complete)
+**Plan:** 04 (complete)
 **Status:** In Progress
-**Progress:** [##--------] 2/? plans
+**Progress:** [####------] 4/? plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 8 |
+| Plans completed | 10 |
 | Plans failed | 0 |
 | Total requirements | 48 |
 | Requirements done | 18 |
@@ -33,6 +33,8 @@
 | 1 | 06 | 202s | 2 | 3 |
 | 2 | 01 | 160s | 7 | 7 |
 | 2 | 02 | 203s | 5 | 5 |
+| 2 | 03 | - | - | - |
+| 2 | 04 | 210s | 4 | 4 |
 
 ## Accumulated Context
 
@@ -73,6 +75,9 @@
 | Stage dispatch via STAGE_HANDLERS record (not switch) | 2-02 | O(1) lookup; adding stages requires only a new handler + record entry |
 | state.philosophy separate from state.data | 2-02 | Philosophy is prose, not CANS YAML; stored separately for CANS.md generation in Plan 03 |
 | Mandatory re-prompt loops for welcome/consent | 2-02 | Non-negotiable acknowledgments -- cannot skip; safety requirement |
+| HTML comment markers for workspace supplementation | 2-04 | Round-trip idempotency: BEGIN/END markers let supplementFile replace without corrupting user content |
+| Atomic write via .tmp rename | 2-04 | Prevents partial-write corruption if process interrupted during SOUL/AGENTS/USER.md writes |
+| Pure function generators with conditional omission | 2-04 | Optional fields (subspecialty, clinical_voice, NPI) omitted entirely -- never rendered empty |
 
 ### Research Findings Applied
 
@@ -96,19 +101,19 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 2 Plan 02 execution (Interview Engine)
-- **Completed:** 2-02-SUMMARY.md -- interview state machine, 9 stage handlers, 40 new tests (211 total)
-- **Next:** Phase 2 Plan 03 (CANS.md generation / review loop)
+- **Activity:** Phase 2 Plan 04 execution (Workspace File Supplementation)
+- **Completed:** 2-04-SUMMARY.md -- workspace-content.ts, workspace-writer.ts, 47 new tests (279 total)
+- **Next:** Phase 2 Plan 05 (careagent status command)
 
 ### Context for Next Session
-- Phase 2 Plan 02 COMPLETE: Interview engine and all stage handlers established
-- 211 tests passing (171 Phase 1+2-01 + 40 new), build succeeds, no TypeScript errors
-- New src/onboarding/ directory: defaults.ts, engine.ts, stages.ts
-- runInterview() orchestrates 9 stages, returns InterviewResult {data: CANSDocument, philosophy: string}
-- runSingleStage() dispatches individual stages by InterviewStage enum
-- All 9 stage handlers tested individually with re-prompt loop coverage
-- completeInterviewResponses fixture works end-to-end through runInterview (last '0' review response unused -- Plan 03 will consume it)
-- state.philosophy stored separate from data -- Plan 03 uses both for CANS.md generation
+- Phase 2 Plan 04 COMPLETE: Workspace supplementation system established
+- 279 tests passing (211 Phase 1+2-01+2-02+2-03 + 68 new), build succeeds, no TypeScript errors
+- src/onboarding/workspace-content.ts: pure generators for SOUL.md, AGENTS.md, USER.md sections
+- src/onboarding/workspace-writer.ts: supplementFile() pure function + supplementWorkspaceFiles() I/O
+- HTML comment markers <!-- CareAgent: BEGIN/END --> enable idempotent round-trips
+- Atomic writes via .tmp rename for all three workspace files
+- supplementFile handles: empty, append (with correct separator), replace-in-place
+- validCANSData fixture has clinical_voice undefined -- tests cover both presence and absence
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
@@ -116,4 +121,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 Plan 02 complete -- interview engine and stage handlers)*
+*Last updated: 2026-02-18 (Phase 2 Plan 04 complete -- workspace supplementation system)*
