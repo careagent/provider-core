@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 describe('@careagent/core', () => {
   it('exports a register function', async () => {
@@ -6,8 +9,9 @@ describe('@careagent/core', () => {
     expect(typeof mod.default).toBe('function');
   });
 
-  it('register function accepts an argument without throwing', async () => {
+  it('register function accepts a mock API without throwing', async () => {
     const mod = await import('../src/index.js');
-    expect(() => mod.default({})).not.toThrow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'careagent-smoke-'));
+    expect(() => mod.default({ workspaceDir: tmpDir })).not.toThrow();
   });
 });
