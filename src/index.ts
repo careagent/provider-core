@@ -13,6 +13,7 @@ import { createAdapter } from './adapter/openclaw-adapter.js';
 import { ActivationGate } from './activation/gate.js';
 import { AuditPipeline } from './audit/pipeline.js';
 import { createAuditIntegrityService } from './audit/integrity-service.js';
+import { registerCLI } from './cli/commands.js';
 
 export default function register(api: unknown): void {
   // Step 1: Create adapter
@@ -23,13 +24,7 @@ export default function register(api: unknown): void {
   const audit = new AuditPipeline(workspacePath);
 
   // Step 3: Register CLI commands (always available — needed before CANS.md exists)
-  adapter.registerCliCommand({
-    name: 'careagent',
-    description: 'CareAgent clinical activation commands',
-    handler: () => {
-      console.log('[CareAgent] CLI not yet implemented. Coming in Phase 2.');
-    },
-  });
+  registerCLI(adapter, workspacePath, audit);
 
   // Step 4: Check activation gate
   const gate = new ActivationGate(workspacePath, (entry) => audit.log({
