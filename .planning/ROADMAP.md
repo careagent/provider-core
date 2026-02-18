@@ -33,7 +33,7 @@
 **Plans:** 6 plans
 Plans:
 - [x] Plan 01 — Project scaffold, build config, and plugin manifest (PLUG-01, PLUG-02, PLUG-05)
-- [ ] Plan 02 — Adapter layer, shared types, and CANS.md TypeBox schema (PLUG-04, CANS-02, CANS-03, CANS-04, CANS-05)
+- [x] Plan 02 — Adapter layer, shared types, and CANS.md TypeBox schema (PLUG-04, CANS-02, CANS-03, CANS-04, CANS-05)
 - [ ] Plan 03 — CANS parser, activation gate, and integrity check (CANS-01, CANS-06, CANS-07)
 - [ ] Plan 04 — Audit entry schema, writer, and pipeline (AUDT-01, AUDT-02, AUDT-03, AUDT-04, AUDT-05)
 - [ ] Plan 05 — Plugin registration wiring and audit integrity service (PLUG-03, AUDT-06)
@@ -105,7 +105,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 1/6 | Executing | - |
+| 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 2/6 | Executing | - |
 | 2. Onboarding and CLI | 0/? | Not started | - |
 | 3. Runtime Hardening | 0/? | Not started | - |
 | 4. Clinical Skills | 0/? | Not started | - |

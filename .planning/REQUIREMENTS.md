@@ -12,16 +12,16 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PLUG-01**: Plugin installs into OpenClaw via `openclaw plugins install @careagent/core` without errors
 - [x] **PLUG-02**: Plugin manifest (openclaw.plugin.json) declares plugin ID, configSchema, skills directories, CLI commands, and hook registrations
 - [ ] **PLUG-03**: Plugin `register(api)` entry point registers CLI commands, hooks, agent tools, and background services
-- [ ] **PLUG-04**: Adapter layer insulates CareAgent from OpenClaw internals so upstream updates do not break the plugin
+- [x] **PLUG-04**: Adapter layer insulates CareAgent from OpenClaw internals so upstream updates do not break the plugin
 - [x] **PLUG-05**: Plugin has zero runtime npm dependencies — all runtime needs come from Node.js built-ins, OpenClaw (peer dependency), and CareAgent's own code
 
 ### Clinical Activation
 
 - [ ] **CANS-01**: CANS.md presence in workspace activates the clinical layer; absence means standard OpenClaw behavior
-- [ ] **CANS-02**: CANS.md schema defines provider identity (name, NPI, license type/state/number, specialty, institutional affiliation, credential status)
-- [ ] **CANS-03**: CANS.md schema defines scope of practice mapped to provider licensure and institutional privileges
-- [ ] **CANS-04**: CANS.md schema defines autonomy tiers for each of the four atomic actions (chart, order, charge, perform)
-- [ ] **CANS-05**: CANS.md schema defines hardening activation flags and consent configuration
+- [x] **CANS-02**: CANS.md schema defines provider identity (name, NPI, license type/state/number, specialty, institutional affiliation, credential status)
+- [x] **CANS-03**: CANS.md schema defines scope of practice mapped to provider licensure and institutional privileges
+- [x] **CANS-04**: CANS.md schema defines autonomy tiers for each of the four atomic actions (chart, order, charge, perform)
+- [x] **CANS-05**: CANS.md schema defines hardening activation flags and consent configuration
 - [ ] **CANS-06**: CANS.md is validated against TypeBox schema at parse time; malformed files are rejected with clear error messages
 - [ ] **CANS-07**: CANS.md integrity is checked on every load via SHA-256 hash comparison against last known-good state
 
@@ -131,13 +131,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLUG-01 | Phase 1 | Pending |
 | PLUG-02 | Phase 1 | Pending |
 | PLUG-03 | Phase 1 | Pending |
-| PLUG-04 | Phase 1 | Pending |
+| PLUG-04 | Phase 1 | Complete |
 | PLUG-05 | Phase 1 | Pending |
 | CANS-01 | Phase 1 | Pending |
-| CANS-02 | Phase 1 | Pending |
-| CANS-03 | Phase 1 | Pending |
-| CANS-04 | Phase 1 | Pending |
-| CANS-05 | Phase 1 | Pending |
+| CANS-02 | Phase 1 | Complete |
+| CANS-03 | Phase 1 | Complete |
+| CANS-04 | Phase 1 | Complete |
+| CANS-05 | Phase 1 | Complete |
 | CANS-06 | Phase 1 | Pending |
 | CANS-07 | Phase 1 | Pending |
 | AUDT-01 | Phase 1 | Pending |
