@@ -2,11 +2,11 @@
 
 ## What This Is
 
-CareAgent is an open-source clinical activation layer for the personal agent ecosystem, distributed as `@careagent/core` — an npm plugin package that transforms any OpenClaw personal AI assistant into a credentialed, auditable, hardened clinical agent. Built by a neurosurgeon for daily clinical use, it operates under the provider's license and authority, governed by the Irreducible Risk Hypothesis: risk stays with the provider, and the AI acts as an extension of their clinical practice.
+CareAgent is an open-source clinical activation layer for AI agents, distributed as `@careagent/core` — a platform-portable npm package that transforms any AI agent workspace into a credentialed, auditable, hardened clinical agent. CANS.md (Care Agent Nervous System) is the universal clinical activation gate that works alongside whatever workspace format the host platform uses (AGENTS.md standard, CLAUDE.md, OpenClaw's SOUL.md/AGENTS.md/USER.md, etc.). Built by a neurosurgeon for daily clinical use, it operates under the provider's license and authority, governed by the Irreducible Risk Hypothesis: risk stays with the provider, and the AI acts as an extension of their clinical practice.
 
 ## Core Value
 
-A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
+A provider installs CareAgent into their AI agent platform, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
 ## Requirements
 
@@ -16,7 +16,7 @@ A provider installs CareAgent into OpenClaw, completes an onboarding interview, 
 
 ### Active
 
-- [ ] Plugin installs cleanly into OpenClaw and registers all extension points (CLI commands, hooks, tools, background services)
+- [ ] Plugin installs cleanly into host platforms and registers all extension points (CLI commands, hooks, tools, background services)
 - [ ] CANS.md (Care Agent Nervous System) activates the clinical layer when present in the workspace
 - [ ] AUDIT.log captures every action, tool invocation, and blocked action as append-only record
 - [ ] Six-layer runtime hardening prevents actions outside credentialed scope
@@ -46,7 +46,8 @@ A provider installs CareAgent into OpenClaw, completes an onboarding interview, 
 
 - **Theoretical foundation:** The Irreducible Risk Hypothesis — provider liability is non-delegable; AI operates under provider authority through existing legal frameworks (state licensing, institutional credentialing, malpractice/tort system)
 - **Four Atomic Actions:** All clinical practice reduces to Chart, Order, Charge, Perform — three are delegable to AI today with varying autonomy tiers
-- **Architecture:** "Extend, don't fork" — CareAgent is a plugin, OpenClaw is a peer dependency, no OpenClaw source code in the repo
+- **Architecture:** "Extend, don't fork" — CareAgent is a plugin/library, host platforms (OpenClaw, AGENTS.md standard, etc.) are optional peer dependencies, no host platform source code in the repo
+- **Platform portability:** CANS.md is the universal clinical activation gate; workspace file supplementation is configurable per platform via workspace profiles
 - **OpenClaw:** Open-source personal AI assistant with workspace architecture (SOUL.md, AGENTS.md, etc.), plugin system, skills framework, multi-channel communication, and exec approval infrastructure
 - **Previous experience:** Prior attempt to install on local Mac broke the OpenClaw installation — all development happens on VPS with fresh OpenClaw install
 - **First specialty:** Neurosurgery — the developer is the provider, building for their own daily clinical use

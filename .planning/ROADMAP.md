@@ -3,7 +3,7 @@
 **Created:** 2026-02-17
 **Depth:** Comprehensive
 **Phases:** 6
-**Coverage:** 48/48 v1 requirements mapped
+**Coverage:** 52/52 v1 requirements mapped
 
 ---
 
@@ -65,8 +65,8 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. When CANS.md is active, only tools required for the provider's clinical functions are permitted; all other tools are denied
   2. All shell execution routes through allowlist mode with only pre-approved binary paths permitted
-  3. CANS.md clinical hard rules appear in the agent's system prompt via the bootstrap hook, and the agent references them in its reasoning
-  4. The before_tool_call safety guard intercepts tool invocations and validates against CANS.md scope; if the hook is not wired, a canary test detects this at startup and warns the provider
+  3. CANS.md clinical hard rules appear in the agent's system prompt via the host platform's hook mechanism (e.g. bootstrap hook), and the agent references them in its reasoning
+  4. The safety guard intercepts tool invocations via the host platform's hook mechanism and validates against CANS.md scope; if the hook is not wired, a canary test detects this at startup and warns the provider
   5. Every hardening layer decision (allow, deny, ask) is recorded in AUDIT.log with the specific layer that made the decision
 **Plans:** TBD
 
@@ -148,6 +148,10 @@ Plans:
 | ONBD-03 | Phase 2 |
 | ONBD-04 | Phase 2 |
 | ONBD-05 | Phase 2 |
+| PORT-01 | Portability |
+| PORT-02 | Portability |
+| PORT-03 | Portability |
+| PORT-04 | Portability |
 | HARD-01 | Phase 3 |
 | HARD-02 | Phase 3 |
 | HARD-03 | Phase 3 |
@@ -174,7 +178,7 @@ Plans:
 | DOCS-04 | Phase 6 |
 | DOCS-05 | Phase 6 |
 
-**Mapped:** 48/48
+**Mapped:** 52/52
 **Orphaned:** 0
 
 ---

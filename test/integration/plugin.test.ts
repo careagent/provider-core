@@ -189,5 +189,14 @@ describe('Plugin Registration Integration', () => {
       expect(pkg.peerDependencies).toBeDefined();
       expect(pkg.peerDependencies.openclaw).toBeDefined();
     });
+
+    it('package.json peerDependenciesMeta marks openclaw as optional', () => {
+      const pkgPath = join(__dirname, '../../package.json');
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+
+      expect(pkg.peerDependenciesMeta).toBeDefined();
+      expect(pkg.peerDependenciesMeta.openclaw).toBeDefined();
+      expect(pkg.peerDependenciesMeta.openclaw.optional).toBe(true);
+    });
   });
 });

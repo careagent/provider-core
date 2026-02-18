@@ -34,6 +34,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AUDT-05**: AUDIT.log entries can never be modified or deleted — only appended
 - [x] **AUDT-06**: Audit background service monitors log integrity and reports anomalies
 
+### Platform Portability
+
+- [x] **PORT-01**: PlatformAdapter interface abstracts host platform interactions; CareAgent subsystems never depend on a specific platform's raw API
+- [x] **PORT-02**: Platform detection duck-types the API object to automatically select the correct adapter (OpenClaw, standalone)
+- [x] **PORT-03**: Workspace file supplementation is configurable per platform via workspace profiles (OpenClaw: SOUL.md + AGENTS.md + USER.md; AGENTS.md standard: single AGENTS.md; standalone: no supplementation)
+- [x] **PORT-04**: Multiple entry points allow platform-specific or pure-library usage (`@careagent/core`, `@careagent/core/standalone`, `@careagent/core/core`)
+
 ### Runtime Hardening
 
 - [ ] **HARD-01**: Layer 1 — Tool policy lockdown: only tools required for provider's clinical functions are permitted when CANS.md is active
@@ -151,6 +158,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ONBD-03 | Phase 2 | Complete |
 | ONBD-04 | Phase 2 | Complete |
 | ONBD-05 | Phase 2 | Complete |
+| PORT-01 | Portability | Complete |
+| PORT-02 | Portability | Complete |
+| PORT-03 | Portability | Complete |
+| PORT-04 | Portability | Complete |
 | HARD-01 | Phase 3 | Pending |
 | HARD-02 | Phase 3 | Pending |
 | HARD-03 | Phase 3 | Pending |
@@ -178,8 +189,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-05 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 48
+- v1 requirements: 52 total (48 original + 4 portability)
+- Mapped to phases: 52
 - Unmapped: 0
 
 ---

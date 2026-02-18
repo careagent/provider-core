@@ -1,7 +1,7 @@
 {
   "name": "@careagent/core",
   "version": "0.1.0",
-  "description": "Clinical activation layer for OpenClaw personal AI assistant",
+  "description": "Clinical activation layer for AI agents",
   "license": "Apache-2.0",
   "type": "module",
   "openclaw": {
@@ -13,6 +13,18 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./openclaw": {
+      "import": "./dist/entry/openclaw.js",
+      "types": "./dist/entry/openclaw.d.ts"
+    },
+    "./standalone": {
+      "import": "./dist/entry/standalone.js",
+      "types": "./dist/entry/standalone.d.ts"
+    },
+    "./core": {
+      "import": "./dist/entry/core.js",
+      "types": "./dist/entry/core.d.ts"
     }
   },
   "engines": {
@@ -20,6 +32,11 @@
   },
   "peerDependencies": {
     "openclaw": ">=2026.1.0"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@sinclair/typebox": "~0.34.0",

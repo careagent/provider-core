@@ -1,9 +1,12 @@
 /**
  * Workspace file supplementation writer.
  *
- * Reads existing SOUL.md, AGENTS.md, and USER.md files in the provider's
- * workspace and writes/updates CareAgent-managed clinical sections using
- * HTML comment markers for idempotent round-trips.
+ * Reads existing workspace files and writes/updates CareAgent-managed clinical
+ * sections using HTML comment markers for idempotent round-trips.
+ *
+ * Which files are supplemented is determined by the workspace profile — different
+ * platforms use different workspace file layouts (e.g. OpenClaw uses SOUL.md +
+ * AGENTS.md + USER.md, the AGENTS.md standard uses a single AGENTS.md).
  *
  * All file writes are atomic: content is written to a .tmp file first,
  * then renamed into place.
@@ -12,11 +15,8 @@
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CANSDocument } from '../activation/cans-schema.js';
-import {
-  generateSoulContent,
-  generateAgentsContent,
-  generateUserContent,
-} from './workspace-content.js';
+import type { WorkspaceProfile } from './workspace-profiles.js';
+import { openclawProfile } from './workspace-profiles.js';
 
 // ---------------------------------------------------------------------------
 // Marker constants
@@ -62,44 +62,37 @@ export function supplementFile(existingContent: string, clinicalSection: string)
 // supplementWorkspaceFiles — reads, supplements, and atomically writes files
 // ---------------------------------------------------------------------------
 
-interface WorkspaceFile {
-  filename: string;
-  generateContent: () => string;
-}
-
 /**
- * Supplements SOUL.md, AGENTS.md, and USER.md in the given workspace path
- * with clinical content derived from the provided CANS document and philosophy.
+ * Supplements workspace files with clinical content derived from the provided
+ * CANS document and philosophy. Which files are written depends on the profile.
+ *
+ * When no profile is provided, defaults to the OpenClaw profile (SOUL.md,
+ * AGENTS.md, USER.md) for backward compatibility.
+ *
  * Each file is written atomically via a .tmp rename.
+ *
+ * @returns The list of filenames that were supplemented.
  */
 export function supplementWorkspaceFiles(
   workspacePath: string,
   data: CANSDocument,
   philosophy: string,
-): void {
-  const files: WorkspaceFile[] = [
-    {
-      filename: 'SOUL.md',
-      generateContent: () => generateSoulContent(data, philosophy),
-    },
-    {
-      filename: 'AGENTS.md',
-      generateContent: () => generateAgentsContent(data),
-    },
-    {
-      filename: 'USER.md',
-      generateContent: () => generateUserContent(data),
-    },
-  ];
+  profile?: WorkspaceProfile,
+): string[] {
+  const resolvedProfile = profile ?? openclawProfile;
+  const supplemented: string[] = [];
 
-  for (const { filename, generateContent } of files) {
+  for (const { filename, generateContent } of resolvedProfile.files) {
     const filePath = join(workspacePath, filename);
     const existingContent = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : '';
-    const clinicalContent = generateContent();
+    const clinicalContent = generateContent(data, philosophy);
     const updatedContent = supplementFile(existingContent, clinicalContent);
 
     const tmpPath = `${filePath}.tmp`;
     writeFileSync(tmpPath, updatedContent, 'utf-8');
     renameSync(tmpPath, filePath);
+    supplemented.push(filename);
   }
+
+  return supplemented;
 }

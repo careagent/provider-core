@@ -4,7 +4,7 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 2 COMPLETE. All 6 plans finished. Ready for Phase 3 (Hardening).
+**Current Focus:** Portability reorganization COMPLETE. Platform-portable architecture in place. Ready for Phase 3 (Hardening).
 
 ## Current Position
 
@@ -19,8 +19,8 @@
 |--------|-------|
 | Plans completed | 12 |
 | Plans failed | 0 |
-| Total requirements | 48 |
-| Requirements done | 23 |
+| Total requirements | 52 |
+| Requirements done | 27 |
 | Requirements remaining | 25 |
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -91,6 +91,12 @@
 | io.close() in finally block in runInitCommand | 2-06 | Ensures readline interface always closed; without this Node.js event loop stays alive indefinitely |
 | supplementWorkspaceFiles after reviewLoop in init | 2-06 | Review loop may iterate multiple times; workspace files must use final approved data |
 | Integration tests use fresh AuditPipeline per test | 2-06 | Prevents cross-test contamination; each mkdtempSync workspace gets its own AUDIT.log |
+| Rename CareAgentPluginAPI to PlatformAdapter | PORT | Platform-neutral naming; backward-compat type alias preserved |
+| src/adapters/ (plural) with platform subdirectories | PORT | Multi-platform adapter structure; old src/adapter/ kept as re-export shims |
+| Workspace profiles for platform-specific file supplementation | PORT | OpenClaw: SOUL+AGENTS+USER; AGENTS.md standard: single AGENTS.md; standalone: none |
+| Multiple entry points (index, openclaw, standalone, core) | PORT | Platform-specific or pure-library usage without coupling to OpenClaw |
+| OpenClaw peer dependency marked optional | PORT | Enables standalone usage without OpenClaw installed |
+| Duck-typing platform detection | PORT | detectPlatform checks registerCli + on presence; no dependency on platform-specific types |
 
 ### Research Findings Applied
 
@@ -114,17 +120,17 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 2 Plan 06 execution (CLI wiring + integration tests)
-- **Completed:** 2-06-SUMMARY.md -- init-command.ts, commands.ts updated, 39 new integration tests (354 total)
+- **Activity:** Platform portability reorganization
+- **Completed:** PORT-01..04 — PlatformAdapter interface, multi-platform adapter directory, workspace profiles, multiple entry points, optional peer deps, 34 new tests (388 total)
 - **Next:** Phase 3 (Hardening) - tool policy lockdown, exec approval, CANS protocol injection
 
 ### Context for Next Session
-- Phase 2 COMPLETE: All 6 plans done. 354 tests passing. Coverage 91.15% statements, 84.81% branches.
-- src/cli/init-command.ts: runInitCommand orchestrates interview + review + supplement + success summary
-- src/cli/commands.ts: careagent init + careagent status handlers fully wired
-- test/integration/onboarding.test.ts: 28 tests for ONBD-01/02/03/05 + post-init verification
-- test/integration/status.test.ts: 11 tests for ONBD-04 (formatStatus output)
-- All ONBD requirements (01-05) verified by integration tests
+- Portability reorganization COMPLETE: 388 tests passing. All 4 entry points build.
+- src/adapters/ (plural): types.ts, detect.ts, openclaw/index.ts, standalone/index.ts, index.ts
+- src/adapter/ (singular): re-export shims for backward compatibility (all existing imports still work)
+- src/entry/: openclaw.ts (register), standalone.ts (activate), core.ts (pure re-exports)
+- src/onboarding/workspace-profiles.ts: openclaw, agents-standard, standalone profiles
+- package.json: exports map for ./openclaw, ./standalone, ./core; peerDependenciesMeta.openclaw.optional=true
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
