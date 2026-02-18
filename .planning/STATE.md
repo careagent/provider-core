@@ -79,18 +79,21 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 1 Plan 03 execution
-- **Completed:** 1-03-SUMMARY.md -- CANS parser, activation gate, integrity check, 34 new tests (87 total)
-- **Next:** Execute Phase 1 Plan 04 (audit pipeline) if not already done in parallel, then Plan 05
+- **Activity:** Phase 1 Plan 04 execution (parallel with Plan 03)
+- **Completed:** 1-04-SUMMARY.md -- audit entry schema, hash-chained writer, pipeline, 21 new tests (87 total)
+- **Next:** Execute Phase 1 Plan 05 (wire register() + integrity service)
 
 ### Context for Next Session
-- Plans 01-03 complete: scaffold + adapter + types + CANS schema + parser + integrity + gate
+- Plans 01-04 complete: scaffold + adapter + types + CANS schema + parser + integrity + gate + audit
 - Activation subsystem complete: parseFrontmatter, verifyIntegrity, ActivationGate
+- Audit subsystem complete: AuditEntrySchema, AuditWriter, AuditPipeline
+- AuditPipeline at src/audit/pipeline.ts (session/trace management, logBlocked convenience)
+- AuditWriter at src/audit/writer.ts (SHA-256 hash-chained, append-only JSONL)
+- AuditEntrySchema at src/audit/entry-schema.ts (5 action states, prev_hash chain)
 - ActivationGate at src/activation/gate.ts (four-step: presence, parse, validate, integrity)
 - AuditCallback type at src/activation/gate.ts for dependency injection
 - Vendored YAML at src/vendor/yaml/index.ts (bundled by tsdown)
 - Test fixtures: valid-cans.md, malformed-cans.md, tampered-cans.md
-- Plan 04 (Wave 3): Audit pipeline (may already be complete from parallel execution)
 - Plan 05 (Wave 4): Wire register() + integrity service
 - Plan 06 (Wave 5): Integration tests + verification
 - VPS-only development -- never install on local OpenClaw
@@ -99,4 +102,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Plan 03 complete)*
+*Last updated: 2026-02-18 (Plan 04 complete)*

@@ -27,11 +27,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Audit & Accountability
 
-- [ ] **AUDT-01**: AUDIT.log captures every agent action as append-only JSONL with timestamp, action type, actor, target, outcome, session ID, and trace ID
-- [ ] **AUDT-02**: AUDIT.log captures every blocked action with rationale (what was attempted, why blocked, which hardening layer caught it)
-- [ ] **AUDT-03**: AUDIT.log distinguishes action states: AI-proposed, provider-approved, provider-modified, provider-rejected, system-blocked
-- [ ] **AUDT-04**: AUDIT.log entries include hash chaining (each entry includes hash of previous entry) for tamper evidence
-- [ ] **AUDT-05**: AUDIT.log entries can never be modified or deleted — only appended
+- [x] **AUDT-01**: AUDIT.log captures every agent action as append-only JSONL with timestamp, action type, actor, target, outcome, session ID, and trace ID
+- [x] **AUDT-02**: AUDIT.log captures every blocked action with rationale (what was attempted, why blocked, which hardening layer caught it)
+- [x] **AUDT-03**: AUDIT.log distinguishes action states: AI-proposed, provider-approved, provider-modified, provider-rejected, system-blocked
+- [x] **AUDT-04**: AUDIT.log entries include hash chaining (each entry includes hash of previous entry) for tamper evidence
+- [x] **AUDT-05**: AUDIT.log entries can never be modified or deleted — only appended
 - [ ] **AUDT-06**: Audit background service monitors log integrity and reports anomalies
 
 ### Runtime Hardening
@@ -140,11 +140,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CANS-05 | Phase 1 | Complete |
 | CANS-06 | Phase 1 | Complete |
 | CANS-07 | Phase 1 | Complete |
-| AUDT-01 | Phase 1 | Pending |
-| AUDT-02 | Phase 1 | Pending |
-| AUDT-03 | Phase 1 | Pending |
-| AUDT-04 | Phase 1 | Pending |
-| AUDT-05 | Phase 1 | Pending |
+| AUDT-01 | Phase 1 | Complete |
+| AUDT-02 | Phase 1 | Complete |
+| AUDT-03 | Phase 1 | Complete |
+| AUDT-04 | Phase 1 | Complete |
+| AUDT-05 | Phase 1 | Complete |
 | AUDT-06 | Phase 1 | Pending |
 | ONBD-01 | Phase 2 | Pending |
 | ONBD-02 | Phase 2 | Pending |
