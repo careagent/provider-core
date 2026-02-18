@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 1 COMPLETE. All 6 plans executed, all 18 requirements verified. Ready for Phase 2 planning.
+**Current Focus:** Phase 2 in progress. Plan 01 (CLI Foundation) complete.
 
 ## Current Position
 
-**Phase:** 1 - Plugin Foundation, Clinical Activation, and Audit Pipeline (COMPLETE)
-**Plan:** 06 (complete -- final plan)
-**Status:** Phase Complete
-**Progress:** [##########] 6/6 plans
+**Phase:** 2 - Onboarding and CLI
+**Plan:** 01 (complete)
+**Status:** In Progress
+**Progress:** [#---------] 1/? plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 6 |
+| Plans completed | 7 |
 | Plans failed | 0 |
 | Total requirements | 48 |
 | Requirements done | 18 |
@@ -31,6 +31,7 @@
 | 1 | 04 | 183s | 2 | 5 |
 | 1 | 05 | 172s | 2 | 4 |
 | 1 | 06 | 202s | 2 | 3 |
+| 2 | 01 | 160s | 7 | 7 |
 
 ## Accumulated Context
 
@@ -64,6 +65,10 @@
 | Real temp workspaces for integration tests | 1-06 | mkdtempSync workspaces ensure file I/O paths are fully exercised end-to-end |
 | Mock API records all method calls | 1-06 | Captures registerCli, registerService, on() calls for assertion without OpenClaw coupling |
 | Separate test/integration/ directory | 1-06 | Clean separation from unit tests in test/unit/ |
+| InterviewIO interface abstracts readline for testability | 2-01 | createMockIO captures output array; createTerminalIO uses node:readline/promises |
+| Recursive reprompt pattern in prompt utilities | 2-01 | askText/askLicenseType/askAutonomyTier recurse on invalid input; keeps validation co-located |
+| Typed literals via const tuple indexing | 2-01 | askLicenseType returns typeof LICENSE_TYPES[number]; compile-time safety over 8 license types |
+| registerCLI accepts workspacePath and audit as future params | 2-01 | Parameters underscore-prefixed now; Plan 06 will use them when interview is wired |
 
 ### Research Findings Applied
 
@@ -87,19 +92,20 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 1 Plan 06 execution (integration tests + phase verification)
-- **Completed:** 1-06-SUMMARY.md -- 37 new integration tests, 131 total, coverage 89%/83%/85%/90%, all 18 Phase 1 requirements verified
-- **Next:** Plan Phase 2 (Onboarding and CLI)
+- **Activity:** Phase 2 Plan 01 execution (CLI foundation)
+- **Completed:** 2-01-SUMMARY.md -- InterviewIO interface, prompt utilities, CLI stubs, 40 new tests (171 total)
+- **Next:** Phase 2 Plan 02 (interview engine or CANS.md generation)
 
 ### Context for Next Session
-- Phase 1 COMPLETE: all 6 plans executed, all 18 requirements verified end-to-end
-- 131 tests passing (94 unit + 37 integration), build succeeds, coverage above 80%
-- register(api) in src/index.ts connects adapter, activation gate, audit pipeline, integrity service
-- 8-step initialization: adapter -> audit -> CLI -> gate -> log -> canary -> integrity -> canary-check
-- Source structure: src/adapter/, src/activation/, src/audit/, src/vendor/yaml/, src/types/, src/index.ts
-- Test structure: test/unit/{adapter,activation,audit}/, test/integration/, test/fixtures/, test/smoke.test.ts
-- Key files: CANS.md schema (cans-schema.ts), gate (gate.ts), parser (cans-parser.ts), integrity (cans-integrity.ts)
-- Key files: audit entry schema (entry-schema.ts), writer (writer.ts), pipeline (pipeline.ts), integrity-service.ts
+- Phase 2 Plan 01 COMPLETE: CLI foundation established
+- 171 tests passing (131 Phase 1 + 40 new), build succeeds, no TypeScript errors
+- New src/cli/ directory: io.ts (InterviewIO), prompts.ts (utilities), commands.ts (registerCLI)
+- registerCLI wired into src/index.ts Step 3, replacing inline stub
+- createMockIO ready for use in all Phase 2 interview tests
+- completeInterviewResponses and minimalInterviewResponses fixtures in test/fixtures/
+- askLicenseType returns typed literal (MD/DO/NP/PA/CRNA/CNM/PhD/PsyD)
+- askAutonomyTier returns typed literal (autonomous/supervised/manual)
+- careagent init and careagent status registered as named command stubs (not yet wired)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
@@ -107,4 +113,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 1 complete -- Plan 06)*
+*Last updated: 2026-02-18 (Phase 2 Plan 01 complete -- CLI foundation)*
