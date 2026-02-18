@@ -7,4 +7,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   external: ['openclaw', 'openclaw/*'],
+  outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
 });
