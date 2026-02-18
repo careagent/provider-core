@@ -1,5 +1,7 @@
 # @careagent/core
 
+> **WARNING: This project is in its infancy. Do not attempt to install CareAgent into your OpenClaw without expecting it to break everything. It goes without saying, but do not use this to care for patients or any human being.**
+
 Clinical activation layer for AI agents.
 
 CareAgent transforms any AI agent workspace into a credentialed, auditable, hardened clinical agent. It is built by a neurosurgeon for daily clinical use and operates under the provider's license and authority, governed by the **Irreducible Risk Hypothesis**: risk stays with the provider, and the AI acts as an extension of their clinical practice.
