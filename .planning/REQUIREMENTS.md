@@ -17,13 +17,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Clinical Activation
 
-- [ ] **CANS-01**: CANS.md presence in workspace activates the clinical layer; absence means standard OpenClaw behavior
+- [x] **CANS-01**: CANS.md presence in workspace activates the clinical layer; absence means standard OpenClaw behavior
 - [x] **CANS-02**: CANS.md schema defines provider identity (name, NPI, license type/state/number, specialty, institutional affiliation, credential status)
 - [x] **CANS-03**: CANS.md schema defines scope of practice mapped to provider licensure and institutional privileges
 - [x] **CANS-04**: CANS.md schema defines autonomy tiers for each of the four atomic actions (chart, order, charge, perform)
 - [x] **CANS-05**: CANS.md schema defines hardening activation flags and consent configuration
-- [ ] **CANS-06**: CANS.md is validated against TypeBox schema at parse time; malformed files are rejected with clear error messages
-- [ ] **CANS-07**: CANS.md integrity is checked on every load via SHA-256 hash comparison against last known-good state
+- [x] **CANS-06**: CANS.md is validated against TypeBox schema at parse time; malformed files are rejected with clear error messages
+- [x] **CANS-07**: CANS.md integrity is checked on every load via SHA-256 hash comparison against last known-good state
 
 ### Audit & Accountability
 
@@ -133,13 +133,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLUG-03 | Phase 1 | Pending |
 | PLUG-04 | Phase 1 | Complete |
 | PLUG-05 | Phase 1 | Pending |
-| CANS-01 | Phase 1 | Pending |
+| CANS-01 | Phase 1 | Complete |
 | CANS-02 | Phase 1 | Complete |
 | CANS-03 | Phase 1 | Complete |
 | CANS-04 | Phase 1 | Complete |
 | CANS-05 | Phase 1 | Complete |
-| CANS-06 | Phase 1 | Pending |
-| CANS-07 | Phase 1 | Pending |
+| CANS-06 | Phase 1 | Complete |
+| CANS-07 | Phase 1 | Complete |
 | AUDT-01 | Phase 1 | Pending |
 | AUDT-02 | Phase 1 | Pending |
 | AUDT-03 | Phase 1 | Pending |

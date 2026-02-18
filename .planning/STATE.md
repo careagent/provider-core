@@ -4,29 +4,31 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 1 executing. Plans 01-02 complete, Plan 03 next.
+**Current Focus:** Phase 1 executing. Plans 01-04 complete, Plan 05 next.
 
 ## Current Position
 
 **Phase:** 1 - Plugin Foundation, Clinical Activation, and Audit Pipeline
-**Plan:** 03 (next to execute)
+**Plan:** 05 (next to execute)
 **Status:** Executing
-**Progress:** [##........] 2/6 plans
+**Progress:** [####......] 4/6 plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 2 |
+| Plans completed | 4 |
 | Plans failed | 0 |
 | Total requirements | 48 |
-| Requirements done | 8 |
-| Requirements remaining | 40 |
+| Requirements done | 16 |
+| Requirements remaining | 32 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 1 | 01 | 191s | 2 | 9 |
 | 1 | 02 | 165s | 2 | 8 |
+| 1 | 03 | 198s | 2 | 12 |
+| 1 | 04 | 183s | 2 | 5 |
 
 ## Accumulated Context
 
@@ -47,6 +49,13 @@
 | 3-level workspace path fallback | 1-02 | Different OpenClaw versions expose workspace path at different locations on the API object |
 | clinical_voice Optional, all other CANS root sections required | 1-02 | Clinical voice populated during onboarding (Phase 2); other sections required for activation |
 | Union of Literals for license type in TypeBox | 1-02 | String enums would allow any string at runtime; literals enforce exact match |
+| Vendored yaml via src/vendor/yaml/index.ts | 1-03 | Centralized and replaceable YAML parsing; bundled by tsdown, not external |
+| First-load trust model for integrity checking | 1-03 | First verifyIntegrity call stores hash; subsequent calls compare against stored value |
+| AuditCallback injection decouples gate from pipeline | 1-03 | ActivationGate accepts callback at construction, avoiding circular dependency with audit |
+| Zero runtime dependencies for audit subsystem | 1-04 | Uses only node:fs and node:crypto built-ins, honoring the zero-dep constraint |
+| Hash chaining from genesis entry (prev_hash: null) | 1-04 | Research finding: deferring hash chains is the #1 audit integrity mistake |
+| Spread-conditional pattern for optional fields | 1-04 | Prevents undefined values from appearing in JSON serialization |
+| Audit log stored in .careagent/AUDIT.log | 1-04 | Standard workspace subdirectory, created automatically with recursive mkdir |
 
 ### Research Findings Applied
 
@@ -70,18 +79,18 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 1 Plan 02 execution
-- **Completed:** 1-02-SUMMARY.md -- adapter layer, shared types, CANS.md TypeBox schema, 40 new tests
-- **Next:** Execute Phase 1 Plan 03 (CANS parser, activation gate, integrity check)
+- **Activity:** Phase 1 Plan 03 execution
+- **Completed:** 1-03-SUMMARY.md -- CANS parser, activation gate, integrity check, 34 new tests (87 total)
+- **Next:** Execute Phase 1 Plan 04 (audit pipeline) if not already done in parallel, then Plan 05
 
 ### Context for Next Session
-- Plans 01-02 complete: project scaffold + adapter + types + CANS schema all in place
-- CareAgentPluginAPI interface available at src/adapter/types.ts
-- createAdapter() available at src/adapter/openclaw-adapter.ts
-- CANSSchema available at src/activation/cans-schema.ts
-- Valid CANS fixture available at test/fixtures/valid-cans-data.ts
-- Plan 03 (Wave 3): CANS parser, activation gate, integrity check (CANS-01, CANS-06, CANS-07)
-- Plan 04 (Wave 3): Audit pipeline subsystem (parallel with Plan 03)
+- Plans 01-03 complete: scaffold + adapter + types + CANS schema + parser + integrity + gate
+- Activation subsystem complete: parseFrontmatter, verifyIntegrity, ActivationGate
+- ActivationGate at src/activation/gate.ts (four-step: presence, parse, validate, integrity)
+- AuditCallback type at src/activation/gate.ts for dependency injection
+- Vendored YAML at src/vendor/yaml/index.ts (bundled by tsdown)
+- Test fixtures: valid-cans.md, malformed-cans.md, tampered-cans.md
+- Plan 04 (Wave 3): Audit pipeline (may already be complete from parallel execution)
 - Plan 05 (Wave 4): Wire register() + integrity service
 - Plan 06 (Wave 5): Integration tests + verification
 - VPS-only development -- never install on local OpenClaw
@@ -90,4 +99,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18*
+*Last updated: 2026-02-18 (Plan 03 complete)*
