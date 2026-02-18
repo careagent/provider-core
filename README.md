@@ -106,6 +106,8 @@ pnpm run typecheck # TypeScript verification
 
 ### Project Structure
 
+The `.planning/` directory is managed by the [GSD](https://github.com/glittercowboy/gsd.build) plugin for Claude Code — it contains the roadmap, requirements, phase plans, and session state.
+
 ```
 src/
   adapters/          # Platform adapter layer (OpenClaw, standalone, detection)
