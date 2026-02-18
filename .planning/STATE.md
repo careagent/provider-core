@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 2 in progress. Plan 01 (CLI Foundation) complete.
+**Current Focus:** Phase 2 in progress. Plan 02 (Interview Engine) complete.
 
 ## Current Position
 
 **Phase:** 2 - Onboarding and CLI
-**Plan:** 01 (complete)
+**Plan:** 02 (complete)
 **Status:** In Progress
-**Progress:** [#---------] 1/? plans
+**Progress:** [##--------] 2/? plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 7 |
+| Plans completed | 8 |
 | Plans failed | 0 |
 | Total requirements | 48 |
 | Requirements done | 18 |
@@ -32,6 +32,7 @@
 | 1 | 05 | 172s | 2 | 4 |
 | 1 | 06 | 202s | 2 | 3 |
 | 2 | 01 | 160s | 7 | 7 |
+| 2 | 02 | 203s | 5 | 5 |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@
 | Recursive reprompt pattern in prompt utilities | 2-01 | askText/askLicenseType/askAutonomyTier recurse on invalid input; keeps validation co-located |
 | Typed literals via const tuple indexing | 2-01 | askLicenseType returns typeof LICENSE_TYPES[number]; compile-time safety over 8 license types |
 | registerCLI accepts workspacePath and audit as future params | 2-01 | Parameters underscore-prefixed now; Plan 06 will use them when interview is wired |
+| Stage dispatch via STAGE_HANDLERS record (not switch) | 2-02 | O(1) lookup; adding stages requires only a new handler + record entry |
+| state.philosophy separate from state.data | 2-02 | Philosophy is prose, not CANS YAML; stored separately for CANS.md generation in Plan 03 |
+| Mandatory re-prompt loops for welcome/consent | 2-02 | Non-negotiable acknowledgments -- cannot skip; safety requirement |
 
 ### Research Findings Applied
 
@@ -92,20 +96,19 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 2 Plan 01 execution (CLI foundation)
-- **Completed:** 2-01-SUMMARY.md -- InterviewIO interface, prompt utilities, CLI stubs, 40 new tests (171 total)
-- **Next:** Phase 2 Plan 02 (interview engine or CANS.md generation)
+- **Activity:** Phase 2 Plan 02 execution (Interview Engine)
+- **Completed:** 2-02-SUMMARY.md -- interview state machine, 9 stage handlers, 40 new tests (211 total)
+- **Next:** Phase 2 Plan 03 (CANS.md generation / review loop)
 
 ### Context for Next Session
-- Phase 2 Plan 01 COMPLETE: CLI foundation established
-- 171 tests passing (131 Phase 1 + 40 new), build succeeds, no TypeScript errors
-- New src/cli/ directory: io.ts (InterviewIO), prompts.ts (utilities), commands.ts (registerCLI)
-- registerCLI wired into src/index.ts Step 3, replacing inline stub
-- createMockIO ready for use in all Phase 2 interview tests
-- completeInterviewResponses and minimalInterviewResponses fixtures in test/fixtures/
-- askLicenseType returns typed literal (MD/DO/NP/PA/CRNA/CNM/PhD/PsyD)
-- askAutonomyTier returns typed literal (autonomous/supervised/manual)
-- careagent init and careagent status registered as named command stubs (not yet wired)
+- Phase 2 Plan 02 COMPLETE: Interview engine and all stage handlers established
+- 211 tests passing (171 Phase 1+2-01 + 40 new), build succeeds, no TypeScript errors
+- New src/onboarding/ directory: defaults.ts, engine.ts, stages.ts
+- runInterview() orchestrates 9 stages, returns InterviewResult {data: CANSDocument, philosophy: string}
+- runSingleStage() dispatches individual stages by InterviewStage enum
+- All 9 stage handlers tested individually with re-prompt loop coverage
+- completeInterviewResponses fixture works end-to-end through runInterview (last '0' review response unused -- Plan 03 will consume it)
+- state.philosophy stored separate from data -- Plan 03 uses both for CANS.md generation
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
@@ -113,4 +116,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 Plan 01 complete -- CLI foundation)*
+*Last updated: 2026-02-18 (Phase 2 Plan 02 complete -- interview engine and stage handlers)*
