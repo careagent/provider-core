@@ -5,7 +5,9 @@
   "license": "Apache-2.0",
   "type": "module",
   "openclaw": {
-    "extensions": ["./dist/index.js"]
+    "extensions": [
+      "./dist/index.js"
+    ]
   },
   "exports": {
     ".": {
@@ -20,13 +22,13 @@
     "openclaw": ">=2026.1.0"
   },
   "devDependencies": {
-    "typescript": "~5.7.0",
-    "tsdown": "~0.20.0",
-    "vitest": "~4.0.0",
+    "@sinclair/typebox": "~0.34.0",
     "@vitest/coverage-v8": "~4.0.0",
-    "@sinclair/typebox": "~0.34.0"
+    "tsdown": "~0.20.0",
+    "typescript": "~5.7.0",
+    "vitest": "~4.0.0",
+    "yaml": "^2.8.2"
   },
-  "dependencies": {},
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
