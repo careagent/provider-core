@@ -11,7 +11,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **PLUG-01**: Plugin installs into OpenClaw via `openclaw plugins install @careagent/core` without errors
 - [x] **PLUG-02**: Plugin manifest (openclaw.plugin.json) declares plugin ID, configSchema, skills directories, CLI commands, and hook registrations
-- [ ] **PLUG-03**: Plugin `register(api)` entry point registers CLI commands, hooks, agent tools, and background services
+- [x] **PLUG-03**: Plugin `register(api)` entry point registers CLI commands, hooks, agent tools, and background services
 - [x] **PLUG-04**: Adapter layer insulates CareAgent from OpenClaw internals so upstream updates do not break the plugin
 - [x] **PLUG-05**: Plugin has zero runtime npm dependencies — all runtime needs come from Node.js built-ins, OpenClaw (peer dependency), and CareAgent's own code
 
@@ -32,7 +32,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AUDT-03**: AUDIT.log distinguishes action states: AI-proposed, provider-approved, provider-modified, provider-rejected, system-blocked
 - [x] **AUDT-04**: AUDIT.log entries include hash chaining (each entry includes hash of previous entry) for tamper evidence
 - [x] **AUDT-05**: AUDIT.log entries can never be modified or deleted — only appended
-- [ ] **AUDT-06**: Audit background service monitors log integrity and reports anomalies
+- [x] **AUDT-06**: Audit background service monitors log integrity and reports anomalies
 
 ### Runtime Hardening
 
@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | PLUG-01 | Phase 1 | Pending |
 | PLUG-02 | Phase 1 | Pending |
-| PLUG-03 | Phase 1 | Pending |
+| PLUG-03 | Phase 1 | Complete |
 | PLUG-04 | Phase 1 | Complete |
 | PLUG-05 | Phase 1 | Pending |
 | CANS-01 | Phase 1 | Complete |
@@ -145,7 +145,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDT-03 | Phase 1 | Complete |
 | AUDT-04 | Phase 1 | Complete |
 | AUDT-05 | Phase 1 | Complete |
-| AUDT-06 | Phase 1 | Pending |
+| AUDT-06 | Phase 1 | Complete |
 | ONBD-01 | Phase 2 | Pending |
 | ONBD-02 | Phase 2 | Pending |
 | ONBD-03 | Phase 2 | Pending |

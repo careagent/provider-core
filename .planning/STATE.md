@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 1 executing. Plans 01-04 complete, Plan 05 next.
+**Current Focus:** Phase 1 executing. Plans 01-05 complete, Plan 06 next.
 
 ## Current Position
 
 **Phase:** 1 - Plugin Foundation, Clinical Activation, and Audit Pipeline
-**Plan:** 05 (next to execute)
+**Plan:** 06 (next to execute)
 **Status:** Executing
-**Progress:** [####......] 4/6 plans
+**Progress:** [#####.....] 5/6 plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 4 |
+| Plans completed | 5 |
 | Plans failed | 0 |
 | Total requirements | 48 |
-| Requirements done | 16 |
-| Requirements remaining | 32 |
+| Requirements done | 18 |
+| Requirements remaining | 30 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -29,6 +29,7 @@
 | 1 | 02 | 165s | 2 | 8 |
 | 1 | 03 | 198s | 2 | 12 |
 | 1 | 04 | 183s | 2 | 5 |
+| 1 | 05 | 172s | 2 | 4 |
 
 ## Accumulated Context
 
@@ -56,6 +57,9 @@
 | Hash chaining from genesis entry (prev_hash: null) | 1-04 | Research finding: deferring hash chains is the #1 audit integrity mistake |
 | Spread-conditional pattern for optional fields | 1-04 | Prevents undefined values from appearing in JSON serialization |
 | Audit log stored in .careagent/AUDIT.log | 1-04 | Standard workspace subdirectory, created automatically with recursive mkdir |
+| CLI registered before activation check | 1-05 | Commands must work without CANS.md (needed for careagent init in Phase 2) |
+| Integrity service checks on startup + 60s interval | 1-05 | Background chain verification catches tampering between explicit verifyChain calls |
+| Hook canary with 30s delayed warning | 1-05 | Detects missing before_tool_call wiring without blocking startup |
 
 ### Research Findings Applied
 
@@ -79,27 +83,24 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 1 Plan 04 execution (parallel with Plan 03)
-- **Completed:** 1-04-SUMMARY.md -- audit entry schema, hash-chained writer, pipeline, 21 new tests (87 total)
-- **Next:** Execute Phase 1 Plan 05 (wire register() + integrity service)
+- **Activity:** Phase 1 Plan 05 execution (plugin wiring + integrity service)
+- **Completed:** 1-05-SUMMARY.md -- register() entry point wired, audit integrity service, 7 new tests (94 total)
+- **Next:** Execute Phase 1 Plan 06 (comprehensive test suite + phase verification)
 
 ### Context for Next Session
-- Plans 01-04 complete: scaffold + adapter + types + CANS schema + parser + integrity + gate + audit
-- Activation subsystem complete: parseFrontmatter, verifyIntegrity, ActivationGate
-- Audit subsystem complete: AuditEntrySchema, AuditWriter, AuditPipeline
-- AuditPipeline at src/audit/pipeline.ts (session/trace management, logBlocked convenience)
-- AuditWriter at src/audit/writer.ts (SHA-256 hash-chained, append-only JSONL)
-- AuditEntrySchema at src/audit/entry-schema.ts (5 action states, prev_hash chain)
-- ActivationGate at src/activation/gate.ts (four-step: presence, parse, validate, integrity)
-- AuditCallback type at src/activation/gate.ts for dependency injection
-- Vendored YAML at src/vendor/yaml/index.ts (bundled by tsdown)
-- Test fixtures: valid-cans.md, malformed-cans.md, tampered-cans.md
-- Plan 05 (Wave 4): Wire register() + integrity service
-- Plan 06 (Wave 5): Integration tests + verification
+- Plans 01-05 complete: full plugin foundation wired end-to-end
+- register(api) in src/index.ts connects adapter, activation gate, audit pipeline, integrity service
+- 8-step initialization: adapter -> audit -> CLI -> gate -> log -> canary -> integrity -> canary-check
+- Inactive mode returns early; active mode wires all subsystems
+- Audit integrity service at src/audit/integrity-service.ts (60s periodic chain verification)
+- Hook canary pattern detects missing before_tool_call wiring after 30s
+- All subsystems from Plans 01-04 unchanged and fully tested
+- Plan 06 (Wave 5): Integration tests + verification (final plan in Phase 1)
+- 94 tests passing, build succeeds
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Plan 04 complete)*
+*Last updated: 2026-02-18 (Plan 05 complete)*
