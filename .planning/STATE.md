@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 1 executing. Plans 01-05 complete, Plan 06 next.
+**Current Focus:** Phase 1 COMPLETE. All 6 plans executed, all 18 requirements verified. Ready for Phase 2 planning.
 
 ## Current Position
 
-**Phase:** 1 - Plugin Foundation, Clinical Activation, and Audit Pipeline
-**Plan:** 06 (next to execute)
-**Status:** Executing
-**Progress:** [#####.....] 5/6 plans
+**Phase:** 1 - Plugin Foundation, Clinical Activation, and Audit Pipeline (COMPLETE)
+**Plan:** 06 (complete -- final plan)
+**Status:** Phase Complete
+**Progress:** [##########] 6/6 plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 5 |
+| Plans completed | 6 |
 | Plans failed | 0 |
 | Total requirements | 48 |
 | Requirements done | 18 |
@@ -30,6 +30,7 @@
 | 1 | 03 | 198s | 2 | 12 |
 | 1 | 04 | 183s | 2 | 5 |
 | 1 | 05 | 172s | 2 | 4 |
+| 1 | 06 | 202s | 2 | 3 |
 
 ## Accumulated Context
 
@@ -60,6 +61,9 @@
 | CLI registered before activation check | 1-05 | Commands must work without CANS.md (needed for careagent init in Phase 2) |
 | Integrity service checks on startup + 60s interval | 1-05 | Background chain verification catches tampering between explicit verifyChain calls |
 | Hook canary with 30s delayed warning | 1-05 | Detects missing before_tool_call wiring without blocking startup |
+| Real temp workspaces for integration tests | 1-06 | mkdtempSync workspaces ensure file I/O paths are fully exercised end-to-end |
+| Mock API records all method calls | 1-06 | Captures registerCli, registerService, on() calls for assertion without OpenClaw coupling |
+| Separate test/integration/ directory | 1-06 | Clean separation from unit tests in test/unit/ |
 
 ### Research Findings Applied
 
@@ -83,24 +87,24 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 1 Plan 05 execution (plugin wiring + integrity service)
-- **Completed:** 1-05-SUMMARY.md -- register() entry point wired, audit integrity service, 7 new tests (94 total)
-- **Next:** Execute Phase 1 Plan 06 (comprehensive test suite + phase verification)
+- **Activity:** Phase 1 Plan 06 execution (integration tests + phase verification)
+- **Completed:** 1-06-SUMMARY.md -- 37 new integration tests, 131 total, coverage 89%/83%/85%/90%, all 18 Phase 1 requirements verified
+- **Next:** Plan Phase 2 (Onboarding and CLI)
 
 ### Context for Next Session
-- Plans 01-05 complete: full plugin foundation wired end-to-end
+- Phase 1 COMPLETE: all 6 plans executed, all 18 requirements verified end-to-end
+- 131 tests passing (94 unit + 37 integration), build succeeds, coverage above 80%
 - register(api) in src/index.ts connects adapter, activation gate, audit pipeline, integrity service
 - 8-step initialization: adapter -> audit -> CLI -> gate -> log -> canary -> integrity -> canary-check
-- Inactive mode returns early; active mode wires all subsystems
-- Audit integrity service at src/audit/integrity-service.ts (60s periodic chain verification)
-- Hook canary pattern detects missing before_tool_call wiring after 30s
-- All subsystems from Plans 01-04 unchanged and fully tested
-- Plan 06 (Wave 5): Integration tests + verification (final plan in Phase 1)
-- 94 tests passing, build succeeds
+- Source structure: src/adapter/, src/activation/, src/audit/, src/vendor/yaml/, src/types/, src/index.ts
+- Test structure: test/unit/{adapter,activation,audit}/, test/integration/, test/fixtures/, test/smoke.test.ts
+- Key files: CANS.md schema (cans-schema.ts), gate (gate.ts), parser (cans-parser.ts), integrity (cans-integrity.ts)
+- Key files: audit entry schema (entry-schema.ts), writer (writer.ts), pipeline (pipeline.ts), integrity-service.ts
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
+- Phase 2 requirements: ONBD-01..05 (careagent init, CANS.md generation, SOUL/AGENTS/USER.md, careagent status, iterative refinement)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Plan 05 complete)*
+*Last updated: 2026-02-18 (Phase 1 complete -- Plan 06)*

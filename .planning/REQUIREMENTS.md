@@ -128,11 +128,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLUG-01 | Phase 1 | Pending |
-| PLUG-02 | Phase 1 | Pending |
+| PLUG-01 | Phase 1 | Complete |
+| PLUG-02 | Phase 1 | Complete |
 | PLUG-03 | Phase 1 | Complete |
 | PLUG-04 | Phase 1 | Complete |
-| PLUG-05 | Phase 1 | Pending |
+| PLUG-05 | Phase 1 | Complete |
 | CANS-01 | Phase 1 | Complete |
 | CANS-02 | Phase 1 | Complete |
 | CANS-03 | Phase 1 | Complete |
