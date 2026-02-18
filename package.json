@@ -1,0 +1,39 @@
+{
+  "name": "@careagent/core",
+  "version": "0.1.0",
+  "description": "Clinical activation layer for OpenClaw personal AI assistant",
+  "license": "Apache-2.0",
+  "type": "module",
+  "openclaw": {
+    "extensions": ["./dist/index.js"]
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.1.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.0",
+    "tsdown": "~0.20.0",
+    "vitest": "~4.0.0",
+    "@vitest/coverage-v8": "~4.0.0",
+    "@sinclair/typebox": "~0.34.0"
+  },
+  "dependencies": {},
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  }
+}
