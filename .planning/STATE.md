@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 2 in progress. Plan 04 (Workspace Supplementation) complete.
+**Current Focus:** Phase 2 in progress. Plan 05 (careagent status command) complete.
 
 ## Current Position
 
 **Phase:** 2 - Onboarding and CLI
-**Plan:** 04 (complete)
+**Plan:** 05 (complete)
 **Status:** In Progress
-**Progress:** [####------] 4/? plans
+**Progress:** [#####-----] 5/? plans
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 10 |
+| Plans completed | 11 |
 | Plans failed | 0 |
 | Total requirements | 48 |
 | Requirements done | 18 |
@@ -35,6 +35,7 @@
 | 2 | 02 | 203s | 5 | 5 |
 | 2 | 03 | 219s | 4 | 4 |
 | 2 | 04 | 210s | 4 | 4 |
+| 2 | 05 | 192s | 2 | 2 |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@
 | HTML comment markers for workspace supplementation | 2-04 | Round-trip idempotency: BEGIN/END markers let supplementFile replace without corrupting user content |
 | Atomic write via .tmp rename | 2-04 | Prevents partial-write corruption if process interrupted during SOUL/AGENTS/USER.md writes |
 | Pure function generators with conditional omission | 2-04 | Optional fields (subspecialty, clinical_voice, NPI) omitted entirely -- never rendered empty |
+| Status integrity check bypasses gate side effect | 2-05 | verifyIntegrity creates store on first load; status reads store directly + computes hash to avoid write |
+| No-op audit callback for status command | 2-05 | Status is a read-only inspection — logging gate checks to audit trail would pollute the log |
+| checkIntegrity three-state: No CANS.md / No hash stored / Verified or MISMATCH | 2-05 | Covers all observable integrity states without triggering side-effect store creation |
 
 ### Research Findings Applied
 
@@ -106,19 +110,19 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 2 Plan 04 execution (Workspace File Supplementation)
-- **Completed:** 2-04-SUMMARY.md -- workspace-content.ts, workspace-writer.ts, 47 new tests (279 total)
-- **Next:** Phase 2 Plan 05 (careagent status command)
+- **Activity:** Phase 2 Plan 05 execution (careagent status command)
+- **Completed:** 2-05-SUMMARY.md -- status-command.ts, 22 new tests (315 total)
+- **Next:** Phase 2 Plan 06 (wire careagent init and status CLI handlers)
 
 ### Context for Next Session
-- Phase 2 Plan 04 COMPLETE: Workspace supplementation system established
-- 279 tests passing (211 Phase 1+2-01+2-02+2-03 + 68 new), build succeeds, no TypeScript errors
-- src/onboarding/workspace-content.ts: pure generators for SOUL.md, AGENTS.md, USER.md sections
-- src/onboarding/workspace-writer.ts: supplementFile() pure function + supplementWorkspaceFiles() I/O
-- HTML comment markers <!-- CareAgent: BEGIN/END --> enable idempotent round-trips
-- Atomic writes via .tmp rename for all three workspace files
-- supplementFile handles: empty, append (with correct separator), replace-in-place
-- validCANSData fixture has clinical_voice undefined -- tests cover both presence and absence
+- Phase 2 Plan 05 COMPLETE: careagent status command implemented
+- 315 tests passing, build succeeds, no TypeScript errors
+- src/cli/status-command.ts: formatStatus, readAuditStats, runStatusCommand, checkIntegrity
+- Status output: Clinical Mode (ACTIVE/INACTIVE + reason), Provider info, Autonomy Tiers, Hardening Layers, Audit Stats, Integrity
+- Integrity check is side-effect-free: reads store + computes hash without calling verifyIntegrity
+- No-op audit callback in gate call: status is read-only, not audited
+- Commands.ts still has stub handlers for careagent init and careagent status — Plan 06 wires them
+- validCANSData fixture: Dr. Test Provider, MD/TX, Neurosurgery, Spine subspecialty, University Medical Center
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
@@ -126,4 +130,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 Plan 03 complete -- CANS.md generator and review loop; 293 tests total)*
+*Last updated: 2026-02-18 (Phase 2 Plan 05 complete -- careagent status command; 315 tests total)*

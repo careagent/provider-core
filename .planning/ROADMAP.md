@@ -106,7 +106,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 6/6 | Complete | 2026-02-18 |
-| 2. Onboarding and CLI | 0/? | Not started | - |
+| 2. Onboarding and CLI | 5/? | In Progress | - |
 | 3. Runtime Hardening | 0/? | Not started | - |
 | 4. Clinical Skills | 0/? | Not started | - |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
