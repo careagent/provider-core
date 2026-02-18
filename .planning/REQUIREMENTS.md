@@ -128,60 +128,60 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLUG-01 | — | Pending |
-| PLUG-02 | — | Pending |
-| PLUG-03 | — | Pending |
-| PLUG-04 | — | Pending |
-| PLUG-05 | — | Pending |
-| CANS-01 | — | Pending |
-| CANS-02 | — | Pending |
-| CANS-03 | — | Pending |
-| CANS-04 | — | Pending |
-| CANS-05 | — | Pending |
-| CANS-06 | — | Pending |
-| CANS-07 | — | Pending |
-| AUDT-01 | — | Pending |
-| AUDT-02 | — | Pending |
-| AUDT-03 | — | Pending |
-| AUDT-04 | — | Pending |
-| AUDT-05 | — | Pending |
-| AUDT-06 | — | Pending |
-| HARD-01 | — | Pending |
-| HARD-02 | — | Pending |
-| HARD-03 | — | Pending |
-| HARD-04 | — | Pending |
-| HARD-05 | — | Pending |
-| HARD-06 | — | Pending |
-| HARD-07 | — | Pending |
-| ONBD-01 | — | Pending |
-| ONBD-02 | — | Pending |
-| ONBD-03 | — | Pending |
-| ONBD-04 | — | Pending |
-| ONBD-05 | — | Pending |
-| SKIL-01 | — | Pending |
-| SKIL-02 | — | Pending |
-| SKIL-03 | — | Pending |
-| SKIL-04 | — | Pending |
-| SKIL-05 | — | Pending |
-| SKIL-06 | — | Pending |
-| SKIL-07 | — | Pending |
-| CANS-08 | — | Pending |
-| CANS-09 | — | Pending |
-| CANS-10 | — | Pending |
-| DOCS-01 | — | Pending |
-| DOCS-02 | — | Pending |
-| DOCS-03 | — | Pending |
-| DOCS-04 | — | Pending |
-| DOCS-05 | — | Pending |
-| INTG-01 | — | Pending |
-| INTG-02 | — | Pending |
-| INTG-03 | — | Pending |
+| PLUG-01 | Phase 1 | Pending |
+| PLUG-02 | Phase 1 | Pending |
+| PLUG-03 | Phase 1 | Pending |
+| PLUG-04 | Phase 1 | Pending |
+| PLUG-05 | Phase 1 | Pending |
+| CANS-01 | Phase 1 | Pending |
+| CANS-02 | Phase 1 | Pending |
+| CANS-03 | Phase 1 | Pending |
+| CANS-04 | Phase 1 | Pending |
+| CANS-05 | Phase 1 | Pending |
+| CANS-06 | Phase 1 | Pending |
+| CANS-07 | Phase 1 | Pending |
+| AUDT-01 | Phase 1 | Pending |
+| AUDT-02 | Phase 1 | Pending |
+| AUDT-03 | Phase 1 | Pending |
+| AUDT-04 | Phase 1 | Pending |
+| AUDT-05 | Phase 1 | Pending |
+| AUDT-06 | Phase 1 | Pending |
+| ONBD-01 | Phase 2 | Pending |
+| ONBD-02 | Phase 2 | Pending |
+| ONBD-03 | Phase 2 | Pending |
+| ONBD-04 | Phase 2 | Pending |
+| ONBD-05 | Phase 2 | Pending |
+| HARD-01 | Phase 3 | Pending |
+| HARD-02 | Phase 3 | Pending |
+| HARD-03 | Phase 3 | Pending |
+| HARD-04 | Phase 3 | Pending |
+| HARD-05 | Phase 3 | Pending |
+| HARD-06 | Phase 3 | Pending |
+| HARD-07 | Phase 3 | Pending |
+| SKIL-01 | Phase 4 | Pending |
+| SKIL-02 | Phase 4 | Pending |
+| SKIL-03 | Phase 4 | Pending |
+| SKIL-04 | Phase 4 | Pending |
+| SKIL-05 | Phase 4 | Pending |
+| SKIL-06 | Phase 4 | Pending |
+| SKIL-07 | Phase 4 | Pending |
+| CANS-08 | Phase 5 | Pending |
+| CANS-09 | Phase 5 | Pending |
+| CANS-10 | Phase 5 | Pending |
+| INTG-01 | Phase 5 | Pending |
+| INTG-02 | Phase 5 | Pending |
+| INTG-03 | Phase 5 | Pending |
+| DOCS-01 | Phase 6 | Pending |
+| DOCS-02 | Phase 6 | Pending |
+| DOCS-03 | Phase 6 | Pending |
+| DOCS-04 | Phase 6 | Pending |
+| DOCS-05 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 48 total
-- Mapped to phases: 0
-- Unmapped: 48
+- Mapped to phases: 48
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-17 after initial definition*
+*Last updated: 2026-02-17 after roadmap creation*
