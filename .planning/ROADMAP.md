@@ -32,7 +32,7 @@
   5. CANS.md integrity is verified on every load via SHA-256 hash comparison; a tampered CANS.md triggers a warning and does not activate
 **Plans:** 6 plans
 Plans:
-- [ ] Plan 01 — Project scaffold, build config, and plugin manifest (PLUG-01, PLUG-02, PLUG-05)
+- [x] Plan 01 — Project scaffold, build config, and plugin manifest (PLUG-01, PLUG-02, PLUG-05)
 - [ ] Plan 02 — Adapter layer, shared types, and CANS.md TypeBox schema (PLUG-04, CANS-02, CANS-03, CANS-04, CANS-05)
 - [ ] Plan 03 — CANS parser, activation gate, and integrity check (CANS-01, CANS-06, CANS-07)
 - [ ] Plan 04 — Audit entry schema, writer, and pipeline (AUDT-01, AUDT-02, AUDT-03, AUDT-04, AUDT-05)
@@ -105,7 +105,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 0/6 | Planned | - |
+| 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 1/6 | Executing | - |
 | 2. Onboarding and CLI | 0/? | Not started | - |
 | 3. Runtime Hardening | 0/? | Not started | - |
 | 4. Clinical Skills | 0/? | Not started | - |
@@ -172,4 +172,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-17*
+*Last updated: 2026-02-18*

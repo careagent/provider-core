@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Plugin Foundation
 
-- [ ] **PLUG-01**: Plugin installs into OpenClaw via `openclaw plugins install @careagent/core` without errors
-- [ ] **PLUG-02**: Plugin manifest (openclaw.plugin.json) declares plugin ID, configSchema, skills directories, CLI commands, and hook registrations
+- [x] **PLUG-01**: Plugin installs into OpenClaw via `openclaw plugins install @careagent/core` without errors
+- [x] **PLUG-02**: Plugin manifest (openclaw.plugin.json) declares plugin ID, configSchema, skills directories, CLI commands, and hook registrations
 - [ ] **PLUG-03**: Plugin `register(api)` entry point registers CLI commands, hooks, agent tools, and background services
 - [ ] **PLUG-04**: Adapter layer insulates CareAgent from OpenClaw internals so upstream updates do not break the plugin
-- [ ] **PLUG-05**: Plugin has zero runtime npm dependencies — all runtime needs come from Node.js built-ins, OpenClaw (peer dependency), and CareAgent's own code
+- [x] **PLUG-05**: Plugin has zero runtime npm dependencies — all runtime needs come from Node.js built-ins, OpenClaw (peer dependency), and CareAgent's own code
 
 ### Clinical Activation
 
