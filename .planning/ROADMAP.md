@@ -10,7 +10,7 @@
 ## Phases
 
 - [x] **Phase 1: Plugin Foundation, Clinical Activation, and Audit Pipeline** - A working OpenClaw plugin that installs, detects CANS.md, validates its schema, and logs every action to a hash-chained audit trail
-- [ ] **Phase 2: Onboarding and CLI** - Provider completes an interactive interview and receives a personalized CANS.md that activates their clinical agent
+- [x] **Phase 2: Onboarding and CLI** - Provider completes an interactive interview and receives a personalized CANS.md that activates their clinical agent
 - [ ] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
 - [ ] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
 - [ ] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
@@ -49,7 +49,14 @@ Plans:
   3. Provider can review, adjust, and re-generate CANS.md before finalizing -- onboarding is not a one-shot process
   4. Provider runs `careagent status` and sees activation state, CANS.md summary, hardening layer status, loaded skills, and audit stats
   5. Existing SOUL.md, AGENTS.md, and USER.md content is preserved and supplemented with clinical content -- never replaced
-**Plans:** TBD
+**Plans:** 6 plans
+Plans:
+- [x] Plan 01 — InterviewIO abstraction, prompt utilities, and CLI scaffolding (ONBD-01 partial)
+- [x] Plan 02 — Interview stage machine and complete onboarding engine (ONBD-01)
+- [x] Plan 03 — CANS.md generator and review-edit-regenerate loop (ONBD-02, ONBD-05)
+- [x] Plan 04 — Workspace file supplementation (SOUL.md, AGENTS.md, USER.md) (ONBD-03)
+- [x] Plan 05 — careagent status command (ONBD-04)
+- [x] Plan 06 — CLI wiring and comprehensive integration tests (ONBD-01 through ONBD-05)
 
 ### Phase 3: Runtime Hardening
 **Goal:** Six defense layers prevent any agent action outside the provider's credentialed scope, with graceful degradation when individual layers are unavailable

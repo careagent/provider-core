@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 2 in progress. Plan 05 (careagent status command) complete.
+**Current Focus:** Phase 2 COMPLETE. All 6 plans finished. Ready for Phase 3 (Hardening).
 
 ## Current Position
 
-**Phase:** 2 - Onboarding and CLI
-**Plan:** 05 (complete)
-**Status:** In Progress
-**Progress:** [#####-----] 5/? plans
+**Phase:** 2 - Onboarding and CLI (COMPLETE)
+**Plan:** 06 (complete)
+**Status:** Phase Complete
+**Progress:** [##########] 6/6 plans (Phase 2 done)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 11 |
+| Plans completed | 12 |
 | Plans failed | 0 |
 | Total requirements | 48 |
-| Requirements done | 18 |
-| Requirements remaining | 30 |
+| Requirements done | 23 |
+| Requirements remaining | 25 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -36,6 +36,7 @@
 | 2 | 03 | 219s | 4 | 4 |
 | 2 | 04 | 210s | 4 | 4 |
 | 2 | 05 | 192s | 2 | 2 |
+| 2 | 06 | 249s | 4 | 4 |
 
 ## Accumulated Context
 
@@ -85,8 +86,11 @@
 | Atomic write via .tmp rename | 2-04 | Prevents partial-write corruption if process interrupted during SOUL/AGENTS/USER.md writes |
 | Pure function generators with conditional omission | 2-04 | Optional fields (subspecialty, clinical_voice, NPI) omitted entirely -- never rendered empty |
 | Status integrity check bypasses gate side effect | 2-05 | verifyIntegrity creates store on first load; status reads store directly + computes hash to avoid write |
-| No-op audit callback for status command | 2-05 | Status is a read-only inspection — logging gate checks to audit trail would pollute the log |
+| No-op audit callback for status command | 2-05 | Status is a read-only inspection -- logging gate checks to audit trail would pollute the log |
 | checkIntegrity three-state: No CANS.md / No hash stored / Verified or MISMATCH | 2-05 | Covers all observable integrity states without triggering side-effect store creation |
+| io.close() in finally block in runInitCommand | 2-06 | Ensures readline interface always closed; without this Node.js event loop stays alive indefinitely |
+| supplementWorkspaceFiles after reviewLoop in init | 2-06 | Review loop may iterate multiple times; workspace files must use final approved data |
+| Integration tests use fresh AuditPipeline per test | 2-06 | Prevents cross-test contamination; each mkdtempSync workspace gets its own AUDIT.log |
 
 ### Research Findings Applied
 
@@ -110,24 +114,22 @@
 
 ### Last Session
 - **Date:** 2026-02-18
-- **Activity:** Phase 2 Plan 05 execution (careagent status command)
-- **Completed:** 2-05-SUMMARY.md -- status-command.ts, 22 new tests (315 total)
-- **Next:** Phase 2 Plan 06 (wire careagent init and status CLI handlers)
+- **Activity:** Phase 2 Plan 06 execution (CLI wiring + integration tests)
+- **Completed:** 2-06-SUMMARY.md -- init-command.ts, commands.ts updated, 39 new integration tests (354 total)
+- **Next:** Phase 3 (Hardening) - tool policy lockdown, exec approval, CANS protocol injection
 
 ### Context for Next Session
-- Phase 2 Plan 05 COMPLETE: careagent status command implemented
-- 315 tests passing, build succeeds, no TypeScript errors
-- src/cli/status-command.ts: formatStatus, readAuditStats, runStatusCommand, checkIntegrity
-- Status output: Clinical Mode (ACTIVE/INACTIVE + reason), Provider info, Autonomy Tiers, Hardening Layers, Audit Stats, Integrity
-- Integrity check is side-effect-free: reads store + computes hash without calling verifyIntegrity
-- No-op audit callback in gate call: status is read-only, not audited
-- Commands.ts still has stub handlers for careagent init and careagent status — Plan 06 wires them
-- validCANSData fixture: Dr. Test Provider, MD/TX, Neurosurgery, Spine subspecialty, University Medical Center
+- Phase 2 COMPLETE: All 6 plans done. 354 tests passing. Coverage 91.15% statements, 84.81% branches.
+- src/cli/init-command.ts: runInitCommand orchestrates interview + review + supplement + success summary
+- src/cli/commands.ts: careagent init + careagent status handlers fully wired
+- test/integration/onboarding.test.ts: 28 tests for ONBD-01/02/03/05 + post-init verification
+- test/integration/status.test.ts: 11 tests for ONBD-04 (formatStatus output)
+- All ONBD requirements (01-05) verified by integration tests
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
-- Phase 2 requirements: ONBD-01..05 (careagent init, CANS.md generation, SOUL/AGENTS/USER.md, careagent status, iterative refinement)
+- Phase 3 requirements: HARD-01..07 (tool policy, exec approval, CANS injection, docker sandbox, safety guard, audit trail, canary test)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 Plan 05 complete -- careagent status command; 315 tests total)*
+*Last updated: 2026-02-18 (Phase 2 Plan 06 complete -- CLI wiring and integration tests; 354 tests total)*
