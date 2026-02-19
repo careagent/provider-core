@@ -9,11 +9,14 @@ import { createStandaloneAdapter } from '../adapters/standalone/index.js';
 import type { PlatformAdapter } from '../adapters/types.js';
 import { ActivationGate, type ActivationResult } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
+import { createHardeningEngine } from '../hardening/engine.js';
+import type { HardeningEngine } from '../hardening/types.js';
 
 export interface ActivateResult {
   adapter: PlatformAdapter;
   audit: AuditPipeline;
   activation: ActivationResult;
+  engine?: HardeningEngine;
 }
 
 /**
@@ -50,6 +53,12 @@ export function activate(workspacePath?: string): ActivateResult {
         specialty: activation.document!.provider.specialty,
       },
     });
+
+    // Activate hardening engine (hooks will no-op in standalone, but layers 1-4 still work)
+    const engine = createHardeningEngine();
+    engine.activate({ cans: activation.document!, adapter, audit });
+
+    return { adapter, audit, activation, engine };
   } else {
     audit.log({
       action: 'activation_check',

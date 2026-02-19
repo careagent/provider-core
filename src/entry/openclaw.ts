@@ -5,7 +5,8 @@
  * and calls the default export with the plugin API.
  *
  * Phase 1 wires: Adapter, Activation Gate, Audit Pipeline.
- * Later phases add: Hardening, Skills.
+ * Phase 3 wires: Hardening Engine (HARD-01 through HARD-07).
+ * Later phases add: Skills.
  */
 
 import { createAdapter } from '../adapters/openclaw/index.js';
@@ -13,6 +14,7 @@ import { ActivationGate } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
 import { createAuditIntegrityService } from '../audit/integrity-service.js';
 import { registerCLI } from '../cli/commands.js';
+import { createHardeningEngine } from '../hardening/engine.js';
 
 export default function register(api: unknown): void {
   // Step 1: Create adapter
@@ -61,35 +63,11 @@ export default function register(api: unknown): void {
   });
   adapter.log('info', `[CareAgent] Clinical mode ACTIVE for ${cans.provider.name} (${cans.provider.specialty})`);
 
-  // Step 6: Register before_tool_call canary
-  let hookCanaryFired = false;
-  adapter.onBeforeToolCall(() => {
-    if (!hookCanaryFired) {
-      hookCanaryFired = true;
-      audit.log({
-        action: 'hook_canary',
-        actor: 'system',
-        outcome: 'allowed',
-        details: { hook: 'before_tool_call', status: 'verified' },
-      });
-    }
-    return { block: false };
-  });
+  // Step 6: Activate hardening engine (HARD-01 through HARD-07)
+  const engine = createHardeningEngine();
+  engine.activate({ cans, adapter, audit });
 
   // Step 7: Register audit integrity background service (AUDT-06)
   const integrityService = createAuditIntegrityService(audit, adapter);
   adapter.registerBackgroundService(integrityService);
-
-  // Step 8: Log canary status after delay
-  setTimeout(() => {
-    if (!hookCanaryFired) {
-      adapter.log('warn', '[CareAgent] before_tool_call hook did NOT fire. Safety Guard will be degraded.');
-      audit.log({
-        action: 'hook_canary',
-        actor: 'system',
-        outcome: 'error',
-        details: { hook: 'before_tool_call', status: 'not_fired', message: 'Safety Guard Layer 5 will be degraded in Phase 3' },
-      });
-    }
-  }, 30_000);
 }

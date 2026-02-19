@@ -36,9 +36,15 @@ export { AuditPipeline } from '../audit/pipeline.js';
 export { getWorkspaceProfile } from '../onboarding/workspace-profiles.js';
 export type { WorkspaceProfile, WorkspaceFileSpec } from '../onboarding/workspace-profiles.js';
 
-// Hardening (interface-only — implementation in Phase 3)
+// Hardening (implementation — Phase 3)
 export type { HardeningEngine, HardeningLayerResult, HardeningConfig, HardeningLayerFn } from '../hardening/index.js';
 export { createHardeningEngine } from '../hardening/index.js';
+export { checkToolPolicy } from '../hardening/index.js';
+export { checkExecAllowlist } from '../hardening/index.js';
+export { checkCansInjection, extractProtocolRules, injectProtocol } from '../hardening/index.js';
+export { checkDockerSandbox, detectDocker } from '../hardening/index.js';
+export { setupCanary } from '../hardening/index.js';
+export type { CanaryHandle } from '../hardening/canary.js';
 
 // Credentials (interface-only — implementation in Phase 4)
 export type { CredentialValidator, CredentialCheckResult } from '../credentials/index.js';
