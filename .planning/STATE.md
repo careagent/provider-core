@@ -17,7 +17,7 @@
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 13 |
+| Plans completed | 14 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 27 |
@@ -37,6 +37,7 @@
 | 2 | 04 | 210s | 4 | 4 |
 | 2 | 05 | 192s | 2 | 2 |
 | 2 | 06 | 249s | 4 | 4 |
+| 2.1 | 01 | 169s | 2 | 8 |
 | 2.1 | 02 | 167s | 2 | 16 |
 | 2.1 | 03 | 113s | 2 | 2 |
 
@@ -104,6 +105,8 @@
 | Self-contained types for neuron and protocol | 2.1-02 | NeuronRegistration and ProtocolSession use primitives only, avoiding coupling to CANS/adapter/audit |
 | All three new CANS fields Type.Optional() for backward compatibility | 2.1-03 | Existing CANS.md files and test fixtures remain valid without modification |
 | Sub-schemas exported individually for downstream use | 2.1-03 | NeuronConfigSchema, SkillGatingSchema, CrossInstallationConsentSchema available as standalone imports |
+| Use PlatformAdapter (canonical) over CareAgentPluginAPI (deprecated) in new code | 2.1-01 | commands.ts updated to canonical name; deprecated alias still exported for external consumers |
+| tsc --noEmit pre-existing failures are not blockers | 2.1-01 | node: module resolution errors exist before and after changes; tsdown build succeeds |
 
 ### Roadmap Evolution
 
@@ -131,19 +134,20 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 2.1 Plan 03 - CANS Schema Extension
-- **Completed:** 02.1-03 -- Extended CANSSchema with neuron, skills, cross_installation optional fields; 15 new tests; 433 total tests passing
-- **Next:** Phase 2.1 Plan 04 (remaining architectural alignment)
+- **Activity:** Phase 2.1 Plan 01 - Remove Stale Import Shims
+- **Completed:** 02.1-01 -- Removed src/adapter/, src/types/ shim directories; updated all imports to canonical paths; 426 tests passing
+- **Next:** Phase 2.1 Plan 04 (README update -- last remaining plan)
 
 ### Context for Next Session
-- CANS schema extended: neuron, skills, cross_installation as Type.Optional() top-level fields
-- New sub-schemas: NeuronConfigSchema, SkillGatingRuleSchema, SkillGatingSchema, CrossInstallationConsentSchema
-- 433 tests passing (388 original + 45 from portability + schema extension)
-- All existing CANS.md files and fixtures valid without modification
+- Backward-compat shims REMOVED: src/adapter/ and src/types/ directories deleted
+- All imports now canonical: src/adapters/ (plural), never src/adapter/ (singular)
+- Test relocated: test/unit/adapters/openclaw/openclaw-adapter.test.ts (was test/unit/adapter/)
+- 426 tests passing, all 4 entry points build successfully
+- Phase 2.1: 3 of 4 plans complete (01, 02, 03); only Plan 04 (README update) remains
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 2.1 Plan 03 complete -- CANS schema extension with neuron/skills/cross_installation; 433 tests total)*
+*Last updated: 2026-02-19 (Phase 2.1 Plan 01 complete -- stale import shims removed; 426 tests total)*
