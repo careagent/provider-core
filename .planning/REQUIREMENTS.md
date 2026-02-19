@@ -43,13 +43,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Runtime Hardening
 
-- [ ] **HARD-01**: Layer 1 — Tool policy lockdown: only tools required for provider's clinical functions are permitted when CANS.md is active
-- [ ] **HARD-02**: Layer 2 — Exec approvals: all shell execution routes through allowlist mode; only pre-approved binary paths are permitted
-- [ ] **HARD-03**: Layer 3 — CANS protocol injection: clinical hard rules are injected into system prompt via agent:bootstrap hook alongside existing workspace files
-- [ ] **HARD-04**: Layer 4 — Docker sandboxing: when available, CareAgent activates OpenClaw's Docker sandbox for process-level isolation
-- [ ] **HARD-05**: Layer 5 — Safety guard: before_tool_call hook intercepts every tool invocation and validates against CANS.md scope boundaries; graceful no-op when hook is not wired
-- [ ] **HARD-06**: Layer 6 — Audit trail integration: every hardening layer feeds into AUDIT.log with full fidelity
-- [ ] **HARD-07**: Canary test verifies before_tool_call hook fires at runtime; warns provider if safety guard is degraded
+- [x] **HARD-01**: Layer 1 — Tool policy lockdown: only tools required for provider's clinical functions are permitted when CANS.md is active
+- [x] **HARD-02**: Layer 2 — Exec approvals: all shell execution routes through allowlist mode; only pre-approved binary paths are permitted
+- [x] **HARD-03**: Layer 3 — CANS protocol injection: clinical hard rules are injected into system prompt via agent:bootstrap hook alongside existing workspace files
+- [x] **HARD-04**: Layer 4 — Docker sandboxing: when available, CareAgent activates OpenClaw's Docker sandbox for process-level isolation
+- [x] **HARD-05**: Layer 5 — Safety guard: before_tool_call hook intercepts every tool invocation and validates against CANS.md scope boundaries; graceful no-op when hook is not wired
+- [x] **HARD-06**: Layer 6 — Audit trail integration: every hardening layer feeds into AUDIT.log with full fidelity
+- [x] **HARD-07**: Canary test verifies before_tool_call hook fires at runtime; warns provider if safety guard is degraded
 
 ### Onboarding
 
@@ -162,13 +162,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PORT-02 | Portability | Complete |
 | PORT-03 | Portability | Complete |
 | PORT-04 | Portability | Complete |
-| HARD-01 | Phase 3 | Pending |
-| HARD-02 | Phase 3 | Pending |
-| HARD-03 | Phase 3 | Pending |
-| HARD-04 | Phase 3 | Pending |
-| HARD-05 | Phase 3 | Pending |
-| HARD-06 | Phase 3 | Pending |
-| HARD-07 | Phase 3 | Pending |
+| HARD-01 | Phase 3 | Complete |
+| HARD-02 | Phase 3 | Complete |
+| HARD-03 | Phase 3 | Complete |
+| HARD-04 | Phase 3 | Complete |
+| HARD-05 | Phase 3 | Complete |
+| HARD-06 | Phase 3 | Complete |
+| HARD-07 | Phase 3 | Complete |
 | SKIL-01 | Phase 4 | Pending |
 | SKIL-02 | Phase 4 | Pending |
 | SKIL-03 | Phase 4 | Pending |
@@ -195,4 +195,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-17 after roadmap creation*
+*Last updated: 2026-02-19 after Phase 3 completion*

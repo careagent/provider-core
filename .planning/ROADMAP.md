@@ -12,7 +12,7 @@
 - [x] **Phase 1: Plugin Foundation, Clinical Activation, and Audit Pipeline** - A working OpenClaw plugin that installs, detects CANS.md, validates its schema, and logs every action to a hash-chained audit trail
 - [x] **Phase 2: Onboarding and CLI** - Provider completes an interactive interview and receives a personalized CANS.md that activates their clinical agent
 - [x] **Phase 2.1: Architectural Alignment** - Restructure codebase to match README target architecture, expand CANS schema for ecosystem readiness, prepare module interfaces (INSERTED)
-- [ ] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
+- [x] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
 - [ ] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
 - [ ] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
 - [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
@@ -84,10 +84,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Types expansion, Layer 1 (tool-policy), Layer 2 (exec-allowlist) with TDD (HARD-01, HARD-02)
-- [ ] 03-02-PLAN.md — Layer 3 (CANS injection), Layer 4 (Docker sandbox) with TDD (HARD-03, HARD-04)
-- [ ] 03-03-PLAN.md — Engine orchestrator, canary module, audit bridge with TDD (HARD-05, HARD-06, HARD-07)
-- [ ] 03-04-PLAN.md — Entry point wiring, integration tests, final verification (all HARD requirements)
+- [x] 03-01-PLAN.md — Types expansion, Layer 1 (tool-policy), Layer 2 (exec-allowlist) with TDD (HARD-01, HARD-02)
+- [x] 03-02-PLAN.md — Layer 3 (CANS injection), Layer 4 (Docker sandbox) with TDD (HARD-03, HARD-04)
+- [x] 03-03-PLAN.md — Engine orchestrator, canary module, audit bridge with TDD (HARD-05, HARD-06, HARD-07)
+- [x] 03-04-PLAN.md — Entry point wiring, integration tests, final verification (all HARD requirements)
 
 ### Phase 4: Clinical Skills
 **Goal:** chart-skill generates template-constrained clinical documentation in the provider's voice, gated on credentials, with integrity verification and version pinning
@@ -134,7 +134,7 @@ Plans:
 | 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 6/6 | Complete | 2026-02-18 |
 | 2. Onboarding and CLI | 6/6 | Complete | 2026-02-18 |
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
-| 3. Runtime Hardening | 0/4 | Planned | - |
+| 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
 | 4. Clinical Skills | 0/? | Not started | - |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
 | 6. Documentation and Release | 0/? | Not started | - |
@@ -203,4 +203,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 02.1 complete — 4/4 plans, 426 tests passing)*
+*Last updated: 2026-02-19 (Phase 3 complete — 4/4 plans, 486 tests passing)*
