@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 3 (Runtime Hardening) in progress.
+**Current Focus:** Phase 3 (Runtime Hardening) complete. Ready for Phase 4.
 
 ## Current Position
 
 **Phase:** 3 - Runtime Hardening
 **Plan:** 04 of 04
-**Status:** In Progress
-**Progress:** [########--] 3/4 plans (Phase 3)
+**Status:** Phase Complete
+**Progress:** [##########] 4/4 plans (Phase 3)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 19 |
+| Plans completed | 20 |
 | Plans failed | 0 |
 | Total requirements | 52 |
-| Requirements done | 27 |
-| Requirements remaining | 25 |
+| Requirements done | 34 |
+| Requirements remaining | 18 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -44,6 +44,7 @@
 | 3 | 01 | 191s | 2 | 9 |
 | 3 | 02 | 134s | 2 | 4 |
 | 3 | 03 | 180s | 2 | 5 |
+| 3 | 04 | 226s | 3 | 4 |
 
 ## Accumulated Context
 
@@ -125,6 +126,9 @@
 | Every layer result audit-logged (not just denies) | 3-03 | Full traceability for compliance; allows forensic review of what was allowed and why |
 | Canary timer unref'd | 3-03 | Prevents background timer from keeping Node.js process alive after plugin cleanup |
 | before_tool_call handler marks canary verified before running check() | 3-03 | Canary tracks hook liveness, not check outcomes; verification happens regardless of allow/deny |
+| Engine replaces inline canary entirely in openclaw.ts | 3-04 | Canary was internal implementation; engine owns the complete hook lifecycle now |
+| Standalone exposes engine as optional on ActivateResult | 3-04 | Programmatic consumers can call engine.check() directly for layer evaluation |
+| Integration tests use real AuditPipeline not mocks | 3-04 | True end-to-end verification of audit entries written to disk with hash chaining |
 
 ### Roadmap Evolution
 
@@ -152,23 +156,21 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 3 Plan 03 - Hardening Engine Orchestrator and Canary
-- **Completed:** 03-03 -- Real engine implementation composing 4 layers with short-circuit-on-deny, canary module (HARD-07) with 30s timeout
-- **Next:** Phase 3 Plan 04 -- final hardening plan
+- **Activity:** Phase 3 Plan 04 - Entry Point Wiring and Integration Tests
+- **Completed:** 03-04 -- Engine wired into openclaw.ts (replacing inline canary) and standalone.ts (degraded mode), 10 end-to-end integration tests, Phase 3 COMPLETE
+- **Next:** Phase 4 planning and execution
 
 ### Context for Next Session
-- Phase 3 (Runtime Hardening) in progress: 3/4 plans complete (01, 02, 03 done)
-- Engine orchestrator in src/hardening/engine.ts composes all 4 layers
-- Canary module in src/hardening/canary.ts tracks hook liveness with 30s timeout
-- activate() wires onBeforeToolCall and onAgentBootstrap hooks
-- check() short-circuits on deny; every layer result audit-logged with trace IDs
-- Layers: tool-policy, exec-allowlist, cans-injection, docker-sandbox
-- index.ts re-exports all layers, canary, detectDocker
-- 476 tests passing across 35 test files
+- Phase 3 (Runtime Hardening) COMPLETE: all HARD-01 through HARD-07 requirements implemented
+- Engine wired into openclaw.ts via createHardeningEngine().activate() -- no inline canary
+- Standalone.ts exposes optional engine on ActivateResult for programmatic use
+- Core.ts exports complete hardening public API: layers, canary, detectDocker, types
+- 486 tests passing across 36 test files (10 new hardening integration tests)
+- Build succeeds with all 4 entry points (index, openclaw, standalone, core)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 3 Plan 03 complete -- 476 tests total)*
+*Last updated: 2026-02-19 (Phase 3 complete -- 486 tests total, all HARD requirements met)*
