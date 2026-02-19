@@ -85,9 +85,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Integration
 
-- [ ] **INTG-01**: End-to-end flow works: fresh OpenClaw install -> plugin install -> onboarding -> personalized CareAgent -> clinical skill loading -> documentation generation -> audit trail verification
-- [ ] **INTG-02**: Security review validates all six hardening layers block unauthorized actions
-- [ ] **INTG-03**: A developer can install @careagent/provider-core, run onboarding, and interact with a functional clinical agent by following documentation alone
+- [x] **INTG-01**: End-to-end flow works: fresh OpenClaw install -> plugin install -> onboarding -> personalized CareAgent -> clinical skill loading -> documentation generation -> audit trail verification
+- [x] **INTG-02**: Security review validates all six hardening layers block unauthorized actions
+- [x] **INTG-03**: A developer can install @careagent/provider-core, run onboarding, and interact with a functional clinical agent by following documentation alone
 
 ## v2 Requirements
 
@@ -179,9 +179,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CANS-08 | Phase 5 | Complete |
 | CANS-09 | Phase 5 | Complete |
 | CANS-10 | Phase 5 | Complete |
-| INTG-01 | Phase 5 | Pending |
-| INTG-02 | Phase 5 | Pending |
-| INTG-03 | Phase 5 | Pending |
+| INTG-01 | Phase 5 | Complete |
+| INTG-02 | Phase 5 | Complete |
+| INTG-03 | Phase 5 | Complete |
 | DOCS-01 | Phase 6 | Pending |
 | DOCS-02 | Phase 6 | Pending |
 | DOCS-03 | Phase 6 | Pending |

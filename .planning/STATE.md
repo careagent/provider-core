@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 5 (CANS Continuous Improvement and Integration) in progress. Plan 02 complete: refinement engine orchestrator, CANS.md write-back, CLI proposals command, entry point wiring.
+**Current Focus:** Phase 5 (CANS Continuous Improvement and Integration) complete. All 3 plans done: refinement engine foundations, orchestrator with CLI proposals, integration tests and security review.
 
 ## Current Position
 
 **Phase:** 5 - CANS Continuous Improvement and Integration
-**Plan:** 02 of 03
-**Status:** In Progress
-**Progress:** [█████████░] 96%
+**Plan:** 03 of 03
+**Status:** Complete
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 27 |
+| Plans completed | 28 |
 | Plans failed | 0 |
 | Total requirements | 52 |
-| Requirements done | 43 |
-| Requirements remaining | 9 |
+| Requirements done | 46 |
+| Requirements remaining | 6 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -52,6 +52,7 @@
 | 4 | 05 | 194s | 2 | 5 |
 | 5 | 01 | 218s | 2 | 8 |
 | 5 | 02 | 306s | 2 | 8 |
+| 5 | 03 | 248s | 2 | 4 |
 
 ## Accumulated Context
 
@@ -163,6 +164,9 @@
 | Dynamic import() for proposals command handler | 5-02 | Prevents loading refinement module on init/status CLI path where it is not needed |
 | Schema validation before any CANS.md write | 5-02 | Value.Check against CANSSchema prevents accepting proposals that create invalid state |
 | Three-layer scope protection: matcher + generator + applyProposal | 5-02 | Defense in depth: each layer independently blocks scope field changes |
+| Mock API factory with accessor methods for integration tests | 5-03 | Enables fine-grained assertions on registered handlers, commands, and services |
+| Adversarial scope test tampers proposal queue file directly | 5-03 | Verifies defense layer 3 independently by changing field_path to scope field |
+| Audit chain test manually corrupts AUDIT.log line | 5-03 | Proves hash chain verification catches tampering at the exact corrupted entry |
 
 ### Roadmap Evolution
 
@@ -190,24 +194,22 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 5 Plan 02 - Refinement Engine and CLI Proposals
-- **Completed:** 05-02 -- refinement engine orchestrator, CANS.md write-back, audit logging, CLI proposals command, entry point wiring; 17 new unit tests
-- **Next:** Phase 5 Plan 03 (final plan for CANS continuous improvement and integration)
+- **Activity:** Phase 5 Plan 03 - Integration Tests and Security Review
+- **Completed:** 05-03 -- E2E flow tests, security review with all six hardening layers, adversarial scenarios, developer install path, refinement E2E; 22 new integration tests
+- **Next:** Phase 5 complete. All phases 1-5 done. Documentation phase or project completion.
 
 ### Context for Next Session
-- Phase 5 (CANS Continuous Improvement) in progress: 2/3 plans done
-- RefinementEngine orchestrator composes observation store, pattern matcher, proposal generator, proposal queue
-- CANS.md write-back: parse/validate/write/hash-update chain for accepted proposals
-- Three-layer scope protection: pattern-matcher (layer 1), generator (layer 2), applyProposal (layer 3)
-- Every proposal lifecycle event audit-logged: created, accepted, rejected, deferred
-- careagent proposals CLI command: batch review with Accept/Reject/Defer/Skip
-- Refinement engine wired into openclaw.ts and standalone.ts
-- core.ts re-exports full refinement public API
-- 49 refinement tests, 657 total across 47 test files
+- Phase 5 (CANS Continuous Improvement) complete: 3/3 plans done
+- 679 tests across 50 test files, zero regressions
+- Synthetic neurosurgeon persona (Dr. Sarah Chen) used across all integration tests
+- E2E flow: fresh workspace -> register -> activate -> hardening -> skills -> audit chain verified
+- Security review: all 6 hardening layers exercised with 5 adversarial scenarios
+- Refinement E2E: observe -> detect -> propose -> accept -> CANS.md updated with real files
+- Complete system validated end-to-end: plugin registration, activation, hardening, skills, refinement, audit
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 5 Plan 02 complete -- refinement engine orchestrator, CANS write-back, CLI proposals, entry point wiring, 17 new tests)*
+*Last updated: 2026-02-19 (Phase 5 Plan 03 complete -- integration tests, security review, adversarial scenarios, 22 new tests, 679 total across 50 files)*
