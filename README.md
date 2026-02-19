@@ -27,7 +27,7 @@ CareAgent is platform-portable. CANS.md works alongside whatever workspace forma
 
 | Platform | Workspace Files | Entry Point |
 |----------|----------------|-------------|
-| [OpenClaw](https://github.com/nicepkg/openclaw) | SOUL.md + AGENTS.md + USER.md | `@careagent/core` |
+| [OpenClaw](https://github.com/openclaw/openclaw) | SOUL.md + AGENTS.md + USER.md | `@careagent/core` |
 | AGENTS.md standard | AGENTS.md | `@careagent/core/standalone` |
 | Claude Code (CLAUDE.md) | CLAUDE.md | `@careagent/core/standalone` |
 | Library / programmatic | None | `@careagent/core/core` |
