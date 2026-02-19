@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 4 (Clinical Skills) in progress. Credential validator complete.
+**Current Focus:** Phase 4 (Clinical Skills) in progress. Skill framework core complete.
 
 ## Current Position
 
 **Phase:** 4 - Clinical Skills
-**Plan:** 01 of 05
+**Plan:** 02 of 05
 **Status:** In Progress
-**Progress:** [##--------] 1/5 plans (Phase 4)
+**Progress:** [####------] 2/5 plans (Phase 4)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 21 |
+| Plans completed | 22 |
 | Plans failed | 0 |
 | Total requirements | 52 |
-| Requirements done | 34 |
-| Requirements remaining | 18 |
+| Requirements done | 36 |
+| Requirements remaining | 16 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -46,6 +46,7 @@
 | 3 | 03 | 180s | 2 | 5 |
 | 3 | 04 | 226s | 3 | 4 |
 | 4 | 01 | 90s | 2 | 2 |
+| 4 | 02 | 140s | 2 | 7 |
 
 ## Accumulated Context
 
@@ -133,6 +134,11 @@
 | Three-dimension credential check: license, specialty, privilege evaluated independently | 4-01 | Failures in multiple dimensions all reported; no short-circuit on first failure |
 | Subspecialty match counts as specialty pass | 4-01 | Provider's subspecialty checked alongside primary specialty for flexible credential matching |
 | Empty/undefined credential requirements pass automatically | 4-01 | Enables SKIL-02: regular OpenClaw skills (no credential requirements) always pass validation |
+| Plain TS interfaces separate from TypeBox schema | 4-02 | types.ts has interfaces, manifest-schema.ts has TypeBox -- downstream imports types without TypeBox dependency |
+| verifySkillIntegrity skips skill-manifest.json entry | 4-02 | Avoids self-referential checksum problem: manifest changes after hashes are computed |
+| Fail-fast integrity on first mismatch | 4-02 | Security boundary: one tampered file is sufficient to reject the entire skill |
+| Three-condition version update detection | 4-02 | pinned=true AND availableVersion provided AND differs from approved -- unpinned skills never report updates |
+| Immutable version approval with deep copies | 4-02 | approveVersion returns new manifest with copied requires/files objects, guaranteeing no mutation |
 
 ### Roadmap Evolution
 
@@ -160,16 +166,18 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 4 Plan 01 - Credential Validator Implementation
-- **Completed:** 04-01 -- Real credential validator replacing stub, 21 comprehensive tests, 504 tests total
-- **Next:** Phase 4 Plan 02 (skill framework core: types, manifest schema, integrity, version pinning)
+- **Activity:** Phase 4 Plan 02 - Skill Framework Core
+- **Completed:** 04-02 -- types, manifest schema, integrity verification, version pinning; 39 new tests; 543 tests total
+- **Next:** Phase 4 Plan 03 (chart-skill templates, voice adapter, SKILL.md, manifest)
 
 ### Context for Next Session
-- Phase 4 (Clinical Skills) IN PROGRESS: 1/5 plans complete
-- Credential validator checks license type, specialty/subspecialty, and privileges
-- Empty/undefined requirements pass automatically (SKIL-02 foundation)
-- Spread-conditional pattern for optional missingCredentials/reason fields
-- 504 tests passing across 36 test files (21 credential tests replacing 3 stubs)
+- Phase 4 (Clinical Skills) IN PROGRESS: 2/5 plans complete
+- src/skills/ module created with types.ts, manifest-schema.ts, integrity.ts, version-pin.ts
+- SkillManifest TypeBox schema validates skill-manifest.json files
+- SHA-256 integrity checker: computeSkillFileHash, computeSkillChecksums, verifySkillIntegrity
+- Version pinning: checkVersionPin detects updates, approveVersion creates immutable copy
+- Credential validator (04-01) checks license, specialty, privilege dimensions
+- 543 tests passing across 39 test files
 - Build succeeds with all 4 entry points (index, openclaw, standalone, core)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
@@ -177,4 +185,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 4 Plan 01 complete -- 504 tests total, credential validator implemented)*
+*Last updated: 2026-02-19 (Phase 4 Plan 02 complete -- 543 tests total, skill framework core implemented)*

@@ -142,7 +142,7 @@ Plans:
 | 2. Onboarding and CLI | 6/6 | Complete | 2026-02-18 |
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
-| 4. Clinical Skills | 1/5 | In Progress | - |
+| 4. Clinical Skills | 2/5 | In Progress | - |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
 | 6. Documentation and Release | 0/? | Not started | - |
 
