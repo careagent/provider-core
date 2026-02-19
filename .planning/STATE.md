@@ -9,15 +9,15 @@
 ## Current Position
 
 **Phase:** 3 - Runtime Hardening
-**Plan:** 03 of 04
+**Plan:** 04 of 04
 **Status:** In Progress
-**Progress:** [#####-----] 2/4 plans (Phase 3)
+**Progress:** [########--] 3/4 plans (Phase 3)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 18 |
+| Plans completed | 19 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 27 |
@@ -43,6 +43,7 @@
 | 2.1 | 04 | 114s | 3 | 2 |
 | 3 | 01 | 191s | 2 | 9 |
 | 3 | 02 | 134s | 2 | 4 |
+| 3 | 03 | 180s | 2 | 5 |
 
 ## Accumulated Context
 
@@ -120,6 +121,10 @@
 | Layer 3 per-check is non-blocking pass-through | 3-02 | Injection happens at bootstrap; per-call check only reports status |
 | Layer 4 checks three Docker signals with graceful /proc fallback | 3-02 | /.dockerenv, /proc/1/cgroup, CONTAINER env var; try/catch for non-Linux |
 | Layer 4 is report-only: never returns allowed: false | 3-02 | Sandbox detection informs audit trail, does not gate tool execution |
+| Engine iterates LAYERS array in fixed order; short-circuits on first deny | 3-03 | Predictable evaluation order; deny-fast reduces unnecessary computation |
+| Every layer result audit-logged (not just denies) | 3-03 | Full traceability for compliance; allows forensic review of what was allowed and why |
+| Canary timer unref'd | 3-03 | Prevents background timer from keeping Node.js process alive after plugin cleanup |
+| before_tool_call handler marks canary verified before running check() | 3-03 | Canary tracks hook liveness, not check outcomes; verification happens regardless of allow/deny |
 
 ### Roadmap Evolution
 
@@ -147,22 +152,23 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 3 Plan 01 - Hardening Types and Layers 1-2 (tool-policy + exec-allowlist)
-- **Completed:** 03-01 -- HardeningEngine.check() updated to ToolCallEvent, HardeningLayerFn type, Layer 1 (checkToolPolicy) and Layer 2 (checkExecAllowlist) with TDD
-- **Next:** Phase 3 Plan 03 -- next hardening layer(s)
+- **Activity:** Phase 3 Plan 03 - Hardening Engine Orchestrator and Canary
+- **Completed:** 03-03 -- Real engine implementation composing 4 layers with short-circuit-on-deny, canary module (HARD-07) with 30s timeout
+- **Next:** Phase 3 Plan 04 -- final hardening plan
 
 ### Context for Next Session
-- Phase 3 (Runtime Hardening) in progress: 2/4 plans complete (01 and 02 done)
-- Layer 1 (tool-policy) and Layer 2 (exec-allowlist) in src/hardening/layers/
-- Layer 3 (CANS injection) and Layer 4 (Docker sandbox) also in src/hardening/layers/
-- All layers follow pure function pattern: (event, cans) => HardeningLayerResult
-- HardeningLayerFn type alias available for composing layers in engine
-- Layer pass-through pattern: disabled CANS flag => { allowed: true, reason: '<flag> disabled' }
-- 460 tests passing across 34 test files
+- Phase 3 (Runtime Hardening) in progress: 3/4 plans complete (01, 02, 03 done)
+- Engine orchestrator in src/hardening/engine.ts composes all 4 layers
+- Canary module in src/hardening/canary.ts tracks hook liveness with 30s timeout
+- activate() wires onBeforeToolCall and onAgentBootstrap hooks
+- check() short-circuits on deny; every layer result audit-logged with trace IDs
+- Layers: tool-policy, exec-allowlist, cans-injection, docker-sandbox
+- index.ts re-exports all layers, canary, detectDocker
+- 476 tests passing across 35 test files
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 3 Plan 01 complete -- 460 tests total)*
+*Last updated: 2026-02-19 (Phase 3 Plan 03 complete -- 476 tests total)*
