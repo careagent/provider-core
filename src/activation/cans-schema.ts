@@ -152,6 +152,49 @@ export const ClinicalVoiceSchema = Type.Object({
 export type ClinicalVoice = Static<typeof ClinicalVoiceSchema>;
 
 // ---------------------------------------------------------------------------
+// Neuron Registration (optional — ecosystem readiness)
+// ---------------------------------------------------------------------------
+
+export const NeuronConfigSchema = Type.Object({
+  endpoint: Type.String({ description: 'Neuron server URL' }),
+  registration_id: Type.Optional(Type.String({ description: 'Registration ID assigned by Neuron' })),
+  auto_register: Type.Optional(Type.Boolean({ description: 'Register on Gateway startup' })),
+});
+
+export type NeuronConfig = Static<typeof NeuronConfigSchema>;
+
+// ---------------------------------------------------------------------------
+// Clinical Skill Gating (optional — ecosystem readiness)
+// ---------------------------------------------------------------------------
+
+export const SkillGatingRuleSchema = Type.Object({
+  skill_id: Type.String({ description: 'Skill package identifier' }),
+  requires_license: Type.Optional(Type.Array(Type.String())),
+  requires_specialty: Type.Optional(Type.Array(Type.String())),
+  requires_privilege: Type.Optional(Type.Array(Type.String())),
+});
+
+export type SkillGatingRule = Static<typeof SkillGatingRuleSchema>;
+
+export const SkillGatingSchema = Type.Object({
+  rules: Type.Array(SkillGatingRuleSchema, { description: 'Per-skill credential requirements' }),
+});
+
+export type SkillGating = Static<typeof SkillGatingSchema>;
+
+// ---------------------------------------------------------------------------
+// Cross-Installation Consent (optional — ecosystem readiness)
+// ---------------------------------------------------------------------------
+
+export const CrossInstallationConsentSchema = Type.Object({
+  allow_inbound: Type.Boolean({ description: 'Accept patient CareAgent connections' }),
+  allow_outbound: Type.Boolean({ description: 'Initiate connections to patient CareAgents' }),
+  require_neuron_verification: Type.Optional(Type.Boolean({ description: 'Require Neuron-verified identity' })),
+});
+
+export type CrossInstallationConsent = Static<typeof CrossInstallationConsentSchema>;
+
+// ---------------------------------------------------------------------------
 // Complete CANS Document Schema
 // ---------------------------------------------------------------------------
 
@@ -163,6 +206,9 @@ export const CANSSchema = Type.Object({
   hardening: HardeningSchema,
   consent: ConsentSchema,
   clinical_voice: Type.Optional(ClinicalVoiceSchema),
+  neuron: Type.Optional(NeuronConfigSchema),
+  skills: Type.Optional(SkillGatingSchema),
+  cross_installation: Type.Optional(CrossInstallationConsentSchema),
 });
 
 export type CANSDocument = Static<typeof CANSSchema>;
