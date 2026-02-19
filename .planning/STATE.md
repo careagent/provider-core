@@ -37,6 +37,7 @@
 | 2 | 04 | 210s | 4 | 4 |
 | 2 | 05 | 192s | 2 | 2 |
 | 2 | 06 | 249s | 4 | 4 |
+| 2.1 | 02 | 167s | 2 | 16 |
 | 2.1 | 03 | 113s | 2 | 2 |
 
 ## Accumulated Context
@@ -98,6 +99,9 @@
 | Multiple entry points (index, openclaw, standalone, core) | PORT | Platform-specific or pure-library usage without coupling to OpenClaw |
 | OpenClaw peer dependency marked optional | PORT | Enables standalone usage without OpenClaw installed |
 | Duck-typing platform detection | PORT | detectPlatform checks registerCli + on presence; no dependency on platform-specific types |
+| Factory stubs throw errors naming their target phase for traceability | 2.1-02 | createHardeningEngine throws "Phase 3", createCredentialValidator throws "Phase 4", neuron/protocol throw "Phase 5" |
+| Async methods for network-bound stub interfaces | 2.1-02 | NeuronClient and ProtocolServer return Promises since real implementations do network I/O |
+| Self-contained types for neuron and protocol | 2.1-02 | NeuronRegistration and ProtocolSession use primitives only, avoiding coupling to CANS/adapter/audit |
 | All three new CANS fields Type.Optional() for backward compatibility | 2.1-03 | Existing CANS.md files and test fixtures remain valid without modification |
 | Sub-schemas exported individually for downstream use | 2.1-03 | NeuronConfigSchema, SkillGatingSchema, CrossInstallationConsentSchema available as standalone imports |
 
