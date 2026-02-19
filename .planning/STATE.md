@@ -10,7 +10,7 @@
 
 **Phase:** 5 - CANS Continuous Improvement and Integration
 **Plan:** 03 of 03
-**Status:** Complete
+**Status:** Milestone complete
 **Progress:** [██████████] 100%
 
 ## Performance Metrics
