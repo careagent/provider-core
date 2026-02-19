@@ -11,6 +11,7 @@
 
 - [x] **Phase 1: Plugin Foundation, Clinical Activation, and Audit Pipeline** - A working OpenClaw plugin that installs, detects CANS.md, validates its schema, and logs every action to a hash-chained audit trail
 - [x] **Phase 2: Onboarding and CLI** - Provider completes an interactive interview and receives a personalized CANS.md that activates their clinical agent
+- [ ] **Phase 2.1: Architectural Alignment** - Restructure codebase to match README target architecture, expand CANS schema for ecosystem readiness, prepare module interfaces (INSERTED)
 - [ ] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
 - [ ] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
 - [ ] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
@@ -57,6 +58,18 @@ Plans:
 - [x] Plan 04 — Workspace file supplementation (SOUL.md, AGENTS.md, USER.md) (ONBD-03)
 - [x] Plan 05 — careagent status command (ONBD-04)
 - [x] Plan 06 — CLI wiring and comprehensive integration tests (ONBD-01 through ONBD-05)
+
+### Phase 02.1: Architectural Alignment (INSERTED)
+
+**Goal:** Restructure codebase to match README target architecture, expand CANS schema for ecosystem readiness, update README to document proven abstractions, and prepare module interfaces for neuron/protocol/credentials/hardening
+**Depends on:** Phase 2
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02.1-01-PLAN.md — Fix stale imports and remove deprecated shim directories (adapter/, types/)
+- [ ] 02.1-02-PLAN.md — Create stub modules (hardening, credentials, neuron, protocol)
+- [ ] 02.1-03-PLAN.md — Expand CANS schema with optional neuron, skills, cross_installation fields
+- [ ] 02.1-04-PLAN.md — Update entry/core.ts re-exports and README Repository Structure
 
 ### Phase 3: Runtime Hardening
 **Goal:** Six defense layers prevent any agent action outside the provider's credentialed scope, with graceful degradation when individual layers are unavailable
@@ -114,6 +127,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 6/6 | Complete | 2026-02-18 |
 | 2. Onboarding and CLI | 6/6 | Complete | 2026-02-18 |
+| 2.1. Architectural Alignment | 0/4 | Planned | - |
 | 3. Runtime Hardening | 0/? | Not started | - |
 | 4. Clinical Skills | 0/? | Not started | - |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
@@ -183,4 +197,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 complete)*
+*Last updated: 2026-02-19 (Phase 02.1 planned — 4 plans in 2 waves)*
