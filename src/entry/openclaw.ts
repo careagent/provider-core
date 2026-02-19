@@ -7,6 +7,7 @@
  * Phase 1 wires: Adapter, Activation Gate, Audit Pipeline.
  * Phase 3 wires: Hardening Engine (HARD-01 through HARD-07).
  * Phase 4 wires: Clinical Skills (SKIL-01 through SKIL-07).
+ * Phase 5 wires: Refinement Engine (CANS-08 through CANS-10).
  */
 
 import { fileURLToPath } from 'node:url';
@@ -19,6 +20,7 @@ import { registerCLI } from '../cli/commands.js';
 import { createHardeningEngine } from '../hardening/engine.js';
 import { createCredentialValidator } from '../credentials/validator.js';
 import { loadClinicalSkills } from '../skills/loader.js';
+import { createRefinementEngine } from '../refinement/index.js';
 
 export default function register(api: unknown): void {
   // Step 1: Create adapter
@@ -92,6 +94,23 @@ export default function register(api: unknown): void {
     adapter.log('warn', `[CareAgent] Skill loading failed: ${msg}`);
     audit.log({ action: 'skill_load', actor: 'system', outcome: 'error', details: { error: msg } });
   }
+
+  // Step 6.7: Create refinement engine and register proposals command (CANS-08, CANS-09, CANS-10)
+  const refinement = createRefinementEngine({
+    workspacePath,
+    audit,
+    sessionId: audit.getSessionId(),
+  });
+  adapter.registerCliCommand({
+    name: 'careagent proposals',
+    description: 'Review and act on CANS.md refinement proposals',
+    handler: async () => {
+      const { createTerminalIO } = await import('../cli/io.js');
+      const { runProposalsCommand } = await import('../cli/proposals-command.js');
+      const io = createTerminalIO();
+      await runProposalsCommand(refinement, io);
+    },
+  });
 
   // Step 7: Register audit integrity background service (AUDT-06)
   const integrityService = createAuditIntegrityService(audit, adapter);

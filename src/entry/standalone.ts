@@ -5,6 +5,7 @@
  * OpenClaw or any other host platform plugin system.
  *
  * Phase 4 wires: Clinical Skills (SKIL-01 through SKIL-07).
+ * Phase 5 wires: Refinement Engine (CANS-08 through CANS-10).
  */
 
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,8 @@ import type { HardeningEngine } from '../hardening/types.js';
 import { createCredentialValidator } from '../credentials/validator.js';
 import { loadClinicalSkills } from '../skills/loader.js';
 import type { SkillLoadResult } from '../skills/types.js';
+import { createRefinementEngine } from '../refinement/index.js';
+import type { RefinementEngine } from '../refinement/refinement-engine.js';
 
 export interface ActivateResult {
   adapter: PlatformAdapter;
@@ -25,6 +28,7 @@ export interface ActivateResult {
   activation: ActivationResult;
   engine?: HardeningEngine;
   skills?: SkillLoadResult[];
+  refinement?: RefinementEngine;
 }
 
 /**
@@ -77,7 +81,14 @@ export function activate(workspacePath?: string): ActivateResult {
       // Skills loading is non-fatal in standalone mode
     }
 
-    return { adapter, audit, activation, engine, skills };
+    // Create refinement engine (CANS-08, CANS-09, CANS-10)
+    const refinement = createRefinementEngine({
+      workspacePath: resolvedPath,
+      audit,
+      sessionId: audit.getSessionId(),
+    });
+
+    return { adapter, audit, activation, engine, skills, refinement };
   } else {
     audit.log({
       action: 'activation_check',

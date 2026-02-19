@@ -59,6 +59,14 @@ export { loadClinicalSkills } from '../skills/index.js';
 export { getTemplate, getAllTemplates, CHART_SKILL_ID, buildChartSkillInstructions } from '../skills/index.js';
 export { extractVoiceDirectives, buildVoiceInstructions } from '../skills/index.js';
 
+// Refinement (implementation — Phase 5)
+export type { RefinementEngine, Observation, Proposal, DivergencePattern, ObservationCategory, ProposalResolution } from '../refinement/index.js';
+export { createRefinementEngine, DEFAULT_DIVERGENCE_THRESHOLD, RESURFACE_THRESHOLD, SACROSANCT_FIELDS, isScopeField } from '../refinement/index.js';
+export { ObservationStore } from '../refinement/index.js';
+export { ProposalQueue } from '../refinement/index.js';
+export { detectDivergences } from '../refinement/index.js';
+export { generateDiffView } from '../refinement/index.js';
+
 // Neuron (interface-only — implementation in Phase 5)
 export type { NeuronClient, NeuronRegistration } from '../neuron/index.js';
 export { createNeuronClient } from '../neuron/index.js';
