@@ -35,3 +35,27 @@ export { AuditPipeline } from '../audit/pipeline.js';
 // Workspace profiles
 export { getWorkspaceProfile } from '../onboarding/workspace-profiles.js';
 export type { WorkspaceProfile, WorkspaceFileSpec } from '../onboarding/workspace-profiles.js';
+
+// Hardening (interface-only — implementation in Phase 3)
+export type { HardeningEngine, HardeningLayerResult, HardeningConfig } from '../hardening/index.js';
+export { createHardeningEngine } from '../hardening/index.js';
+
+// Credentials (interface-only — implementation in Phase 4)
+export type { CredentialValidator, CredentialCheckResult } from '../credentials/index.js';
+export { createCredentialValidator } from '../credentials/index.js';
+
+// Neuron (interface-only — implementation in Phase 5)
+export type { NeuronClient, NeuronRegistration } from '../neuron/index.js';
+export { createNeuronClient } from '../neuron/index.js';
+
+// Protocol (interface-only — implementation in Phase 5)
+export type { ProtocolServer, ProtocolSession } from '../protocol/index.js';
+export { createProtocolServer } from '../protocol/index.js';
+
+// CANS schema extensions
+export type {
+  NeuronConfig,
+  SkillGatingRule,
+  SkillGating,
+  CrossInstallationConsent,
+} from '../activation/cans-schema.js';
