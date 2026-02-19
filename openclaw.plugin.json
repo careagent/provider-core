@@ -4,7 +4,7 @@
   "description": "Clinical activation layer — transforms OpenClaw into a credentialed, auditable clinical agent",
   "version": "0.1.0",
   "configSchema": {},
-  "skills": [],
+  "skills": ["skills/chart-skill"],
   "commands": [],
   "hooks": []
 }

@@ -46,9 +46,18 @@ export { checkDockerSandbox, detectDocker } from '../hardening/index.js';
 export { setupCanary } from '../hardening/index.js';
 export type { CanaryHandle } from '../hardening/canary.js';
 
-// Credentials (interface-only — implementation in Phase 4)
+// Credentials (implementation — Phase 4)
 export type { CredentialValidator, CredentialCheckResult } from '../credentials/index.js';
 export { createCredentialValidator } from '../credentials/index.js';
+
+// Skills (implementation — Phase 4)
+export type { SkillManifest, SkillLoadResult, ChartTemplate, TemplateSection, VoiceDirectives } from '../skills/index.js';
+export { SkillManifestSchema, validateManifest } from '../skills/index.js';
+export { computeSkillFileHash, computeSkillChecksums, verifySkillIntegrity } from '../skills/index.js';
+export { checkVersionPin, approveVersion } from '../skills/index.js';
+export { loadClinicalSkills } from '../skills/index.js';
+export { getTemplate, getAllTemplates, CHART_SKILL_ID, buildChartSkillInstructions } from '../skills/index.js';
+export { extractVoiceDirectives, buildVoiceInstructions } from '../skills/index.js';
 
 // Neuron (interface-only — implementation in Phase 5)
 export type { NeuronClient, NeuronRegistration } from '../neuron/index.js';

@@ -6,15 +6,19 @@
  *
  * Phase 1 wires: Adapter, Activation Gate, Audit Pipeline.
  * Phase 3 wires: Hardening Engine (HARD-01 through HARD-07).
- * Later phases add: Skills.
+ * Phase 4 wires: Clinical Skills (SKIL-01 through SKIL-07).
  */
 
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { createAdapter } from '../adapters/openclaw/index.js';
 import { ActivationGate } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
 import { createAuditIntegrityService } from '../audit/integrity-service.js';
 import { registerCLI } from '../cli/commands.js';
 import { createHardeningEngine } from '../hardening/engine.js';
+import { createCredentialValidator } from '../credentials/validator.js';
+import { loadClinicalSkills } from '../skills/loader.js';
 
 export default function register(api: unknown): void {
   // Step 1: Create adapter
@@ -66,6 +70,28 @@ export default function register(api: unknown): void {
   // Step 6: Activate hardening engine (HARD-01 through HARD-07)
   const engine = createHardeningEngine();
   engine.activate({ cans, adapter, audit });
+
+  // Step 6.5: Load clinical skills (SKIL-01 through SKIL-07)
+  try {
+    const pluginRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+    const skillsDir = join(pluginRoot, 'skills');
+    const validator = createCredentialValidator();
+    const skillResults = loadClinicalSkills(skillsDir, cans, validator, audit);
+
+    const loadedSkills = skillResults.filter(r => r.loaded);
+    const blockedSkills = skillResults.filter(r => !r.loaded);
+
+    if (loadedSkills.length > 0) {
+      adapter.log('info', `[CareAgent] Loaded ${loadedSkills.length} clinical skill(s): ${loadedSkills.map(s => s.skillId).join(', ')}`);
+    }
+    if (blockedSkills.length > 0) {
+      adapter.log('warn', `[CareAgent] Blocked ${blockedSkills.length} clinical skill(s): ${blockedSkills.map(s => `${s.skillId} (${s.reason})`).join(', ')}`);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    adapter.log('warn', `[CareAgent] Skill loading failed: ${msg}`);
+    audit.log({ action: 'skill_load', actor: 'system', outcome: 'error', details: { error: msg } });
+  }
 
   // Step 7: Register audit integrity background service (AUDT-06)
   const integrityService = createAuditIntegrityService(audit, adapter);
