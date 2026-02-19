@@ -234,7 +234,7 @@ Skills that exceed the provider's declared credentials do not load. A family med
 
 ## Neuron Integration
 
-The provider's Care Agent registers with a Neuron — the organization-level node that serves as the public-facing endpoint for the practice. The Neuron manages inbound patient CareAgent connections and routes them to the correct provider Care Agent.
+The provider's Care Agent registers with a Neuron — the organization-level node that serves as the public-facing endpoint for the practice or organization to which the provider belongs. The Neuron manages inbound patient CareAgent connections and routes them to the correct provider Care Agent.
 
 The Neuron connection is configured during onboarding and stored in `CANS.md`. The plugin registers with the Neuron at each Gateway startup.
 
