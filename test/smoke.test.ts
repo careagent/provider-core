@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-describe('@careagent/core', () => {
+describe('@careagent/provider-core', () => {
   it('exports a register function', async () => {
     const mod = await import('../src/index.js');
     expect(typeof mod.default).toBe('function');

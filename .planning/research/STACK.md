@@ -1,6 +1,6 @@
 # Technology Stack
 
-**Project:** CareAgent (@careagent/core)
+**Project:** CareAgent (@careagent/provider-core)
 **Researched:** 2026-02-17
 **Overall Confidence:** MEDIUM-HIGH
 
@@ -274,7 +274,7 @@ function checksumFile(path: string): string {
 ## Package Structure
 
 ```
-@careagent/core/
+@careagent/provider-core/
   package.json                    # openclaw.extensions, peerDeps
   openclaw.plugin.json            # Plugin manifest with configSchema
   tsdown.config.ts                # Build configuration
@@ -328,7 +328,7 @@ function checksumFile(path: string): string {
 
 ```json
 {
-  "name": "@careagent/core",
+  "name": "@careagent/provider-core",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",
@@ -420,7 +420,7 @@ pnpm add -D @medplum/fhirtypes@~5.0.0
 
 ```bash
 # User installation (future)
-openclaw plugins install @careagent/core
+openclaw plugins install @careagent/provider-core
 ```
 
 ---

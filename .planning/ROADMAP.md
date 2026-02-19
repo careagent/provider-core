@@ -25,7 +25,7 @@
 **Depends on:** Nothing (first phase)
 **Requirements:** PLUG-01, PLUG-02, PLUG-03, PLUG-04, PLUG-05, CANS-01, CANS-02, CANS-03, CANS-04, CANS-05, CANS-06, CANS-07, AUDT-01, AUDT-02, AUDT-03, AUDT-04, AUDT-05, AUDT-06
 **Success Criteria** (what must be TRUE):
-  1. Provider runs `openclaw plugins install @careagent/core` and the plugin installs without errors, registers its extension points, and shows up in OpenClaw's plugin list
+  1. Provider runs `openclaw plugins install @careagent/provider-core` and the plugin installs without errors, registers its extension points, and shows up in OpenClaw's plugin list
   2. When CANS.md is present in the workspace, CareAgent activates clinical mode; when CANS.md is absent, OpenClaw behaves as if the plugin is not there
   3. A malformed CANS.md is rejected at parse time with a clear error message explaining what is wrong, and clinical mode does not activate
   4. Every agent action, blocked action, and state transition is recorded in AUDIT.log as append-only JSONL with hash chaining, and the log cannot be modified or deleted through normal operations

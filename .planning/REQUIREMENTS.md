@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Plugin Foundation
 
-- [x] **PLUG-01**: Plugin installs into OpenClaw via `openclaw plugins install @careagent/core` without errors
+- [x] **PLUG-01**: Plugin installs into OpenClaw via `openclaw plugins install @careagent/provider-core` without errors
 - [x] **PLUG-02**: Plugin manifest (openclaw.plugin.json) declares plugin ID, configSchema, skills directories, CLI commands, and hook registrations
 - [x] **PLUG-03**: Plugin `register(api)` entry point registers CLI commands, hooks, agent tools, and background services
 - [x] **PLUG-04**: Adapter layer insulates CareAgent from OpenClaw internals so upstream updates do not break the plugin
@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PORT-01**: PlatformAdapter interface abstracts host platform interactions; CareAgent subsystems never depend on a specific platform's raw API
 - [x] **PORT-02**: Platform detection duck-types the API object to automatically select the correct adapter (OpenClaw, standalone)
 - [x] **PORT-03**: Workspace file supplementation is configurable per platform via workspace profiles (OpenClaw: SOUL.md + AGENTS.md + USER.md; AGENTS.md standard: single AGENTS.md; standalone: no supplementation)
-- [x] **PORT-04**: Multiple entry points allow platform-specific or pure-library usage (`@careagent/core`, `@careagent/core/standalone`, `@careagent/core/core`)
+- [x] **PORT-04**: Multiple entry points allow platform-specific or pure-library usage (`@careagent/provider-core`, `@careagent/provider-core/standalone`, `@careagent/provider-core/core`)
 
 ### Runtime Hardening
 
@@ -87,7 +87,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **INTG-01**: End-to-end flow works: fresh OpenClaw install -> plugin install -> onboarding -> personalized CareAgent -> clinical skill loading -> documentation generation -> audit trail verification
 - [ ] **INTG-02**: Security review validates all six hardening layers block unauthorized actions
-- [ ] **INTG-03**: A developer can install @careagent/core, run onboarding, and interact with a functional clinical agent by following documentation alone
+- [ ] **INTG-03**: A developer can install @careagent/provider-core, run onboarding, and interact with a functional clinical agent by following documentation alone
 
 ## v2 Requirements
 

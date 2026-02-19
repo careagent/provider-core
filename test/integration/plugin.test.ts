@@ -175,11 +175,11 @@ describe('Plugin Registration Integration', () => {
       expect(pkg.openclaw.extensions).toContain('./dist/index.js');
     });
 
-    it('openclaw.plugin.json has id @careagent/core', () => {
+    it('openclaw.plugin.json has id @careagent/provider-core', () => {
       const pluginPath = join(__dirname, '../../openclaw.plugin.json');
       const plugin = JSON.parse(readFileSync(pluginPath, 'utf-8'));
 
-      expect(plugin.id).toBe('@careagent/core');
+      expect(plugin.id).toBe('@careagent/provider-core');
     });
 
     it('package.json peerDependencies includes openclaw', () => {

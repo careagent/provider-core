@@ -19,7 +19,7 @@ The primary technical challenge in Phase 1 is YAML frontmatter parsing under the
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| PLUG-01 | Plugin installs into OpenClaw via `openclaw plugins install @careagent/core` without errors | Plugin manifest format (package.json `openclaw.extensions`), entry point pattern, peer dependency declaration |
+| PLUG-01 | Plugin installs into OpenClaw via `openclaw plugins install @careagent/provider-core` without errors | Plugin manifest format (package.json `openclaw.extensions`), entry point pattern, peer dependency declaration |
 | PLUG-02 | Plugin manifest declares plugin ID, configSchema, skills directories, CLI commands, hook registrations | `openclaw.plugin.json` format, TypeBox configSchema, registration API methods |
 | PLUG-03 | Plugin `register(api)` entry point registers CLI commands, hooks, agent tools, and background services | `api.registerCli`, `registerPluginHooksFromDir`, `api.registerService`, `api.registerCommand` patterns |
 | PLUG-04 | Adapter layer insulates CareAgent from OpenClaw internals | Ports-and-adapters pattern, narrow interface definition, adapter module structure |
@@ -96,7 +96,7 @@ pnpm add -D @sinclair/typebox@~0.34.0
 ### Recommended Project Structure (Phase 1)
 
 ```
-@careagent/core/
+@careagent/provider-core/
   package.json                    # openclaw.extensions, peerDeps, zero runtime deps
   openclaw.plugin.json            # Plugin manifest: id, configSchema
   tsdown.config.ts                # ESM output, external openclaw
@@ -766,7 +766,7 @@ export { AuditEntrySchema };
 ```json
 // package.json
 {
-  "name": "@careagent/core",
+  "name": "@careagent/provider-core",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "type": "module",

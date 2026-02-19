@@ -1,6 +1,6 @@
 # Research Summary
 
-**Project:** CareAgent (@careagent/core)
+**Project:** CareAgent (@careagent/provider-core)
 **Synthesized:** 2026-02-17
 **Overall Confidence:** MEDIUM-HIGH
 

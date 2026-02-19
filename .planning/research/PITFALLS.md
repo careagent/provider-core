@@ -1,7 +1,7 @@
 # Domain Pitfalls
 
 **Domain:** Clinical AI Plugin (OpenClaw Healthcare Activation Layer)
-**Project:** CareAgent (@careagent/core)
+**Project:** CareAgent (@careagent/provider-core)
 **Researched:** 2026-02-17
 
 ---

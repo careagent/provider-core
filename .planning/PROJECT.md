@@ -2,7 +2,7 @@
 
 ## What This Is
 
-CareAgent is an open-source clinical activation layer for AI agents, distributed as `@careagent/core` — a platform-portable npm package that transforms any AI agent workspace into a credentialed, auditable, hardened clinical agent. CANS.md (Care Agent Nervous System) is the universal clinical activation gate that works alongside whatever workspace format the host platform uses (AGENTS.md standard, CLAUDE.md, OpenClaw's SOUL.md/AGENTS.md/USER.md, etc.). Built by a neurosurgeon for daily clinical use, it operates under the provider's license and authority, governed by the Irreducible Risk Hypothesis: risk stays with the provider, and the AI acts as an extension of their clinical practice.
+CareAgent is an open-source clinical activation layer for AI agents, distributed as `@careagent/provider-core` — a platform-portable npm package that transforms any AI agent workspace into a credentialed, auditable, hardened clinical agent. CANS.md (Care Agent Nervous System) is the universal clinical activation gate that works alongside whatever workspace format the host platform uses (AGENTS.md standard, CLAUDE.md, OpenClaw's SOUL.md/AGENTS.md/USER.md, etc.). Built by a neurosurgeon for daily clinical use, it operates under the provider's license and authority, governed by the Irreducible Risk Hypothesis: risk stays with the provider, and the AI acts as an extension of their clinical practice.
 
 ## Core Value
 

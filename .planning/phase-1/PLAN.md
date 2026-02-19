@@ -84,7 +84,7 @@ must_haves:
 
 ### Objective
 
-Create the complete project scaffold for @careagent/core: package.json with zero runtime dependencies and OpenClaw peer dependency, TypeScript configuration targeting Node 22 ESM, tsdown build config, Vitest test config, and a stub entry point that exports a register function.
+Create the complete project scaffold for @careagent/provider-core: package.json with zero runtime dependencies and OpenClaw peer dependency, TypeScript configuration targeting Node 22 ESM, tsdown build config, Vitest test config, and a stub entry point that exports a register function.
 
 Purpose: Everything in Phase 1 depends on a buildable, testable project. This plan creates the skeleton.
 Output: A project that runs `pnpm install`, `pnpm build`, and `pnpm test` without errors.
@@ -116,7 +116,7 @@ Output: A project that runs `pnpm install`, `pnpm build`, and `pnpm test` withou
 1. Create `package.json` with the following exact structure:
    ```json
    {
-     "name": "@careagent/core",
+     "name": "@careagent/provider-core",
      "version": "0.1.0",
      "description": "Clinical activation layer for OpenClaw personal AI assistant",
      "license": "Apache-2.0",
@@ -266,7 +266,7 @@ cat package.json | node -e "const p=JSON.parse(require('fs').readFileSync('/dev/
 2. Create `openclaw.plugin.json`:
    ```json
    {
-     "id": "@careagent/core",
+     "id": "@careagent/provider-core",
      "name": "CareAgent",
      "description": "Clinical activation layer — transforms OpenClaw into a credentialed, auditable clinical agent",
      "version": "0.1.0",
@@ -281,7 +281,7 @@ cat package.json | node -e "const p=JSON.parse(require('fs').readFileSync('/dev/
 3. Create `src/index.ts`:
    ```typescript
    /**
-    * @careagent/core — Clinical activation layer for OpenClaw
+    * @careagent/provider-core — Clinical activation layer for OpenClaw
     *
     * This is the plugin entry point. OpenClaw discovers this via the
     * `openclaw.extensions` field in package.json and calls the default
@@ -304,7 +304,7 @@ cat package.json | node -e "const p=JSON.parse(require('fs').readFileSync('/dev/
    ```typescript
    import { describe, it, expect } from 'vitest';
 
-   describe('@careagent/core', () => {
+   describe('@careagent/provider-core', () => {
      it('exports a register function', async () => {
        const mod = await import('../src/index.js');
        expect(typeof mod.default).toBe('function');
@@ -1549,7 +1549,7 @@ Rewrite `src/index.ts` to wire all subsystems:
 
 ```typescript
 /**
- * @careagent/core — Clinical activation layer for OpenClaw
+ * @careagent/provider-core — Clinical activation layer for OpenClaw
  *
  * Entry point. OpenClaw calls this with the plugin API on startup.
  * Performs: adapter creation -> audit start -> activation check -> clinical wiring.
@@ -1944,7 +1944,7 @@ pnpm test -- --reporter=verbose test/integration/
 
    **Test group: "Plugin Registration — PLUG-01, PLUG-02: Manifest verification"**
    - Read `package.json`, verify `openclaw.extensions` points to `./dist/index.js`
-   - Read `openclaw.plugin.json`, verify `id` is `@careagent/core`
+   - Read `openclaw.plugin.json`, verify `id` is `@careagent/provider-core`
    - Read `package.json`, verify `peerDependencies` includes `openclaw`
 
 2. Run the full test suite with coverage:

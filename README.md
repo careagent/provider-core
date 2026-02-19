@@ -27,23 +27,23 @@ CareAgent is platform-portable. CANS.md works alongside whatever workspace forma
 
 | Platform | Workspace Files | Entry Point |
 |----------|----------------|-------------|
-| [OpenClaw](https://github.com/openclaw/openclaw) | SOUL.md + AGENTS.md + USER.md | `@careagent/core` |
-| AGENTS.md standard | AGENTS.md | `@careagent/core/standalone` |
-| Claude Code (CLAUDE.md) | CLAUDE.md | `@careagent/core/standalone` |
-| Library / programmatic | None | `@careagent/core/core` |
+| [OpenClaw](https://github.com/openclaw/openclaw) | SOUL.md + AGENTS.md + USER.md | `@careagent/provider-core` |
+| AGENTS.md standard | AGENTS.md | `@careagent/provider-core/standalone` |
+| Claude Code (CLAUDE.md) | CLAUDE.md | `@careagent/provider-core/standalone` |
+| Library / programmatic | None | `@careagent/provider-core/core` |
 
 ### Entry Points
 
 ```typescript
 // OpenClaw plugin (default) — register(api) called by plugin loader
-import register from '@careagent/core';
+import register from '@careagent/provider-core';
 
 // Standalone — activate without a host platform
-import { activate } from '@careagent/core/standalone';
+import { activate } from '@careagent/provider-core/standalone';
 const { adapter, audit, activation } = activate('/path/to/workspace');
 
 // Core — pure types, schemas, and classes (no side effects)
-import { ActivationGate, PlatformAdapter, CANSSchema } from '@careagent/core/core';
+import { ActivationGate, PlatformAdapter, CANSSchema } from '@careagent/provider-core/core';
 ```
 
 ## Architecture
@@ -75,7 +75,7 @@ CANS.md (activation gate)
 ### OpenClaw
 
 ```bash
-openclaw plugins install @careagent/core
+openclaw plugins install @careagent/provider-core
 careagent init    # onboarding interview
 careagent status  # verify activation
 ```
@@ -83,11 +83,11 @@ careagent status  # verify activation
 ### Standalone
 
 ```bash
-npm install @careagent/core
+npm install @careagent/provider-core
 ```
 
 ```typescript
-import { activate } from '@careagent/core/standalone';
+import { activate } from '@careagent/provider-core/standalone';
 
 const result = activate(process.cwd());
 if (result.activation.active) {

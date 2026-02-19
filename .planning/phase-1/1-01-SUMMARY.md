@@ -37,7 +37,7 @@ ESM project scaffold with tsdown build, vitest test suite, zero runtime npm depe
 ## What Was Built
 
 ### Task 1: Project scaffold and build toolchain
-- `package.json` with `@careagent/core` identity, zero runtime dependencies (`dependencies: {}`), OpenClaw peer dependency, ESM-only config, Node >=22.12.0 engine requirement
+- `package.json` with `@careagent/provider-core` identity, zero runtime dependencies (`dependencies: {}`), OpenClaw peer dependency, ESM-only config, Node >=22.12.0 engine requirement
 - `tsconfig.json` targeting ES2023/NodeNext with strict mode and all recommended checks
 - `tsdown.config.ts` producing ESM bundle with `.js`/`.d.ts` output extensions, sourcemaps, and DTS generation
 - `vitest.config.ts` with v8 coverage provider and 80% threshold gates on lines/branches/functions/statements

@@ -1,5 +1,5 @@
 {
-  "name": "@careagent/core",
+  "name": "@careagent/provider-core",
   "version": "0.1.0",
   "description": "Clinical activation layer for AI agents",
   "license": "Apache-2.0",

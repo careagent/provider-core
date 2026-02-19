@@ -6,7 +6,7 @@
 
 ## Recommended Architecture
 
-CareAgent is a **single npm package** (`@careagent/core`) that extends OpenClaw through its plugin system. It is NOT a standalone application. The architecture must respect one absolute boundary: CareAgent extends OpenClaw; it never contains, wraps, or forks it.
+CareAgent is a **single npm package** (`@careagent/provider-core`) that extends OpenClaw through its plugin system. It is NOT a standalone application. The architecture must respect one absolute boundary: CareAgent extends OpenClaw; it never contains, wraps, or forks it.
 
 The plugin decomposes into seven internal components that register into four OpenClaw extension points (CLI commands, hooks, tools, background services). Activation is binary: CANS.md present = clinical layer active; CANS.md absent = plugin is inert.
 
@@ -29,7 +29,7 @@ The plugin decomposes into seven internal components that register into four Ope
 |        |                    |                       |               |
 |  +-----|--------------------|-----------------------|----------+    |
 |  |     v                    v                       v          |    |
-|  |              @careagent/core                                |    |
+|  |              @careagent/provider-core                                |    |
 |  |                                                             |    |
 |  |  +------------------+  +-------------------+               |    |
 |  |  | 1. Plugin Shell  |  | 2. Activation     |               |    |
@@ -87,7 +87,7 @@ Data flows through the system in three distinct paths:
 **Path 1: Activation (cold start / session start)**
 ```
 OpenClaw starts
-  -> Plugin Loader discovers @careagent/core
+  -> Plugin Loader discovers @careagent/provider-core
     -> register(api) called
       -> Activation Gate checks workspace for CANS.md
         -> IF ABSENT: register CLI commands only, plugin is inert
@@ -137,7 +137,7 @@ The entry point follows OpenClaw's plugin convention precisely.
 
 **Structure:**
 ```
-@careagent/core/
+@careagent/provider-core/
   package.json          # openclaw.extensions, peer dependency on openclaw
   src/
     index.ts            # exports register(api)
@@ -153,7 +153,7 @@ The entry point follows OpenClaw's plugin convention precisely.
 **package.json manifest:**
 ```json
 {
-  "name": "@careagent/core",
+  "name": "@careagent/provider-core",
   "openclaw": {
     "extensions": ["./dist/index.js"],
     "configSchema": "./dist/config-schema.js",

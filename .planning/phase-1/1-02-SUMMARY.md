@@ -50,7 +50,7 @@ Created the adapter boundary between CareAgent and OpenClaw:
 
 - **src/adapter/types.ts**: CareAgentPluginAPI interface with 7 methods (getWorkspacePath, onBeforeToolCall, onAgentBootstrap, registerCliCommand, registerBackgroundService, registerSlashCommand, log), plus ToolCallEvent, ToolCallResult, ToolCallHandler, BootstrapHandler, BootstrapContext, CliCommandConfig, ServiceConfig, SlashCommandConfig types
 - **src/adapter/openclaw-adapter.ts**: `createAdapter(api: unknown)` function that translates CareAgentPluginAPI calls to raw OpenClaw API, with every call wrapped in try/catch. Workspace path resolves through 3 fallback levels. Log falls back to console when api.log is unavailable.
-- **src/types/index.ts**: Re-exports all adapter types for clean imports from `@careagent/core`
+- **src/types/index.ts**: Re-exports all adapter types for clean imports from `@careagent/provider-core`
 - **test/unit/adapter/openclaw-adapter.test.ts**: 20 tests covering adapter creation, workspace path resolution, graceful degradation when API methods are missing, and console fallback logging
 
 ### Task 2: CANS.md TypeBox schema (4316dd4)
