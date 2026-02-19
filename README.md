@@ -290,18 +290,19 @@ careagent/provider-core/
 ├── src/
 │   ├── index.ts              # Plugin entry point — register(api)
 │   ├── activation/           # CANS.md parsing, validation, activation logic
+│   ├── adapters/             # Multi-platform adapter layer (OpenClaw, standalone)
 │   ├── audit/                # AUDIT.log append-only logging
-│   ├── hardening/            # Six-layer hardening implementation
-│   ├── credentials/          # Credential validation against CANS.md
+│   ├── cli/                  # CLI commands (careagent init, careagent status)
+│   ├── credentials/          # Credential validation against CANS.md [stub — Phase 4]
+│   ├── entry/                # Platform-specific entry points (openclaw, standalone, core)
+│   ├── hardening/            # Six-layer hardening implementation [stub — Phase 3]
+│   ├── neuron/               # Neuron registration and communication [stub — Phase 5]
 │   ├── onboarding/           # careagent init interview and CANS generation
-│   ├── neuron/               # Neuron registration and communication
-│   └── protocol/             # Cross-installation channel (server role)
-├── skills/                   # Bundled core clinical skills
-├── templates/                # CANS.md templates for provider types
-├── test/                     # Test suites
-├── docs/                     # Architecture and contribution guides
+│   ├── protocol/             # Cross-installation channel, server role [stub — Phase 5]
+│   └── vendor/               # Vendored dependencies (yaml)
+├── test/                     # Unit, integration, and smoke tests
 ├── openclaw.plugin.json      # Plugin manifest
-└── package.json              # pnpm package — OpenClaw as peer dependency
+└── package.json              # pnpm package — OpenClaw as optional peer dependency
 ```
 
 ---
