@@ -10,7 +10,7 @@
  * and the audit pipeline itself.
  */
 
-import type { ServiceConfig } from '../adapter/types.js';
+import type { ServiceConfig } from '../adapters/types.js';
 import type { AuditPipeline } from './pipeline.js';
 
 interface AdapterLog {

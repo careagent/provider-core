@@ -1,11 +1,11 @@
-import type { CareAgentPluginAPI } from '../adapter/types.js';
+import type { PlatformAdapter } from '../adapters/types.js';
 import type { AuditPipeline } from '../audit/pipeline.js';
 import { createTerminalIO } from './io.js';
 import { runInitCommand } from './init-command.js';
 import { runStatusCommand } from './status-command.js';
 
 export function registerCLI(
-  adapter: CareAgentPluginAPI,
+  adapter: PlatformAdapter,
   workspacePath: string,
   audit: AuditPipeline,
 ): void {
