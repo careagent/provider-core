@@ -118,7 +118,11 @@ Plans:
   3. The complete flow works end-to-end: fresh OpenClaw install, plugin install, onboarding, personalized clinical agent, skill loading, documentation generation, and audit trail verification
   4. A security review confirms all six hardening layers correctly block unauthorized actions in a realistic scenario
   5. A developer who has never seen CareAgent can install, onboard, and reach a functional clinical agent by following the installation steps
-**Plans:** TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 05-01-PLAN.md — Refinement engine core: types, observation store, pattern matcher, proposal generator (CANS-08)
+- [ ] 05-02-PLAN.md — Refinement engine orchestrator, CANS.md write-back, CLI proposals command, entry point wiring (CANS-08, CANS-09, CANS-10)
+- [ ] 05-03-PLAN.md — Integration tests: E2E flow, security review, developer install path, refinement lifecycle (INTG-01, INTG-02, INTG-03)
 
 ### Phase 6: Documentation and Release
 **Goal:** Repository is open-source ready with comprehensive documentation that enables independent installation, understanding, and contribution
@@ -143,7 +147,7 @@ Plans:
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
 | 4. Clinical Skills | 5/5 | Complete | 2026-02-19 |
-| 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
+| 5. CANS Continuous Improvement and Integration | 0/3 | Planned | - |
 | 6. Documentation and Release | 0/? | Not started | - |
 
 ---
