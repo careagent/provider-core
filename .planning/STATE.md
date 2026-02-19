@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 2.1 (Architectural Alignment) complete. Ready for Phase 3 (Hardening).
+**Current Focus:** Phase 3 (Runtime Hardening) in progress.
 
 ## Current Position
 
-**Phase:** 2.1 - Architectural Alignment (COMPLETE)
-**Plan:** 04 of 04 (complete)
-**Status:** Complete
-**Progress:** [##########] 4/4 plans (Phase 2.1)
+**Phase:** 3 - Runtime Hardening
+**Plan:** 02 of 04
+**Status:** In Progress
+**Progress:** [#####-----] 2/4 plans (Phase 3)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 15 |
+| Plans completed | 17 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 27 |
@@ -41,6 +41,7 @@
 | 2.1 | 02 | 167s | 2 | 16 |
 | 2.1 | 03 | 113s | 2 | 2 |
 | 2.1 | 04 | 114s | 3 | 2 |
+| 3 | 02 | 134s | 2 | 4 |
 
 ## Accumulated Context
 
@@ -110,6 +111,10 @@
 | tsc --noEmit pre-existing failures are not blockers | 2.1-01 | node: module resolution errors exist before and after changes; tsdown build succeeds |
 | Core entry point re-exports both types and factories from stub modules | 2.1-04 | Complete API surface via @careagent/provider-core/core; downstream can import everything from one path |
 | README documents all 11 actual src/ directories with stub annotations | 2.1-04 | Removed 4 non-existent directories; added adapters/, cli/, entry/, vendor/; stubs marked [stub -- Phase N] |
+| extractProtocolRules produces markdown under 2000 chars with provider/scope/autonomy | 3-02 | Concise format for system prompt injection; keeps token budget manageable |
+| Layer 3 per-check is non-blocking pass-through | 3-02 | Injection happens at bootstrap; per-call check only reports status |
+| Layer 4 checks three Docker signals with graceful /proc fallback | 3-02 | /.dockerenv, /proc/1/cgroup, CONTAINER env var; try/catch for non-Linux |
+| Layer 4 is report-only: never returns allowed: false | 3-02 | Sandbox detection informs audit trail, does not gate tool execution |
 
 ### Roadmap Evolution
 
@@ -137,22 +142,21 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 2.1 Plan 04 - Entry Point Re-exports and README Structure Alignment
-- **Completed:** 02.1-04 -- Core entry point re-exports all stub module types/factories; README updated with actual directory structure; Phase 2.1 complete
-- **Next:** Phase 3 (Hardening) -- implement the hardening stub interfaces
+- **Activity:** Phase 3 Plan 02 - CANS Protocol Injection and Docker Sandbox Detection
+- **Completed:** 03-02 -- Layer 3 (extractProtocolRules, injectProtocol, checkCansInjection) and Layer 4 (detectDocker, checkDockerSandbox) implemented with TDD
+- **Next:** Phase 3 Plan 03 -- next hardening layer(s)
 
 ### Context for Next Session
-- Phase 2.1 (Architectural Alignment) COMPLETE: all 4 plans executed successfully
-- entry/core.ts provides complete type surface for all modules via @careagent/provider-core/core
-- README Repository Structure matches actual codebase with stub annotations
-- 426 tests passing across 30 test files, all 4 entry points build successfully
-- No stale imports (src/adapter/, src/types/ removed in 02.1-01)
-- No circular dependencies between existing modules and stubs
-- Stub modules ready for implementation: hardening (Phase 3), credentials (Phase 4), neuron/protocol (Phase 5)
+- Phase 3 (Runtime Hardening) in progress: 2/4 plans complete
+- Layer 3 (CANS injection) and Layer 4 (Docker sandbox) in src/hardening/layers/
+- Both layers follow HardeningLayerResult interface for engine composition
+- Layer 3 has bootstrap injection (injectProtocol) + per-check pass-through (checkCansInjection)
+- Layer 4 is report-only with multi-signal Docker detection (detectDocker)
+- 452 tests passing across 33 test files
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 2.1 complete -- all 4 plans done; 426 tests total)*
+*Last updated: 2026-02-19 (Phase 3 Plan 02 complete -- 452 tests total)*
