@@ -14,6 +14,7 @@
  */
 
 import type { CANSDocument } from '../activation/cans-schema.js';
+import type { ToolCallEvent } from '../adapters/types.js';
 import type { PlatformAdapter } from '../adapters/types.js';
 import type { AuditPipeline } from '../audit/pipeline.js';
 
@@ -42,8 +43,19 @@ export interface HardeningEngine {
   activate(config: HardeningConfig): void;
 
   /** Check a tool call against all active hardening layers. */
-  check(toolName: string, params?: Record<string, unknown>): HardeningLayerResult;
+  check(event: ToolCallEvent): HardeningLayerResult;
 
   /** Extract clinical hard rules from CANS for system prompt injection (HARD-03). */
   injectProtocol(cans: CANSDocument): string[];
 }
+
+/**
+ * Signature for a single hardening layer check function.
+ *
+ * Every layer is a pure, stateless function: (event, cans) => LayerResult.
+ * Layers are composed by the engine in a fixed order.
+ */
+export type HardeningLayerFn = (
+  event: ToolCallEvent,
+  cans: CANSDocument,
+) => HardeningLayerResult;

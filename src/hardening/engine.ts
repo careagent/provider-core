@@ -13,7 +13,7 @@ export function createHardeningEngine(): HardeningEngine {
     activate(_config) {
       throw new Error('Hardening engine not yet implemented (Phase 3)');
     },
-    check(_toolName, _params) {
+    check(_event) {
       throw new Error('Hardening engine not yet implemented (Phase 3)');
     },
     injectProtocol(_cans) {

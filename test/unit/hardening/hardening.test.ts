@@ -16,7 +16,7 @@ describe('createHardeningEngine', () => {
 
   it('check() throws with message containing "not yet implemented"', () => {
     const engine = createHardeningEngine();
-    expect(() => engine.check('test-tool')).toThrow('not yet implemented');
+    expect(() => engine.check({ toolName: 'test-tool' })).toThrow('not yet implemented');
   });
 
   it('injectProtocol() throws with message containing "not yet implemented"', () => {
@@ -31,7 +31,7 @@ describe('createHardeningEngine', () => {
 
   it('check() error message references Phase 3', () => {
     const engine = createHardeningEngine();
-    expect(() => engine.check('test-tool')).toThrow('Phase 3');
+    expect(() => engine.check({ toolName: 'test-tool' })).toThrow('Phase 3');
   });
 
   it('injectProtocol() error message references Phase 3', () => {

@@ -37,7 +37,7 @@ export { getWorkspaceProfile } from '../onboarding/workspace-profiles.js';
 export type { WorkspaceProfile, WorkspaceFileSpec } from '../onboarding/workspace-profiles.js';
 
 // Hardening (interface-only — implementation in Phase 3)
-export type { HardeningEngine, HardeningLayerResult, HardeningConfig } from '../hardening/index.js';
+export type { HardeningEngine, HardeningLayerResult, HardeningConfig, HardeningLayerFn } from '../hardening/index.js';
 export { createHardeningEngine } from '../hardening/index.js';
 
 // Credentials (interface-only — implementation in Phase 4)
