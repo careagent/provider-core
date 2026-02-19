@@ -81,7 +81,13 @@ Plans:
   3. CANS.md clinical hard rules appear in the agent's system prompt via the host platform's hook mechanism (e.g. bootstrap hook), and the agent references them in its reasoning
   4. The safety guard intercepts tool invocations via the host platform's hook mechanism and validates against CANS.md scope; if the hook is not wired, a canary test detects this at startup and warns the provider
   5. Every hardening layer decision (allow, deny, ask) is recorded in AUDIT.log with the specific layer that made the decision
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Types expansion, Layer 1 (tool-policy), Layer 2 (exec-allowlist) with TDD (HARD-01, HARD-02)
+- [ ] 03-02-PLAN.md — Layer 3 (CANS injection), Layer 4 (Docker sandbox) with TDD (HARD-03, HARD-04)
+- [ ] 03-03-PLAN.md — Engine orchestrator, canary module, audit bridge with TDD (HARD-05, HARD-06, HARD-07)
+- [ ] 03-04-PLAN.md — Entry point wiring, integration tests, final verification (all HARD requirements)
 
 ### Phase 4: Clinical Skills
 **Goal:** chart-skill generates template-constrained clinical documentation in the provider's voice, gated on credentials, with integrity verification and version pinning
@@ -128,7 +134,7 @@ Plans:
 | 1. Plugin Foundation, Clinical Activation, and Audit Pipeline | 6/6 | Complete | 2026-02-18 |
 | 2. Onboarding and CLI | 6/6 | Complete | 2026-02-18 |
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
-| 3. Runtime Hardening | 0/? | Not started | - |
+| 3. Runtime Hardening | 0/4 | Planned | - |
 | 4. Clinical Skills | 0/? | Not started | - |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
 | 6. Documentation and Release | 0/? | Not started | - |
