@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 4 (Clinical Skills) in progress. Skill loader with credential gating, version pinning, integrity verification complete.
+**Current Focus:** Phase 4 (Clinical Skills) COMPLETE. All 5 plans executed: credential validator, skill framework, chart-skill, skill loader, entry-point wiring with integration tests.
 
 ## Current Position
 
 **Phase:** 4 - Clinical Skills
-**Plan:** 04 of 05
-**Status:** In Progress
-**Progress:** [########--] 4/5 plans (Phase 4)
+**Plan:** 05 of 05
+**Status:** Complete
+**Progress:** [##########] 5/5 plans (Phase 4)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 24 |
+| Plans completed | 25 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 40 |
@@ -49,6 +49,7 @@
 | 4 | 02 | 140s | 2 | 7 |
 | 4 | 03 | 146s | 2 | 9 |
 | 4 | 04 | 152s | 2 | 3 |
+| 4 | 05 | 194s | 2 | 5 |
 
 ## Accumulated Context
 
@@ -148,6 +149,10 @@
 | CANS rules merge via Set union (only stricter, never permissive) | 4-04 | skills.rules add requirements via deduped union; gating only gets stricter |
 | Regular skills (no manifest) silently skipped | 4-04 | No result entry or audit entry for non-CareAgent directories |
 | checkVersionPin called with manifest.version as availableVersion | 4-04 | Leverages existing three-condition check to detect version/approved_version mismatch |
+| Skill loading non-fatal in both entry points via try/catch | 4-05 | Skill error never prevents plugin activation; errors logged to adapter and audit |
+| import.meta.url path resolution for ESM-compatible plugin root | 4-05 | fileURLToPath resolves ../../ from entry point to find skills/ at package root |
+| Complete skills API surface on core.ts re-exports | 4-05 | Matches hardening (Phase 3) and credentials (Phase 4) patterns; single import path |
+| openclaw.plugin.json declares chart-skill in skills array | 4-05 | OpenClaw skill discovery requires explicit declaration in plugin manifest |
 
 ### Roadmap Evolution
 
@@ -175,19 +180,17 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 4 Plan 04 - Skill Loader
-- **Completed:** 04-04 -- six-step skill loader with credential gating, version pinning, integrity verification, CANS rules augmentation, audit logging; 28 new tests; 594 tests total
-- **Next:** Phase 4 Plan 05 (entry-point wiring and integration tests)
+- **Activity:** Phase 4 Plan 05 - Entry-Point Wiring and Integration Tests
+- **Completed:** 04-05 -- skill loading wired into openclaw.ts and standalone.ts, core.ts re-exports expanded, 14 integration tests; 608 tests total across 42 files
+- **Next:** Phase 5 (Integration) planning and execution
 
 ### Context for Next Session
-- Phase 4 (Clinical Skills) IN PROGRESS: 4/5 plans complete
-- src/skills/loader.ts: loadClinicalSkills() six-step pipeline (discovery, manifest, version pin, credentials, CANS rules, integrity)
-- src/skills/index.ts: full module re-exports (types, manifest, integrity, version-pin, loader, chart-skill)
-- src/skills/chart-skill/: templates (operative-note, h-and-p, progress-note), voice-adapter, index
-- skills/chart-skill/: SKILL.md (LLM instructions), skill-manifest.json (SHA-256 integrity)
-- Credential validator (04-01) checks license, specialty, privilege dimensions
-- Skill framework (04-02): types, manifest schema, integrity checker, version pinning
-- 594 tests passing across 41 test files
+- Phase 4 (Clinical Skills) COMPLETE: 5/5 plans done
+- Entry points wired: openclaw.ts Step 6.5, standalone.ts with skills on ActivateResult
+- core.ts: full skills API surface re-exported (types, schema, integrity, version-pin, loader, chart-skill, voice-adapter)
+- openclaw.plugin.json: skills array populated with chart-skill
+- Complete skill pipeline: credential validator -> skill framework -> chart-skill -> loader -> entry-point wiring
+- 608 tests passing across 42 test files (14 new integration tests)
 - Build succeeds with all 4 entry points (index, openclaw, standalone, core)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
@@ -195,4 +198,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 4 Plan 04 complete -- 594 tests total, skill loader with credential gating and audit logging implemented)*
+*Last updated: 2026-02-19 (Phase 4 COMPLETE -- 608 tests total, all 5 plans executed: credential validator, skill framework, chart-skill, loader, entry-point wiring)*

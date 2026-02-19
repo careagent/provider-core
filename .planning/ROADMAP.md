@@ -13,7 +13,7 @@
 - [x] **Phase 2: Onboarding and CLI** - Provider completes an interactive interview and receives a personalized CANS.md that activates their clinical agent
 - [x] **Phase 2.1: Architectural Alignment** - Restructure codebase to match README target architecture, expand CANS schema for ecosystem readiness, prepare module interfaces (INSERTED)
 - [x] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
-- [ ] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
+- [x] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
 - [ ] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
 - [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
 
@@ -106,7 +106,7 @@ Plans:
 - [x] 04-02-PLAN.md — Skill framework core: types, manifest schema, integrity, version pinning (SKIL-03, SKIL-04)
 - [x] 04-03-PLAN.md — Chart-skill templates, voice adapter, SKILL.md, and manifest (SKIL-05, SKIL-06)
 - [x] 04-04-PLAN.md — Skill loader with credential gating, integrity verification, and audit logging (SKIL-01, SKIL-03, SKIL-07)
-- [ ] 04-05-PLAN.md — Entry point wiring, core re-exports, and integration tests (all SKIL requirements)
+- [x] 04-05-PLAN.md — Entry point wiring, core re-exports, and integration tests (all SKIL requirements)
 
 ### Phase 5: CANS Continuous Improvement and Integration
 **Goal:** CareAgent proposes refinements to the provider's CANS.md based on usage patterns, and the complete end-to-end flow from fresh install to clinical documentation is verified
@@ -142,7 +142,7 @@ Plans:
 | 2. Onboarding and CLI | 6/6 | Complete | 2026-02-18 |
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
-| 4. Clinical Skills | 4/5 | In Progress | - |
+| 4. Clinical Skills | 5/5 | Complete | 2026-02-19 |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
 | 6. Documentation and Release | 0/? | Not started | - |
 
@@ -210,4 +210,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 4 Plan 04 complete -- skill loader with credential gating, version pinning, integrity, audit)*
+*Last updated: 2026-02-19 (Phase 4 COMPLETE -- all 5 plans done, 608 tests, clinical skills wired into entry points)*
