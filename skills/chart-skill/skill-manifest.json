@@ -1,0 +1,14 @@
+{
+  "skill_id": "chart-skill",
+  "version": "1.0.0",
+  "requires": {
+    "license": ["MD", "DO"],
+    "specialty": [],
+    "privilege": []
+  },
+  "files": {
+    "SKILL.md": "af19321536ca380980f9e277a4783e837b3af878f36c7183567c5501a852608f"
+  },
+  "pinned": true,
+  "approved_version": "1.0.0"
+}
