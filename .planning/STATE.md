@@ -9,7 +9,7 @@
 ## Current Position
 
 **Phase:** 3 - Runtime Hardening
-**Plan:** 02 of 04
+**Plan:** 03 of 04
 **Status:** In Progress
 **Progress:** [#####-----] 2/4 plans (Phase 3)
 
@@ -17,7 +17,7 @@
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 17 |
+| Plans completed | 18 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 27 |
@@ -41,6 +41,7 @@
 | 2.1 | 02 | 167s | 2 | 16 |
 | 2.1 | 03 | 113s | 2 | 2 |
 | 2.1 | 04 | 114s | 3 | 2 |
+| 3 | 01 | 191s | 2 | 9 |
 | 3 | 02 | 134s | 2 | 4 |
 
 ## Accumulated Context
@@ -111,6 +112,10 @@
 | tsc --noEmit pre-existing failures are not blockers | 2.1-01 | node: module resolution errors exist before and after changes; tsdown build succeeds |
 | Core entry point re-exports both types and factories from stub modules | 2.1-04 | Complete API surface via @careagent/provider-core/core; downstream can import everything from one path |
 | README documents all 11 actual src/ directories with stub annotations | 2.1-04 | Removed 4 non-existent directories; added adapters/, cli/, entry/, vendor/; stubs marked [stub -- Phase N] |
+| HardeningEngine.check() accepts ToolCallEvent instead of raw (toolName, params) | 3-01 | Structured event type is safer and more extensible; no consumers exist to break |
+| Prohibited trumps permitted in tool-policy layer | 3-01 | Safety-first: if a tool appears in both lists, deny always wins |
+| Conservative exec allowlist (read-only utilities + git) | 3-01 | cat, ls, head, tail, wc, git, grep, find, echo, sort, uniq, diff -- safe defaults extensible later |
+| EXEC_TOOL_NAMES includes both Bash and exec | 3-01 | Multi-platform compatibility: OpenClaw uses Bash, other platforms may use exec |
 | extractProtocolRules produces markdown under 2000 chars with provider/scope/autonomy | 3-02 | Concise format for system prompt injection; keeps token budget manageable |
 | Layer 3 per-check is non-blocking pass-through | 3-02 | Injection happens at bootstrap; per-call check only reports status |
 | Layer 4 checks three Docker signals with graceful /proc fallback | 3-02 | /.dockerenv, /proc/1/cgroup, CONTAINER env var; try/catch for non-Linux |
@@ -142,21 +147,22 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 3 Plan 02 - CANS Protocol Injection and Docker Sandbox Detection
-- **Completed:** 03-02 -- Layer 3 (extractProtocolRules, injectProtocol, checkCansInjection) and Layer 4 (detectDocker, checkDockerSandbox) implemented with TDD
+- **Activity:** Phase 3 Plan 01 - Hardening Types and Layers 1-2 (tool-policy + exec-allowlist)
+- **Completed:** 03-01 -- HardeningEngine.check() updated to ToolCallEvent, HardeningLayerFn type, Layer 1 (checkToolPolicy) and Layer 2 (checkExecAllowlist) with TDD
 - **Next:** Phase 3 Plan 03 -- next hardening layer(s)
 
 ### Context for Next Session
-- Phase 3 (Runtime Hardening) in progress: 2/4 plans complete
-- Layer 3 (CANS injection) and Layer 4 (Docker sandbox) in src/hardening/layers/
-- Both layers follow HardeningLayerResult interface for engine composition
-- Layer 3 has bootstrap injection (injectProtocol) + per-check pass-through (checkCansInjection)
-- Layer 4 is report-only with multi-signal Docker detection (detectDocker)
-- 452 tests passing across 33 test files
+- Phase 3 (Runtime Hardening) in progress: 2/4 plans complete (01 and 02 done)
+- Layer 1 (tool-policy) and Layer 2 (exec-allowlist) in src/hardening/layers/
+- Layer 3 (CANS injection) and Layer 4 (Docker sandbox) also in src/hardening/layers/
+- All layers follow pure function pattern: (event, cans) => HardeningLayerResult
+- HardeningLayerFn type alias available for composing layers in engine
+- Layer pass-through pattern: disabled CANS flag => { allowed: true, reason: '<flag> disabled' }
+- 460 tests passing across 34 test files
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 3 Plan 02 complete -- 452 tests total)*
+*Last updated: 2026-02-19 (Phase 3 Plan 01 complete -- 460 tests total)*
