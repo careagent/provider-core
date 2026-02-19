@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Portability reorganization COMPLETE. Platform-portable architecture in place. Ready for Phase 3 (Hardening).
+**Current Focus:** Phase 2.1 (Architectural Alignment) inserted — restructure codebase to match README target architecture before Phase 3 (Hardening).
 
 ## Current Position
 
-**Phase:** 2 - Onboarding and CLI (COMPLETE)
-**Plan:** 06 (complete)
-**Status:** Phase Complete
-**Progress:** [##########] 6/6 plans (Phase 2 done)
+**Phase:** 2.1 - Architectural Alignment (IN PROGRESS)
+**Plan:** 03 of 04 (complete)
+**Status:** Executing
+**Progress:** [#######---] 3/4 plans (Phase 2.1)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 12 |
+| Plans completed | 13 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 27 |
@@ -37,6 +37,7 @@
 | 2 | 04 | 210s | 4 | 4 |
 | 2 | 05 | 192s | 2 | 2 |
 | 2 | 06 | 249s | 4 | 4 |
+| 2.1 | 03 | 113s | 2 | 2 |
 
 ## Accumulated Context
 
@@ -97,6 +98,12 @@
 | Multiple entry points (index, openclaw, standalone, core) | PORT | Platform-specific or pure-library usage without coupling to OpenClaw |
 | OpenClaw peer dependency marked optional | PORT | Enables standalone usage without OpenClaw installed |
 | Duck-typing platform detection | PORT | detectPlatform checks registerCli + on presence; no dependency on platform-specific types |
+| All three new CANS fields Type.Optional() for backward compatibility | 2.1-03 | Existing CANS.md files and test fixtures remain valid without modification |
+| Sub-schemas exported individually for downstream use | 2.1-03 | NeuronConfigSchema, SkillGatingSchema, CrossInstallationConsentSchema available as standalone imports |
+
+### Roadmap Evolution
+
+- Phase 2.1 inserted after Phase 2: Architectural Alignment — Restructure codebase to match README target architecture, expand CANS schema for ecosystem readiness, update README to document proven abstractions, prepare module interfaces for neuron/protocol/credentials/hardening (URGENT)
 
 ### Research Findings Applied
 
@@ -119,23 +126,20 @@
 ## Session Continuity
 
 ### Last Session
-- **Date:** 2026-02-18
-- **Activity:** Platform portability reorganization
-- **Completed:** PORT-01..04 — PlatformAdapter interface, multi-platform adapter directory, workspace profiles, multiple entry points, optional peer deps, 34 new tests (388 total)
-- **Next:** Phase 3 (Hardening) - tool policy lockdown, exec approval, CANS protocol injection
+- **Date:** 2026-02-19
+- **Activity:** Phase 2.1 Plan 03 - CANS Schema Extension
+- **Completed:** 02.1-03 -- Extended CANSSchema with neuron, skills, cross_installation optional fields; 15 new tests; 433 total tests passing
+- **Next:** Phase 2.1 Plan 04 (remaining architectural alignment)
 
 ### Context for Next Session
-- Portability reorganization COMPLETE: 388 tests passing. All 4 entry points build.
-- src/adapters/ (plural): types.ts, detect.ts, openclaw/index.ts, standalone/index.ts, index.ts
-- src/adapter/ (singular): re-export shims for backward compatibility (all existing imports still work)
-- src/entry/: openclaw.ts (register), standalone.ts (activate), core.ts (pure re-exports)
-- src/onboarding/workspace-profiles.ts: openclaw, agents-standard, standalone profiles
-- package.json: exports map for ./openclaw, ./standalone, ./core; peerDependenciesMeta.openclaw.optional=true
+- CANS schema extended: neuron, skills, cross_installation as Type.Optional() top-level fields
+- New sub-schemas: NeuronConfigSchema, SkillGatingRuleSchema, SkillGatingSchema, CrossInstallationConsentSchema
+- 433 tests passing (388 original + 45 from portability + schema extension)
+- All existing CANS.md files and fixtures valid without modification
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
-- Phase 3 requirements: HARD-01..07 (tool policy, exec approval, CANS injection, docker sandbox, safety guard, audit trail, canary test)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-18 (Phase 2 Plan 06 complete -- CLI wiring and integration tests; 354 tests total)*
+*Last updated: 2026-02-19 (Phase 2.1 Plan 03 complete -- CANS schema extension with neuron/skills/cross_installation; 433 tests total)*
