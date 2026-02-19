@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 4 (Clinical Skills) COMPLETE. All 5 plans executed: credential validator, skill framework, chart-skill, skill loader, entry-point wiring with integration tests.
+**Current Focus:** Phase 5 (CANS Continuous Improvement and Integration) in progress. Plan 01 complete: refinement engine foundations (types, observation store, proposal queue, pattern matcher, proposal generator).
 
 ## Current Position
 
-**Phase:** 4 - Clinical Skills
-**Plan:** 05 of 05
-**Status:** Complete
-**Progress:** [##########] 5/5 plans (Phase 4)
+**Phase:** 5 - CANS Continuous Improvement and Integration
+**Plan:** 01 of 03
+**Status:** In Progress
+**Progress:** [█████████░] 94%
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 25 |
+| Plans completed | 26 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 40 |
@@ -50,6 +50,7 @@
 | 4 | 03 | 146s | 2 | 9 |
 | 4 | 04 | 152s | 2 | 3 |
 | 4 | 05 | 194s | 2 | 5 |
+| 5 | 01 | 218s | 2 | 8 |
 
 ## Accumulated Context
 
@@ -153,6 +154,10 @@
 | import.meta.url path resolution for ESM-compatible plugin root | 4-05 | fileURLToPath resolves ../../ from entry point to find skills/ at package root |
 | Complete skills API surface on core.ts re-exports | 4-05 | Matches hardening (Phase 3) and credentials (Phase 4) patterns; single import path |
 | openclaw.plugin.json declares chart-skill in skills array | 4-05 | OpenClaw skill discovery requires explicit declaration in plugin manifest |
+| Append-only JSONL for observations, JSON for proposals | 5-01 | JSONL mirrors audit log pattern; proposals need random access for status updates |
+| Two-layer scope protection: pattern-matcher + generator assertion | 5-01 | Defense in depth per research; scope fields sacrosanct, never proposed for change |
+| Rejected proposal resurfacing at RESURFACE_THRESHOLD (10) with count exceeding prior | 5-01 | Minimizes false positives while allowing genuinely persistent divergences to resurface |
+| JSON.stringify deep comparison for declared/observed values | 5-01 | Handles objects, arrays, and primitives uniformly for divergence detection |
 
 ### Roadmap Evolution
 
@@ -180,22 +185,23 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 4 Plan 05 - Entry-Point Wiring and Integration Tests
-- **Completed:** 04-05 -- skill loading wired into openclaw.ts and standalone.ts, core.ts re-exports expanded, 14 integration tests; 608 tests total across 42 files
-- **Next:** Phase 5 (Integration) planning and execution
+- **Activity:** Phase 5 Plan 01 - Refinement Engine Foundations
+- **Completed:** 05-01 -- types, observation store, proposal queue, pattern matcher, proposal generator; 32 new unit tests
+- **Next:** Phase 5 Plan 02 (refinement engine orchestrator, CANS write-back, proposal presentation)
 
 ### Context for Next Session
-- Phase 4 (Clinical Skills) COMPLETE: 5/5 plans done
-- Entry points wired: openclaw.ts Step 6.5, standalone.ts with skills on ActivateResult
-- core.ts: full skills API surface re-exported (types, schema, integrity, version-pin, loader, chart-skill, voice-adapter)
-- openclaw.plugin.json: skills array populated with chart-skill
-- Complete skill pipeline: credential validator -> skill framework -> chart-skill -> loader -> entry-point wiring
-- 608 tests passing across 42 test files (14 new integration tests)
-- Build succeeds with all 4 entry points (index, openclaw, standalone, core)
+- Phase 5 (CANS Continuous Improvement) in progress: 1/3 plans done
+- Refinement engine foundations: 5 modules in src/refinement/
+- ObservationStore: append-only JSONL at .careagent/observations.jsonl
+- ProposalQueue: JSON persistence at .careagent/proposals.json with full lifecycle
+- Pattern matcher: 5+ threshold, scope exclusion, resurfacing logic, deep value comparison
+- Proposal generator: UUID IDs, evidence summaries, diff views, scope assertion (defense layer 2)
+- SACROSANCT_FIELDS + isScopeField: two-layer scope protection
+- 32 new unit tests (640 total across 45 test files)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 4 COMPLETE -- 608 tests total, all 5 plans executed: credential validator, skill framework, chart-skill, loader, entry-point wiring)*
+*Last updated: 2026-02-19 (Phase 5 Plan 01 complete -- refinement engine foundations, 32 new tests, two-layer scope protection)*
