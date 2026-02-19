@@ -61,13 +61,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Clinical Skills
 
-- [ ] **SKIL-01**: Clinical skills gate on CANS.md credentials (license type, specialty, privilege) — skills that require credentials the provider lacks do not load
-- [ ] **SKIL-02**: Regular OpenClaw skills continue to load and function normally alongside clinical skills
+- [x] **SKIL-01**: Clinical skills gate on CANS.md credentials (license type, specialty, privilege) — skills that require credentials the provider lacks do not load
+- [x] **SKIL-02**: Regular OpenClaw skills continue to load and function normally alongside clinical skills
 - [x] **SKIL-03**: Clinical skill integrity verification: SHA-256 checksumming at install, verification at load; modified skills do not load
 - [x] **SKIL-04**: Clinical skill version pinning: no auto-update; provider must explicitly approve version changes
 - [x] **SKIL-05**: chart-skill generates template-constrained clinical documentation (not freeform) in the provider's clinical voice
 - [x] **SKIL-06**: chart-skill includes neurosurgery-specific templates (operative note, H&P, progress note)
-- [ ] **SKIL-07**: Skill installation, loading, and usage events are recorded in AUDIT.log
+- [x] **SKIL-07**: Skill installation, loading, and usage events are recorded in AUDIT.log
 
 ### CANS Continuous Improvement
 
@@ -169,13 +169,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HARD-05 | Phase 3 | Complete |
 | HARD-06 | Phase 3 | Complete |
 | HARD-07 | Phase 3 | Complete |
-| SKIL-01 | Phase 4 | Pending |
-| SKIL-02 | Phase 4 | Pending |
+| SKIL-01 | Phase 4 | Complete |
+| SKIL-02 | Phase 4 | Complete |
 | SKIL-03 | Phase 4 | Complete |
 | SKIL-04 | Phase 4 | Complete |
 | SKIL-05 | Phase 4 | Complete |
 | SKIL-06 | Phase 4 | Complete |
-| SKIL-07 | Phase 4 | Pending |
+| SKIL-07 | Phase 4 | Complete |
 | CANS-08 | Phase 5 | Pending |
 | CANS-09 | Phase 5 | Pending |
 | CANS-10 | Phase 5 | Pending |
