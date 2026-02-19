@@ -6,14 +6,6 @@
 
 ---
 
-## The Irreducible Risk Hypothesis
-
-> *The assumption of risk by a licensed provider is the irreducible and non-delegable foundation of clinical practice. While all clinical actions may be delegated to agents acting under provider authority, the risk associated with those actions cannot be transferred. Therefore, AI can only be fully realized in healthcare through a provider-owned model in which the agent, as an extension of the provider, is credentialed and insured through the same mechanisms that govern said provider.*
-
-This principle governs every design decision in this package.
-
----
-
 ## What This Package Does
 
 @careagent/provider-core is a pnpm plugin package that installs into an existing OpenClaw installation. It does not replace OpenClaw or modify its core. It activates a clinical layer on top of it.
