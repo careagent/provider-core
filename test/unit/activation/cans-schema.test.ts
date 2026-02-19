@@ -133,6 +133,157 @@ describe('CANSSchema', () => {
     });
   });
 
+  describe('neuron validation', () => {
+    it('accepts valid CANS data without neuron field', () => {
+      expect(Value.Check(CANSSchema, validCANSData)).toBe(true);
+    });
+
+    it('accepts valid neuron config with all fields', () => {
+      const data = {
+        ...validCANSData,
+        neuron: {
+          endpoint: 'https://neuron.example.com',
+          registration_id: 'reg-123',
+          auto_register: true,
+        },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts neuron config with only required endpoint', () => {
+      const data = {
+        ...validCANSData,
+        neuron: { endpoint: 'https://neuron.example.com' },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('rejects neuron config without endpoint', () => {
+      const data = {
+        ...validCANSData,
+        neuron: {},
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+  });
+
+  describe('skills validation', () => {
+    it('accepts valid CANS data without skills field', () => {
+      expect(Value.Check(CANSSchema, validCANSData)).toBe(true);
+    });
+
+    it('accepts valid skill gating rules', () => {
+      const data = {
+        ...validCANSData,
+        skills: {
+          rules: [
+            {
+              skill_id: 'chart-skill',
+              requires_license: ['MD', 'DO'],
+              requires_specialty: ['neurosurgery'],
+            },
+          ],
+        },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts empty skill gating rules array', () => {
+      const data = {
+        ...validCANSData,
+        skills: { rules: [] },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('rejects skill gating rule without skill_id', () => {
+      const data = {
+        ...validCANSData,
+        skills: { rules: [{}] },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('accepts skill gating rule with only skill_id', () => {
+      const data = {
+        ...validCANSData,
+        skills: { rules: [{ skill_id: 'chart-skill' }] },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+  });
+
+  describe('cross_installation validation', () => {
+    it('accepts valid CANS data without cross_installation field', () => {
+      expect(Value.Check(CANSSchema, validCANSData)).toBe(true);
+    });
+
+    it('accepts valid cross_installation consent', () => {
+      const data = {
+        ...validCANSData,
+        cross_installation: {
+          allow_inbound: true,
+          allow_outbound: false,
+          require_neuron_verification: true,
+        },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts cross_installation without require_neuron_verification', () => {
+      const data = {
+        ...validCANSData,
+        cross_installation: { allow_inbound: true, allow_outbound: true },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('rejects cross_installation missing allow_inbound', () => {
+      const data = {
+        ...validCANSData,
+        cross_installation: { allow_outbound: true },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects cross_installation missing allow_outbound', () => {
+      const data = {
+        ...validCANSData,
+        cross_installation: { allow_inbound: true },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+  });
+
+  describe('combined new fields', () => {
+    it('accepts CANS data with all three new optional fields', () => {
+      const data = {
+        ...validCANSData,
+        neuron: {
+          endpoint: 'https://neuron.example.com',
+          registration_id: 'reg-456',
+          auto_register: false,
+        },
+        skills: {
+          rules: [
+            {
+              skill_id: 'chart-skill',
+              requires_license: ['MD'],
+              requires_specialty: ['neurosurgery'],
+              requires_privilege: ['neurosurgical procedures'],
+            },
+          ],
+        },
+        cross_installation: {
+          allow_inbound: true,
+          allow_outbound: true,
+          require_neuron_verification: true,
+        },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+  });
+
   describe('error reporting', () => {
     it('returns error objects with path for invalid data', () => {
       const invalidData = structuredClone(validCANSData);
