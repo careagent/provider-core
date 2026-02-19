@@ -1,4 +1,4 @@
-# @careagent/core
+# @careagent/provider-core
 
 > **WARNING!: This project is in its infancy. Do not attempt to install CareAgent into your OpenClaw without expecting it to break everything. It goes without saying, but do not use this to provide medical services of any kind!**
 
