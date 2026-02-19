@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 5 (CANS Continuous Improvement and Integration) in progress. Plan 01 complete: refinement engine foundations (types, observation store, proposal queue, pattern matcher, proposal generator).
+**Current Focus:** Phase 5 (CANS Continuous Improvement and Integration) in progress. Plan 02 complete: refinement engine orchestrator, CANS.md write-back, CLI proposals command, entry point wiring.
 
 ## Current Position
 
 **Phase:** 5 - CANS Continuous Improvement and Integration
-**Plan:** 01 of 03
+**Plan:** 02 of 03
 **Status:** In Progress
-**Progress:** [█████████░] 94%
+**Progress:** [█████████░] 96%
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 26 |
+| Plans completed | 27 |
 | Plans failed | 0 |
 | Total requirements | 52 |
-| Requirements done | 40 |
-| Requirements remaining | 12 |
+| Requirements done | 43 |
+| Requirements remaining | 9 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -51,6 +51,7 @@
 | 4 | 04 | 152s | 2 | 3 |
 | 4 | 05 | 194s | 2 | 5 |
 | 5 | 01 | 218s | 2 | 8 |
+| 5 | 02 | 306s | 2 | 8 |
 
 ## Accumulated Context
 
@@ -158,6 +159,10 @@
 | Two-layer scope protection: pattern-matcher + generator assertion | 5-01 | Defense in depth per research; scope fields sacrosanct, never proposed for change |
 | Rejected proposal resurfacing at RESURFACE_THRESHOLD (10) with count exceeding prior | 5-01 | Minimizes false positives while allowing genuinely persistent divergences to resurface |
 | JSON.stringify deep comparison for declared/observed values | 5-01 | Handles objects, arrays, and primitives uniformly for divergence detection |
+| Direct CLI registration in openclaw.ts for proposals command | 5-02 | Avoids modifying shared registerCLI signature; proposals only available after activation |
+| Dynamic import() for proposals command handler | 5-02 | Prevents loading refinement module on init/status CLI path where it is not needed |
+| Schema validation before any CANS.md write | 5-02 | Value.Check against CANSSchema prevents accepting proposals that create invalid state |
+| Three-layer scope protection: matcher + generator + applyProposal | 5-02 | Defense in depth: each layer independently blocks scope field changes |
 
 ### Roadmap Evolution
 
@@ -185,23 +190,24 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 5 Plan 01 - Refinement Engine Foundations
-- **Completed:** 05-01 -- types, observation store, proposal queue, pattern matcher, proposal generator; 32 new unit tests
-- **Next:** Phase 5 Plan 02 (refinement engine orchestrator, CANS write-back, proposal presentation)
+- **Activity:** Phase 5 Plan 02 - Refinement Engine and CLI Proposals
+- **Completed:** 05-02 -- refinement engine orchestrator, CANS.md write-back, audit logging, CLI proposals command, entry point wiring; 17 new unit tests
+- **Next:** Phase 5 Plan 03 (final plan for CANS continuous improvement and integration)
 
 ### Context for Next Session
-- Phase 5 (CANS Continuous Improvement) in progress: 1/3 plans done
-- Refinement engine foundations: 5 modules in src/refinement/
-- ObservationStore: append-only JSONL at .careagent/observations.jsonl
-- ProposalQueue: JSON persistence at .careagent/proposals.json with full lifecycle
-- Pattern matcher: 5+ threshold, scope exclusion, resurfacing logic, deep value comparison
-- Proposal generator: UUID IDs, evidence summaries, diff views, scope assertion (defense layer 2)
-- SACROSANCT_FIELDS + isScopeField: two-layer scope protection
-- 32 new unit tests (640 total across 45 test files)
+- Phase 5 (CANS Continuous Improvement) in progress: 2/3 plans done
+- RefinementEngine orchestrator composes observation store, pattern matcher, proposal generator, proposal queue
+- CANS.md write-back: parse/validate/write/hash-update chain for accepted proposals
+- Three-layer scope protection: pattern-matcher (layer 1), generator (layer 2), applyProposal (layer 3)
+- Every proposal lifecycle event audit-logged: created, accepted, rejected, deferred
+- careagent proposals CLI command: batch review with Accept/Reject/Defer/Skip
+- Refinement engine wired into openclaw.ts and standalone.ts
+- core.ts re-exports full refinement public API
+- 49 refinement tests, 657 total across 47 test files
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
 - TypeBox for all schemas (not Zod)
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 5 Plan 01 complete -- refinement engine foundations, 32 new tests, two-layer scope protection)*
+*Last updated: 2026-02-19 (Phase 5 Plan 02 complete -- refinement engine orchestrator, CANS write-back, CLI proposals, entry point wiring, 17 new tests)*

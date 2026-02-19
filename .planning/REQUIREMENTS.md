@@ -72,8 +72,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### CANS Continuous Improvement
 
 - [x] **CANS-08**: CareAgent can propose updates to CANS.md based on observed usage patterns
-- [ ] **CANS-09**: Provider must approve or reject proposed CANS.md changes — no automatic modifications
-- [ ] **CANS-10**: Every CANS.md modification (proposed, accepted, rejected) is recorded in AUDIT.log
+- [x] **CANS-09**: Provider must approve or reject proposed CANS.md changes — no automatic modifications
+- [x] **CANS-10**: Every CANS.md modification (proposed, accepted, rejected) is recorded in AUDIT.log
 
 ### Documentation & Release
 
@@ -177,8 +177,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SKIL-06 | Phase 4 | Complete |
 | SKIL-07 | Phase 4 | Complete |
 | CANS-08 | Phase 5 | Complete |
-| CANS-09 | Phase 5 | Pending |
-| CANS-10 | Phase 5 | Pending |
+| CANS-09 | Phase 5 | Complete |
+| CANS-10 | Phase 5 | Complete |
 | INTG-01 | Phase 5 | Pending |
 | INTG-02 | Phase 5 | Pending |
 | INTG-03 | Phase 5 | Pending |

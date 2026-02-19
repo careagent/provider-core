@@ -120,8 +120,8 @@ Plans:
   5. A developer who has never seen CareAgent can install, onboard, and reach a functional clinical agent by following the installation steps
 **Plans:** 3 plans
 Plans:
-- [ ] 05-01-PLAN.md — Refinement engine core: types, observation store, pattern matcher, proposal generator (CANS-08)
-- [ ] 05-02-PLAN.md — Refinement engine orchestrator, CANS.md write-back, CLI proposals command, entry point wiring (CANS-08, CANS-09, CANS-10)
+- [x] 05-01-PLAN.md — Refinement engine core: types, observation store, pattern matcher, proposal generator (CANS-08)
+- [x] 05-02-PLAN.md — Refinement engine orchestrator, CANS.md write-back, CLI proposals command, entry point wiring (CANS-08, CANS-09, CANS-10)
 - [ ] 05-03-PLAN.md — Integration tests: E2E flow, security review, developer install path, refinement lifecycle (INTG-01, INTG-02, INTG-03)
 
 ### Phase 6: Documentation and Release
