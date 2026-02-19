@@ -102,7 +102,7 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Credential validator implementation and tests (SKIL-01, SKIL-02)
+- [x] 04-01-PLAN.md — Credential validator implementation and tests (SKIL-01, SKIL-02)
 - [ ] 04-02-PLAN.md — Skill framework core: types, manifest schema, integrity, version pinning (SKIL-03, SKIL-04)
 - [ ] 04-03-PLAN.md — Chart-skill templates, voice adapter, SKILL.md, and manifest (SKIL-05, SKIL-06)
 - [ ] 04-04-PLAN.md — Skill loader with credential gating, integrity verification, and audit logging (SKIL-01, SKIL-03, SKIL-07)
@@ -142,7 +142,7 @@ Plans:
 | 2. Onboarding and CLI | 6/6 | Complete | 2026-02-18 |
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
-| 4. Clinical Skills | 0/5 | Planned | - |
+| 4. Clinical Skills | 1/5 | In Progress | - |
 | 5. CANS Continuous Improvement and Integration | 0/? | Not started | - |
 | 6. Documentation and Release | 0/? | Not started | - |
 

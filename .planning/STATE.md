@@ -4,20 +4,20 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 3 (Runtime Hardening) complete. Ready for Phase 4.
+**Current Focus:** Phase 4 (Clinical Skills) in progress. Credential validator complete.
 
 ## Current Position
 
-**Phase:** 3 - Runtime Hardening
-**Plan:** 04 of 04
-**Status:** Phase Complete
-**Progress:** [##########] 4/4 plans (Phase 3)
+**Phase:** 4 - Clinical Skills
+**Plan:** 01 of 05
+**Status:** In Progress
+**Progress:** [##--------] 1/5 plans (Phase 4)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 20 |
+| Plans completed | 21 |
 | Plans failed | 0 |
 | Total requirements | 52 |
 | Requirements done | 34 |
@@ -45,6 +45,7 @@
 | 3 | 02 | 134s | 2 | 4 |
 | 3 | 03 | 180s | 2 | 5 |
 | 3 | 04 | 226s | 3 | 4 |
+| 4 | 01 | 90s | 2 | 2 |
 
 ## Accumulated Context
 
@@ -129,6 +130,9 @@
 | Engine replaces inline canary entirely in openclaw.ts | 3-04 | Canary was internal implementation; engine owns the complete hook lifecycle now |
 | Standalone exposes engine as optional on ActivateResult | 3-04 | Programmatic consumers can call engine.check() directly for layer evaluation |
 | Integration tests use real AuditPipeline not mocks | 3-04 | True end-to-end verification of audit entries written to disk with hash chaining |
+| Three-dimension credential check: license, specialty, privilege evaluated independently | 4-01 | Failures in multiple dimensions all reported; no short-circuit on first failure |
+| Subspecialty match counts as specialty pass | 4-01 | Provider's subspecialty checked alongside primary specialty for flexible credential matching |
+| Empty/undefined credential requirements pass automatically | 4-01 | Enables SKIL-02: regular OpenClaw skills (no credential requirements) always pass validation |
 
 ### Roadmap Evolution
 
@@ -156,16 +160,16 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 3 Plan 04 - Entry Point Wiring and Integration Tests
-- **Completed:** 03-04 -- Engine wired into openclaw.ts (replacing inline canary) and standalone.ts (degraded mode), 10 end-to-end integration tests, Phase 3 COMPLETE
-- **Next:** Phase 4 planning and execution
+- **Activity:** Phase 4 Plan 01 - Credential Validator Implementation
+- **Completed:** 04-01 -- Real credential validator replacing stub, 21 comprehensive tests, 504 tests total
+- **Next:** Phase 4 Plan 02 (skill framework core: types, manifest schema, integrity, version pinning)
 
 ### Context for Next Session
-- Phase 3 (Runtime Hardening) COMPLETE: all HARD-01 through HARD-07 requirements implemented
-- Engine wired into openclaw.ts via createHardeningEngine().activate() -- no inline canary
-- Standalone.ts exposes optional engine on ActivateResult for programmatic use
-- Core.ts exports complete hardening public API: layers, canary, detectDocker, types
-- 486 tests passing across 36 test files (10 new hardening integration tests)
+- Phase 4 (Clinical Skills) IN PROGRESS: 1/5 plans complete
+- Credential validator checks license type, specialty/subspecialty, and privileges
+- Empty/undefined requirements pass automatically (SKIL-02 foundation)
+- Spread-conditional pattern for optional missingCredentials/reason fields
+- 504 tests passing across 36 test files (21 credential tests replacing 3 stubs)
 - Build succeeds with all 4 entry points (index, openclaw, standalone, core)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
@@ -173,4 +177,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 3 complete -- 486 tests total, all HARD requirements met)*
+*Last updated: 2026-02-19 (Phase 4 Plan 01 complete -- 504 tests total, credential validator implemented)*
