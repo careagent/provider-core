@@ -4,24 +4,24 @@
 
 **Core Value:** A provider installs CareAgent into OpenClaw, completes an onboarding interview, and interacts with a personalized clinical agent that knows their specialty, speaks in their clinical voice, respects their scope boundaries, and logs every action to an immutable audit trail.
 
-**Current Focus:** Phase 4 (Clinical Skills) in progress. Skill framework core complete.
+**Current Focus:** Phase 4 (Clinical Skills) in progress. Chart-skill templates and voice adapter complete.
 
 ## Current Position
 
 **Phase:** 4 - Clinical Skills
-**Plan:** 02 of 05
+**Plan:** 03 of 05
 **Status:** In Progress
-**Progress:** [####------] 2/5 plans (Phase 4)
+**Progress:** [######----] 3/5 plans (Phase 4)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 22 |
+| Plans completed | 23 |
 | Plans failed | 0 |
 | Total requirements | 52 |
-| Requirements done | 36 |
-| Requirements remaining | 16 |
+| Requirements done | 38 |
+| Requirements remaining | 14 |
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -47,6 +47,7 @@
 | 3 | 04 | 226s | 3 | 4 |
 | 4 | 01 | 90s | 2 | 2 |
 | 4 | 02 | 140s | 2 | 7 |
+| 4 | 03 | 146s | 2 | 9 |
 
 ## Accumulated Context
 
@@ -139,6 +140,9 @@
 | Fail-fast integrity on first mismatch | 4-02 | Security boundary: one tampered file is sufficient to reject the entire skill |
 | Three-condition version update detection | 4-02 | pinned=true AND availableVersion provided AND differs from approved -- unpinned skills never report updates |
 | Immutable version approval with deep copies | 4-02 | approveVersion returns new manifest with copied requires/files objects, guaranteeing no mutation |
+| Three neurosurgery-specific templates with specialty sections | 4-03 | Neuromonitoring, Neurological Examination, Neurological Status, Implants/Hardware are neurosurgery differentiators |
+| Voice adapter uses spread-conditional pattern for undefined field omission | 4-03 | Same pattern as Phase 1 Plan 04; cleanly omits undefined fields without explicit if-checks |
+| SKILL.md in repo root skills/, TypeScript in src/skills/ | 4-03 | Clean separation: LLM-facing instructions loaded from disk at runtime vs compiled TypeScript source |
 
 ### Roadmap Evolution
 
@@ -166,18 +170,19 @@
 
 ### Last Session
 - **Date:** 2026-02-19
-- **Activity:** Phase 4 Plan 02 - Skill Framework Core
-- **Completed:** 04-02 -- types, manifest schema, integrity verification, version pinning; 39 new tests; 543 tests total
-- **Next:** Phase 4 Plan 03 (chart-skill templates, voice adapter, SKILL.md, manifest)
+- **Activity:** Phase 4 Plan 03 - Chart-Skill Templates and Voice Adapter
+- **Completed:** 04-03 -- three neurosurgery templates, voice adapter, SKILL.md, manifest; 23 new tests; 566 tests total
+- **Next:** Phase 4 Plan 04 (skill loader)
 
 ### Context for Next Session
-- Phase 4 (Clinical Skills) IN PROGRESS: 2/5 plans complete
-- src/skills/ module created with types.ts, manifest-schema.ts, integrity.ts, version-pin.ts
-- SkillManifest TypeBox schema validates skill-manifest.json files
-- SHA-256 integrity checker: computeSkillFileHash, computeSkillChecksums, verifySkillIntegrity
-- Version pinning: checkVersionPin detects updates, approveVersion creates immutable copy
+- Phase 4 (Clinical Skills) IN PROGRESS: 3/5 plans complete
+- src/skills/chart-skill/ module: templates (operative-note, h-and-p, progress-note), voice-adapter, index
+- skills/chart-skill/ root: SKILL.md (LLM instructions), skill-manifest.json (SHA-256 integrity)
+- Voice adapter bridges CANS ClinicalVoice to VoiceDirectives with instruction builder
+- buildChartSkillInstructions(voice?) generates complete system prompt injection text
 - Credential validator (04-01) checks license, specialty, privilege dimensions
-- 543 tests passing across 39 test files
+- Skill framework (04-02): types, manifest schema, integrity checker, version pinning
+- 566 tests passing across 40 test files
 - Build succeeds with all 4 entry points (index, openclaw, standalone, core)
 - VPS-only development -- never install on local OpenClaw
 - Zero runtime npm dependencies constraint
@@ -185,4 +190,4 @@
 
 ---
 *State initialized: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 4 Plan 02 complete -- 543 tests total, skill framework core implemented)*
+*Last updated: 2026-02-19 (Phase 4 Plan 03 complete -- 566 tests total, chart-skill templates and voice adapter implemented)*

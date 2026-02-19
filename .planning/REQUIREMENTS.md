@@ -65,8 +65,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SKIL-02**: Regular OpenClaw skills continue to load and function normally alongside clinical skills
 - [x] **SKIL-03**: Clinical skill integrity verification: SHA-256 checksumming at install, verification at load; modified skills do not load
 - [x] **SKIL-04**: Clinical skill version pinning: no auto-update; provider must explicitly approve version changes
-- [ ] **SKIL-05**: chart-skill generates template-constrained clinical documentation (not freeform) in the provider's clinical voice
-- [ ] **SKIL-06**: chart-skill includes neurosurgery-specific templates (operative note, H&P, progress note)
+- [x] **SKIL-05**: chart-skill generates template-constrained clinical documentation (not freeform) in the provider's clinical voice
+- [x] **SKIL-06**: chart-skill includes neurosurgery-specific templates (operative note, H&P, progress note)
 - [ ] **SKIL-07**: Skill installation, loading, and usage events are recorded in AUDIT.log
 
 ### CANS Continuous Improvement
@@ -173,8 +173,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SKIL-02 | Phase 4 | Pending |
 | SKIL-03 | Phase 4 | Complete |
 | SKIL-04 | Phase 4 | Complete |
-| SKIL-05 | Phase 4 | Pending |
-| SKIL-06 | Phase 4 | Pending |
+| SKIL-05 | Phase 4 | Complete |
+| SKIL-06 | Phase 4 | Complete |
 | SKIL-07 | Phase 4 | Pending |
 | CANS-08 | Phase 5 | Pending |
 | CANS-09 | Phase 5 | Pending |
@@ -195,4 +195,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-19 after Phase 3 completion*
+*Last updated: 2026-02-19 after Phase 4 Plan 03 completion (SKIL-05, SKIL-06 complete)*
