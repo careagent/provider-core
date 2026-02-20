@@ -37,7 +37,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Platform Portability
 
 - [x] **PORT-01**: PlatformAdapter interface abstracts host platform interactions; CareAgent subsystems never depend on a specific platform's raw API
-- [x] **PORT-02**: Platform detection duck-types the API object to automatically select the correct adapter (OpenClaw, standalone)
+- [ ] **PORT-02**: Platform detection duck-types the API object to automatically select the correct adapter (OpenClaw, standalone)
 - [x] **PORT-03**: Workspace file supplementation is configurable per platform via workspace profiles (OpenClaw: SOUL.md + AGENTS.md + USER.md; AGENTS.md standard: single AGENTS.md; standalone: no supplementation)
 - [x] **PORT-04**: Multiple entry points allow platform-specific or pure-library usage (`@careagent/provider-core`, `@careagent/provider-core/standalone`, `@careagent/provider-core/core`)
 
@@ -56,7 +56,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **ONBD-01**: `careagent init` CLI command initiates an interactive conversation that discovers clinical role, specialty, scope, philosophy, documentation voice, and autonomy preferences
 - [x] **ONBD-02**: Onboarding generates personalized CANS.md from interview responses with provider approval before finalizing
 - [x] **ONBD-03**: Onboarding writes clinical content into SOUL.md, AGENTS.md, and USER.md — supplementing (not replacing) existing content
-- [x] **ONBD-04**: `careagent status` CLI command shows activation state, CANS.md summary, hardening layer status, loaded clinical skills, and audit stats
+- [ ] **ONBD-04**: `careagent status` CLI command shows activation state, CANS.md summary, hardening layer status, loaded clinical skills, and audit stats
 - [x] **ONBD-05**: Onboarding supports iterative refinement — provider can review and adjust generated CANS.md before activation
 
 ### Clinical Skills
@@ -65,13 +65,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SKIL-02**: Regular OpenClaw skills continue to load and function normally alongside clinical skills
 - [x] **SKIL-03**: Clinical skill integrity verification: SHA-256 checksumming at install, verification at load; modified skills do not load
 - [x] **SKIL-04**: Clinical skill version pinning: no auto-update; provider must explicitly approve version changes
-- [x] **SKIL-05**: chart-skill generates template-constrained clinical documentation (not freeform) in the provider's clinical voice
-- [x] **SKIL-06**: chart-skill includes neurosurgery-specific templates (operative note, H&P, progress note)
+- [ ] **SKIL-05**: chart-skill generates template-constrained clinical documentation (not freeform) in the provider's clinical voice
+- [ ] **SKIL-06**: chart-skill includes neurosurgery-specific templates (operative note, H&P, progress note)
 - [x] **SKIL-07**: Skill installation, loading, and usage events are recorded in AUDIT.log
 
 ### CANS Continuous Improvement
 
-- [x] **CANS-08**: CareAgent can propose updates to CANS.md based on observed usage patterns
+- [ ] **CANS-08**: CareAgent can propose updates to CANS.md based on observed usage patterns
 - [x] **CANS-09**: Provider must approve or reject proposed CANS.md changes — no automatic modifications
 - [x] **CANS-10**: Every CANS.md modification (proposed, accepted, rejected) is recorded in AUDIT.log
 
@@ -156,10 +156,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ONBD-01 | Phase 2 | Complete |
 | ONBD-02 | Phase 2 | Complete |
 | ONBD-03 | Phase 2 | Complete |
-| ONBD-04 | Phase 2 | Complete |
+| ONBD-04 | Phase 7 | Pending |
 | ONBD-05 | Phase 2 | Complete |
 | PORT-01 | Portability | Complete |
-| PORT-02 | Portability | Complete |
+| PORT-02 | Phase 7 | Pending |
 | PORT-03 | Portability | Complete |
 | PORT-04 | Portability | Complete |
 | HARD-01 | Phase 3 | Complete |
@@ -173,10 +173,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SKIL-02 | Phase 4 | Complete |
 | SKIL-03 | Phase 4 | Complete |
 | SKIL-04 | Phase 4 | Complete |
-| SKIL-05 | Phase 4 | Complete |
-| SKIL-06 | Phase 4 | Complete |
+| SKIL-05 | Phase 7 | Pending |
+| SKIL-06 | Phase 7 | Pending |
 | SKIL-07 | Phase 4 | Complete |
-| CANS-08 | Phase 5 | Complete |
+| CANS-08 | Phase 7 | Pending |
 | CANS-09 | Phase 5 | Complete |
 | CANS-10 | Phase 5 | Complete |
 | INTG-01 | Phase 5 | Complete |
@@ -195,4 +195,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-19 after Phase 4 Plan 03 completion (SKIL-05, SKIL-06 complete)*
+*Last updated: 2026-02-19 after v1.0 milestone audit — 5 partial requirements reset and reassigned to Phase 7 gap closure*

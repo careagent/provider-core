@@ -2,7 +2,7 @@
 
 **Created:** 2026-02-17
 **Depth:** Comprehensive
-**Phases:** 6
+**Phases:** 7
 **Coverage:** 52/52 v1 requirements mapped
 
 ---
@@ -14,8 +14,9 @@
 - [x] **Phase 2.1: Architectural Alignment** - Restructure codebase to match README target architecture, expand CANS schema for ecosystem readiness, prepare module interfaces (INSERTED)
 - [x] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
 - [x] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
-- [ ] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
+- [x] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
 - [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
+- [ ] **Phase 7: Production Wiring Gap Closure** - All orphaned subsystem functions are connected to their production call sites
 
 ---
 
@@ -122,7 +123,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Refinement engine core: types, observation store, pattern matcher, proposal generator (CANS-08)
 - [x] 05-02-PLAN.md — Refinement engine orchestrator, CANS.md write-back, CLI proposals command, entry point wiring (CANS-08, CANS-09, CANS-10)
-- [ ] 05-03-PLAN.md — Integration tests: E2E flow, security review, developer install path, refinement lifecycle (INTG-01, INTG-02, INTG-03)
+- [x] 05-03-PLAN.md — Integration tests: E2E flow, security review, developer install path, refinement lifecycle (INTG-01, INTG-02, INTG-03)
 
 ### Phase 6: Documentation and Release
 **Goal:** Repository is open-source ready with comprehensive documentation that enables independent installation, understanding, and contribution
@@ -136,6 +137,19 @@ Plans:
   5. Repository has LICENSE (Apache 2.0), README, and CONTRIBUTING guide ready for public release
 **Plans:** TBD
 
+### Phase 7: Production Wiring Gap Closure
+**Goal:** Connect five orphaned subsystem functions to their production call sites, restoring two broken E2E flows and closing all integration gaps identified by the v1.0 milestone audit
+**Depends on:** Phase 5 (requires all subsystems to exist)
+**Requirements:** CANS-08, SKIL-05, SKIL-06, PORT-02, ONBD-04
+**Gap Closure:** Closes gaps from v1.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. `refinement.observe()` is called from at least one production code path, enabling the CANS Continuous Improvement E2E flow
+  2. `buildChartSkillInstructions()` is called by the skill loader after successful skill loading, injecting chart-skill templates into agent context
+  3. `detectPlatform()` is called by entry points to auto-select the correct platform adapter
+  4. `careagent status` displays loaded clinical skills alongside activation state, CANS summary, and hardening status
+  5. All existing 679+ tests continue passing; no regressions
+**Plans:** TBD
+
 ---
 
 ## Progress
@@ -147,8 +161,9 @@ Plans:
 | 2.1. Architectural Alignment | 4/4 | Complete | 2026-02-19 |
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
 | 4. Clinical Skills | 5/5 | Complete | 2026-02-19 |
-| 5. CANS Continuous Improvement and Integration | 0/3 | Planned | - |
+| 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
 | 6. Documentation and Release | 0/? | Not started | - |
+| 7. Production Wiring Gap Closure | 0/? | Not started | - |
 
 ---
 
@@ -177,10 +192,10 @@ Plans:
 | ONBD-01 | Phase 2 |
 | ONBD-02 | Phase 2 |
 | ONBD-03 | Phase 2 |
-| ONBD-04 | Phase 2 |
+| ONBD-04 | Phase 7 |
 | ONBD-05 | Phase 2 |
 | PORT-01 | Portability |
-| PORT-02 | Portability |
+| PORT-02 | Phase 7 |
 | PORT-03 | Portability |
 | PORT-04 | Portability |
 | HARD-01 | Phase 3 |
@@ -194,10 +209,10 @@ Plans:
 | SKIL-02 | Phase 4 |
 | SKIL-03 | Phase 4 |
 | SKIL-04 | Phase 4 |
-| SKIL-05 | Phase 4 |
-| SKIL-06 | Phase 4 |
+| SKIL-05 | Phase 7 |
+| SKIL-06 | Phase 7 |
 | SKIL-07 | Phase 4 |
-| CANS-08 | Phase 5 |
+| CANS-08 | Phase 7 |
 | CANS-09 | Phase 5 |
 | CANS-10 | Phase 5 |
 | INTG-01 | Phase 5 |
@@ -214,4 +229,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-19 (Phase 4 COMPLETE -- all 5 plans done, 608 tests, clinical skills wired into entry points)*
+*Last updated: 2026-02-19 (gap closure Phase 7 added per v1.0 milestone audit — 5 partial requirements reassigned)*
