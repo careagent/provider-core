@@ -38,6 +38,14 @@ All provider practice reduces to seven irreducible actions:
 | **Educate** | Yes | Comprehension verification |
 | **Coordinate** | Yes | Protocol-driven |
 
+**Chart** — documenting the clinical encounter. The note, the assessment, the plan. Every provider type charts — physicians dictate, nurses document assessments, therapists write treatment plans, social workers record psychosocial evaluations. This is the single largest time thief in modern healthcare and the safest entry point for AI delegation.
+
+**Order** — directing a clinical action to be carried out. A physician ordering a medication, a lab, or an imaging study. An NP prescribing. A PT ordering a modality. The order carries direct patient impact — what is ordered happens to a human being. Higher oversight tier than charting.
+
+**Charge** — translating the clinical encounter into a billable event. CPT and ICD coding, modifier selection, documentation-to-code alignment. Rules-based, auditable, and well-suited to AI delegation with periodic human audit.
+
+**Perform** — the hands-on clinical act itself. A surgeon operating, a nurse administering an injection, a phlebotomist drawing blood, a therapist performing manual therapy. The one action that currently requires the provider to be physically present. AI assists but does not replace the human performing the act.
+
 **Interpret** — rendering a formal clinical finding from raw data. A radiologist reading an MRI, a psychologist scoring a test battery, an audiologist interpreting an audiogram. CMS already bills this separately (professional component vs technical component). Distinct from performing the test and distinct from charting a note.
 
 **Educate** — structured patient/family health teaching or therapeutic counseling as a primary clinical act. RNs teach discharge instructions, PTs teach home exercises, pharmacists counsel on medications, genetic counselors counsel on risk. This is a billable, legally-scoped action across 13+ provider types. Not a procedure. Not documentation.
