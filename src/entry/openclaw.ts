@@ -12,6 +12,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { detectPlatform } from '../adapters/detect.js';
 import { createAdapter } from '../adapters/openclaw/index.js';
 import { ActivationGate } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
@@ -23,8 +24,12 @@ import { loadClinicalSkills } from '../skills/loader.js';
 import { createRefinementEngine } from '../refinement/index.js';
 
 export default function register(api: unknown): void {
+  // Step 0: Detect platform (PORT-02)
+  const platform = detectPlatform(api);
+
   // Step 1: Create adapter
   const adapter = createAdapter(api);
+  adapter.log('info', `[CareAgent] Platform detected: ${platform}`);
   const workspacePath = adapter.getWorkspacePath();
 
   // Step 2: Start audit pipeline (always active, even without CANS.md)

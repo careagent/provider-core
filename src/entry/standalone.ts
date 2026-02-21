@@ -10,6 +10,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { detectPlatform } from '../adapters/detect.js';
 import { createStandaloneAdapter } from '../adapters/standalone/index.js';
 import type { PlatformAdapter } from '../adapters/types.js';
 import { ActivationGate, type ActivationResult } from '../activation/gate.js';
@@ -41,7 +42,11 @@ export interface ActivateResult {
  * @param workspacePath - The workspace directory. Defaults to process.cwd().
  */
 export function activate(workspacePath?: string): ActivateResult {
+  // Step 0: Detect platform (PORT-02)
+  const platform = detectPlatform(undefined);
+
   const adapter = createStandaloneAdapter(workspacePath);
+  adapter.log('info', `[CareAgent] Platform detected: ${platform}`);
   const resolvedPath = adapter.getWorkspacePath();
 
   const audit = new AuditPipeline(resolvedPath);
