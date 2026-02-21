@@ -152,7 +152,10 @@ Plans:
   3. `detectPlatform()` is called by entry points to auto-select the correct platform adapter
   4. `careagent status` displays loaded clinical skills alongside activation state, CANS summary, and hardening status
   5. All existing 679+ tests continue passing; no regressions
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 07-01-PLAN.md — Entry point wiring: detectPlatform, buildChartSkillInstructions, refinement.observe, skill cache write (PORT-02, SKIL-05, SKIL-06, CANS-08, ONBD-04)
+- [ ] 07-02-PLAN.md — Status command skill display and integration tests for all five gaps (ONBD-04, CANS-08, SKIL-05, SKIL-06, PORT-02)
 
 ---
 
