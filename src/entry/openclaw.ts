@@ -21,6 +21,7 @@ import { registerCLI } from '../cli/commands.js';
 import { createHardeningEngine } from '../hardening/engine.js';
 import { createCredentialValidator } from '../credentials/validator.js';
 import { loadClinicalSkills } from '../skills/loader.js';
+import { CHART_SKILL_ID, buildChartSkillInstructions } from '../skills/chart-skill/index.js';
 import { createRefinementEngine } from '../refinement/index.js';
 
 export default function register(api: unknown): void {
@@ -94,6 +95,16 @@ export default function register(api: unknown): void {
     if (blockedSkills.length > 0) {
       adapter.log('warn', `[CareAgent] Blocked ${blockedSkills.length} clinical skill(s): ${blockedSkills.map(s => `${s.skillId} (${s.reason})`).join(', ')}`);
     }
+
+    // SKIL-05, SKIL-06: Inject chart-skill instructions into agent context if loaded
+    const chartSkillLoaded = loadedSkills.some(s => s.skillId === CHART_SKILL_ID);
+    if (chartSkillLoaded) {
+      const instructions = buildChartSkillInstructions(cans.voice);
+      adapter.onAgentBootstrap((context) => {
+        context.addFile('CHART_SKILL_INSTRUCTIONS', instructions);
+      });
+      adapter.log('info', '[CareAgent] Chart-skill instructions registered for agent bootstrap');
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     adapter.log('warn', `[CareAgent] Skill loading failed: ${msg}`);
@@ -115,6 +126,16 @@ export default function register(api: unknown): void {
       const io = createTerminalIO();
       await runProposalsCommand(refinement, io);
     },
+  });
+
+  // CANS-08: Feed session-start observation into refinement engine on agent bootstrap
+  adapter.onAgentBootstrap((_context) => {
+    refinement.observe({
+      category: 'skill_usage',
+      field_path: 'skills.chart',
+      declared_value: 'chart-skill',
+      observed_value: 'session_start',
+    });
   });
 
   // Step 7: Register audit integrity background service (AUDT-06)

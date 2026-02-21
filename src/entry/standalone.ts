@@ -19,6 +19,7 @@ import { createHardeningEngine } from '../hardening/engine.js';
 import type { HardeningEngine } from '../hardening/types.js';
 import { createCredentialValidator } from '../credentials/validator.js';
 import { loadClinicalSkills } from '../skills/loader.js';
+import { CHART_SKILL_ID, buildChartSkillInstructions } from '../skills/chart-skill/index.js';
 import type { SkillLoadResult } from '../skills/types.js';
 import { createRefinementEngine } from '../refinement/index.js';
 import type { RefinementEngine } from '../refinement/refinement-engine.js';
@@ -82,6 +83,16 @@ export function activate(workspacePath?: string): ActivateResult {
       const skillsDir = join(pluginRoot, 'skills');
       const validator = createCredentialValidator();
       skills = loadClinicalSkills(skillsDir, activation.document!, validator, audit);
+
+      // SKIL-05, SKIL-06: Inject chart-skill instructions if loaded
+      const loadedSkills = skills.filter(s => s.loaded);
+      const chartSkillLoaded = loadedSkills.some(s => s.skillId === CHART_SKILL_ID);
+      if (chartSkillLoaded) {
+        const instructions = buildChartSkillInstructions(activation.document!.voice);
+        adapter.onAgentBootstrap((context) => {
+          context.addFile('CHART_SKILL_INSTRUCTIONS', instructions);
+        });
+      }
     } catch {
       // Skills loading is non-fatal in standalone mode
     }
@@ -91,6 +102,16 @@ export function activate(workspacePath?: string): ActivateResult {
       workspacePath: resolvedPath,
       audit,
       sessionId: audit.getSessionId(),
+    });
+
+    // CANS-08: Feed session-start observation via bootstrap handler
+    adapter.onAgentBootstrap((_context) => {
+      refinement.observe({
+        category: 'skill_usage',
+        field_path: 'skills.chart',
+        declared_value: 'chart-skill',
+        observed_value: 'session_start',
+      });
     });
 
     return { adapter, audit, activation, engine, skills, refinement };
