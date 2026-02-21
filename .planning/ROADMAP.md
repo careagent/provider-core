@@ -16,7 +16,7 @@
 - [x] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
 - [x] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
 - [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
-- [ ] **Phase 7: Production Wiring Gap Closure** - All orphaned subsystem functions are connected to their production call sites
+- [x] **Phase 7: Production Wiring Gap Closure** - All orphaned subsystem functions are connected to their production call sites (completed 2026-02-21)
 
 ---
 
@@ -152,7 +152,7 @@ Plans:
   3. `detectPlatform()` is called by entry points to auto-select the correct platform adapter
   4. `careagent status` displays loaded clinical skills alongside activation state, CANS summary, and hardening status
   5. All existing 679+ tests continue passing; no regressions
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 07-01-PLAN.md — Entry point wiring: detectPlatform, buildChartSkillInstructions, refinement.observe, skill cache write (PORT-02, SKIL-05, SKIL-06, CANS-08, ONBD-04)
 - [ ] 07-02-PLAN.md — Status command skill display and integration tests for all five gaps (ONBD-04, CANS-08, SKIL-05, SKIL-06, PORT-02)
@@ -170,7 +170,7 @@ Plans:
 | 4. Clinical Skills | 5/5 | Complete | 2026-02-19 |
 | 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
 | 6. Documentation and Release | 0/3 | Planned | - |
-| 7. Production Wiring Gap Closure | 0/? | Not started | - |
+| 7. Production Wiring Gap Closure | 0/? | Complete    | 2026-02-21 |
 
 ---
 
