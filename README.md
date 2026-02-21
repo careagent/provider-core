@@ -33,7 +33,7 @@ All provider practice reduces to seven irreducible actions:
 | **Chart** | Yes | Post-hoc review |
 | **Order** | Yes | Pre-execution approval |
 | **Charge** | Yes | Periodic audit |
-| **Perform** | Not yet | Physician-present |
+| **Perform** | Not yet | Provider-present |
 | **Interpret** | Yes | Provider attestation |
 | **Educate** | Yes | Comprehension verification |
 | **Coordinate** | Yes | Protocol-driven |
