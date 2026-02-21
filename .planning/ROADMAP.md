@@ -135,7 +135,11 @@ Plans:
   3. Onboarding walkthrough guides a provider from `careagent init` through their first clinical documentation generation
   4. CANS.md schema, skill metadata format, and plugin configuration are fully documented with examples
   5. Repository has LICENSE (Apache 2.0), README, and CONTRIBUTING guide ready for public release
-**Plans:** TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 06-01-PLAN.md — Architecture guide and installation guide (DOCS-01, DOCS-02)
+- [ ] 06-02-PLAN.md — Onboarding walkthrough and configuration reference (DOCS-03, DOCS-04)
+- [ ] 06-03-PLAN.md — Open-source release artifacts and README slim-down (DOCS-05)
 
 ### Phase 7: Production Wiring Gap Closure
 **Goal:** Connect five orphaned subsystem functions to their production call sites, restoring two broken E2E flows and closing all integration gaps identified by the v1.0 milestone audit
@@ -162,7 +166,7 @@ Plans:
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
 | 4. Clinical Skills | 5/5 | Complete | 2026-02-19 |
 | 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
-| 6. Documentation and Release | 0/? | Not started | - |
+| 6. Documentation and Release | 0/3 | Planned | - |
 | 7. Production Wiring Gap Closure | 0/? | Not started | - |
 
 ---
