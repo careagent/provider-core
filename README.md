@@ -24,9 +24,9 @@ When no `CANS.md` is present, the plugin takes no action. The agent runs as stan
 
 ---
 
-## The Four Atomic Actions
+## The Seven Atomic Actions
 
-All provider practice reduces to four irreducible actions:
+All provider practice reduces to seven irreducible actions:
 
 | Action | Delegable to AI | Oversight Model |
 |--------|----------------|-----------------|
@@ -34,8 +34,17 @@ All provider practice reduces to four irreducible actions:
 | **Order** | Yes | Pre-execution approval |
 | **Charge** | Yes | Periodic audit |
 | **Perform** | Not yet | Physician-present |
+| **Interpret** | Yes | Provider attestation |
+| **Educate** | Yes | Comprehension verification |
+| **Coordinate** | Yes | Protocol-driven |
 
-@careagent/provider-core enables AI delegation of chart, order, and charge within defined autonomy tiers. The risk associated with every delegated action remains with the provider.
+**Interpret** — rendering a formal clinical finding from raw data. A radiologist reading an MRI, a psychologist scoring a test battery, an audiologist interpreting an audiogram. CMS already bills this separately (professional component vs technical component). Distinct from performing the test and distinct from charting a note.
+
+**Educate** — structured patient/family health teaching or therapeutic counseling as a primary clinical act. RNs teach discharge instructions, PTs teach home exercises, pharmacists counsel on medications, genetic counselors counsel on risk. This is a billable, legally-scoped action across 13+ provider types. Not a procedure. Not documentation.
+
+**Coordinate** — arranging care, making referrals, navigating systems on behalf of a patient. Primary function of LCSWs, care managers, CHWs. CMS bills this under CCM/TCM codes. It is not charting, ordering, billing, or performing.
+
+@careagent/provider-core enables AI delegation of chart, order, charge, interpret, educate, and coordinate within defined autonomy tiers. The risk associated with every delegated action remains with the provider.
 
 ---
 
