@@ -75,11 +75,11 @@ describe('ONBD-01: careagent init interview flow', () => {
     await expect(runInit(tmpDir, [...completeInterviewResponses])).resolves.not.toThrow();
   });
 
-  it('collects provider name, license type, specialty from interview', async () => {
+  it('collects provider name, types, specialty from interview', async () => {
     await runInit(tmpDir, [...completeInterviewResponses]);
     const content = readCANS(tmpDir);
     expect(content).toContain('Dr. Test Provider');
-    expect(content).toContain('MD');
+    expect(content).toContain('Physician');
     expect(content).toContain('Neurosurgery');
   });
 
@@ -229,12 +229,11 @@ describe('ONBD-03: Workspace file supplementation', () => {
     expect(content).toContain('NEVER');
   });
 
-  it('USER.md contains provider name and license', async () => {
+  it('USER.md contains provider name and credentials', async () => {
     await runInit(tmpDir, [...completeInterviewResponses]);
     const content = readWorkspaceFile(tmpDir, 'USER.md');
     expect(content).toContain('Dr. Test Provider');
     expect(content).toContain('MD');
-    expect(content).toContain('A12345');
   });
 
   it('pre-existing SOUL.md content is preserved after init', async () => {
@@ -272,7 +271,7 @@ describe('ONBD-05: Iterative refinement', () => {
   });
 
   it('edit provider name during review: CANS.md contains new name', async () => {
-    // Full 26 interview responses, then:
+    // Full interview responses, then:
     // "1" = edit provider (IDENTITY stage) in review menu
     // "Dr. Updated Name" = new name
     // "" = skip NPI
@@ -289,27 +288,6 @@ describe('ONBD-05: Iterative refinement', () => {
     await runInit(tmpDir, responses);
     const content = readCANS(tmpDir);
     expect(content).toContain('Dr. Updated Name');
-  });
-
-  it('toggle hardening flag during review: flag state is reflected in CANS.md', async () => {
-    // Full 26 interview responses, then:
-    // "8" = toggle hardening flags in review menu (index 8)
-    // "3" = toggle docker_sandbox (4th flag, 0-indexed = 3)
-    // "6" = done (index 6, which is the last "Done" option after 6 flags)
-    // "0" = approve
-    const interviewPart = completeInterviewResponses.slice(0, -1); // all except final '0'
-    const responses = [
-      ...interviewPart,
-      '8',  // review menu: toggle hardening flags
-      '3',  // select docker_sandbox (index 3)
-      '6',  // done (index 6 = Done option after 6 flag entries)
-      '0',  // approve
-    ];
-
-    await runInit(tmpDir, responses);
-    const content = readCANS(tmpDir);
-    // docker_sandbox defaults to true (defaultHardening); after toggle it should be false
-    expect(content).toContain('docker_sandbox: false');
   });
 });
 

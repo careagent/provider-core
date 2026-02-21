@@ -82,7 +82,7 @@ describe('RefinementEngine', () => {
   it('observe() appends to observation store with auto-generated timestamp and sessionId', () => {
     engine.observe({
       category: 'voice',
-      field_path: 'clinical_voice.tone',
+      field_path: 'voice.chart',
       declared_value: 'formal',
       observed_value: 'conversational',
     });
@@ -97,7 +97,7 @@ describe('RefinementEngine', () => {
     expect(obs.timestamp).toBeDefined();
     expect(obs.session_id).toBe('test-session-001');
     expect(obs.category).toBe('voice');
-    expect(obs.field_path).toBe('clinical_voice.tone');
+    expect(obs.field_path).toBe('voice.chart');
     expect(obs.declared_value).toBe('formal');
     expect(obs.observed_value).toBe('conversational');
   });
@@ -107,11 +107,11 @@ describe('RefinementEngine', () => {
   // -------------------------------------------------------------------------
 
   it('generateProposals() detects divergences and creates proposals in the queue', () => {
-    seedObservations(engine, 'clinical_voice.tone', 'voice', 'formal', 'conversational', 6);
+    seedObservations(engine, 'voice.chart', 'voice', 'formal', 'conversational', 6);
 
     const proposals = engine.generateProposals();
     expect(proposals).toHaveLength(1);
-    expect(proposals[0].field_path).toBe('clinical_voice.tone');
+    expect(proposals[0].field_path).toBe('voice.chart');
     expect(proposals[0].current_value).toBe('formal');
     expect(proposals[0].proposed_value).toBe('conversational');
     expect(proposals[0].status).toBe('pending');
@@ -123,7 +123,7 @@ describe('RefinementEngine', () => {
   });
 
   it('generateProposals() audit-logs each new proposal with cans_proposal_created', () => {
-    seedObservations(engine, 'clinical_voice.tone', 'voice', 'formal', 'conversational', 6);
+    seedObservations(engine, 'voice.chart', 'voice', 'formal', 'conversational', 6);
 
     const proposals = engine.generateProposals();
 
@@ -135,7 +135,7 @@ describe('RefinementEngine', () => {
 
     const details = createdEntries[0].details as Record<string, unknown>;
     expect(details.proposal_id).toBe(proposals[0].id);
-    expect(details.field_path).toBe('clinical_voice.tone');
+    expect(details.field_path).toBe('voice.chart');
     expect(details.category).toBe('voice');
     expect(details.observation_count).toBe(6);
     expect(details.evidence_summary).toBeDefined();
@@ -146,16 +146,16 @@ describe('RefinementEngine', () => {
   // -------------------------------------------------------------------------
 
   it('resolveProposal(accept) writes to CANS.md, updates hash, audit-logs cans_proposal_accepted', () => {
-    // Seed with clinical_voice data so the proposal is valid
+    // Seed with voice data so the proposal is valid
     const cansWithVoice = {
       ...validCANSData,
-      clinical_voice: { tone: 'formal', documentation_style: 'structured', eponyms: true, abbreviations: 'standard' },
+      voice: { chart: 'formal', order: 'structured', educate: 'standard' },
     };
     createCANSFile(workspacePath, cansWithVoice);
     // Re-create engine so it picks up the new file
     engine = createRefinementEngine({ workspacePath, audit, sessionId: 'test-session-001' });
 
-    seedObservations(engine, 'clinical_voice.tone', 'voice', 'formal', 'conversational', 6);
+    seedObservations(engine, 'voice.chart', 'voice', 'formal', 'conversational', 6);
     const proposals = engine.generateProposals();
     const proposalId = proposals[0].id;
 
@@ -165,8 +165,8 @@ describe('RefinementEngine', () => {
     const cansContent = readFileSync(join(workspacePath, 'CANS.md'), 'utf-8');
     const parsed = parseFrontmatter(cansContent);
     expect(parsed.frontmatter).not.toBeNull();
-    const voice = parsed.frontmatter!.clinical_voice as Record<string, unknown>;
-    expect(voice.tone).toBe('conversational');
+    const voice = parsed.frontmatter!.voice as Record<string, unknown>;
+    expect(voice.chart).toBe('conversational');
 
     // Verify integrity hash was updated
     const integrityPath = join(workspacePath, '.careagent', 'cans-integrity.json');
@@ -186,7 +186,7 @@ describe('RefinementEngine', () => {
   // -------------------------------------------------------------------------
 
   it('resolveProposal(reject) updates proposal status, audit-logs cans_proposal_rejected', () => {
-    seedObservations(engine, 'clinical_voice.tone', 'voice', 'formal', 'conversational', 6);
+    seedObservations(engine, 'voice.chart', 'voice', 'formal', 'conversational', 6);
     const proposals = engine.generateProposals();
     const proposalId = proposals[0].id;
 
@@ -209,7 +209,7 @@ describe('RefinementEngine', () => {
   // -------------------------------------------------------------------------
 
   it('resolveProposal(defer) updates proposal status, audit-logs cans_proposal_deferred', () => {
-    seedObservations(engine, 'clinical_voice.tone', 'voice', 'formal', 'conversational', 6);
+    seedObservations(engine, 'voice.chart', 'voice', 'formal', 'conversational', 6);
     const proposals = engine.generateProposals();
     const proposalId = proposals[0].id;
 
@@ -292,8 +292,8 @@ describe('RefinementEngine', () => {
 
   it('getPendingProposals returns pending and deferred proposals', () => {
     // Seed enough observations for two different field paths
-    seedObservations(engine, 'clinical_voice.tone', 'voice', 'formal', 'conversational', 6);
-    seedObservations(engine, 'clinical_voice.abbreviations', 'voice', 'standard', 'minimal', 6);
+    seedObservations(engine, 'voice.chart', 'voice', 'formal', 'conversational', 6);
+    seedObservations(engine, 'voice.order', 'voice', 'standard', 'minimal', 6);
 
     const proposals = engine.generateProposals();
     expect(proposals).toHaveLength(2);

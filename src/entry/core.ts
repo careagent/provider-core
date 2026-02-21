@@ -77,8 +77,8 @@ export { createProtocolServer } from '../protocol/index.js';
 
 // CANS schema extensions
 export type {
-  NeuronConfig,
-  SkillGatingRule,
-  SkillGating,
+  Organization,
+  Voice,
+  Skills,
   CrossInstallationConsent,
 } from '../activation/cans-schema.js';

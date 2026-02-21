@@ -66,12 +66,12 @@ describe('Refinement Engine E2E Integration', () => {
       sessionId: 'test-session',
     });
 
-    // Record 6 observations of voice tone divergence
+    // Record 6 observations of voice.chart divergence
     for (let i = 0; i < 6; i++) {
       engine.observe({
         category: 'voice',
-        field_path: 'clinical_voice.tone',
-        declared_value: 'formal',
+        field_path: 'voice.chart',
+        declared_value: 'formal, structured templates',
         observed_value: 'conversational',
       });
     }
@@ -81,7 +81,7 @@ describe('Refinement Engine E2E Integration', () => {
     expect(proposals.length).toBe(1);
 
     const proposal = proposals[0];
-    expect(proposal.field_path).toBe('clinical_voice.tone');
+    expect(proposal.field_path).toBe('voice.chart');
     expect(proposal.proposed_value).toBe('conversational');
 
     // Assert: AUDIT.log has cans_proposal_created entry
@@ -93,13 +93,13 @@ describe('Refinement Engine E2E Integration', () => {
     // Accept the proposal
     engine.resolveProposal(proposal.id, 'accept');
 
-    // Read CANS.md -- verify clinical_voice.tone is now 'conversational'
+    // Read CANS.md -- verify voice.chart is now 'conversational'
     const cansPath = join(tmpDir, 'CANS.md');
     const updatedContent = readFileSync(cansPath, 'utf-8');
     const parsed = parseFrontmatter(updatedContent);
     expect(parsed.frontmatter).toBeDefined();
-    const clinicalVoice = (parsed.frontmatter as Record<string, unknown>).clinical_voice as Record<string, unknown>;
-    expect(clinicalVoice.tone).toBe('conversational');
+    const voice = (parsed.frontmatter as Record<string, unknown>).voice as Record<string, unknown>;
+    expect(voice.chart).toBe('conversational');
 
     // Verify integrity: hash was updated correctly
     const integrity = verifyIntegrity(tmpDir, updatedContent);
@@ -150,8 +150,8 @@ describe('Refinement Engine E2E Integration', () => {
     for (let i = 0; i < 5; i++) {
       engine.observe({
         category: 'voice',
-        field_path: 'clinical_voice.documentation_style',
-        declared_value: 'structured',
+        field_path: 'voice.order',
+        declared_value: 'concise',
         observed_value: 'narrative',
       });
     }
@@ -165,8 +165,8 @@ describe('Refinement Engine E2E Integration', () => {
     for (let i = 0; i < 5; i++) {
       engine.observe({
         category: 'voice',
-        field_path: 'clinical_voice.documentation_style',
-        declared_value: 'structured',
+        field_path: 'voice.order',
+        declared_value: 'concise',
         observed_value: 'narrative',
       });
     }
@@ -178,8 +178,8 @@ describe('Refinement Engine E2E Integration', () => {
     for (let i = 0; i < 5; i++) {
       engine.observe({
         category: 'voice',
-        field_path: 'clinical_voice.documentation_style',
-        declared_value: 'structured',
+        field_path: 'voice.order',
+        declared_value: 'concise',
         observed_value: 'narrative',
       });
     }
@@ -193,7 +193,7 @@ describe('Refinement Engine E2E Integration', () => {
     expect(allResurfaced.length).toBeGreaterThanOrEqual(1);
 
     const resurfacedProposal = allResurfaced.find(
-      (p) => p.field_path === 'clinical_voice.documentation_style',
+      (p) => p.field_path === 'voice.order',
     );
     expect(resurfacedProposal).toBeDefined();
     expect(resurfacedProposal!.observation_count).toBeGreaterThan(5);
@@ -213,8 +213,8 @@ describe('Refinement Engine E2E Integration', () => {
     for (let i = 0; i < 6; i++) {
       engine1.observe({
         category: 'voice',
-        field_path: 'clinical_voice.abbreviations',
-        declared_value: 'standard medical',
+        field_path: 'voice.order',
+        declared_value: 'concise',
         observed_value: 'minimal',
       });
     }

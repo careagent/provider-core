@@ -9,7 +9,6 @@ import {
   askOptionalText,
   askSelect,
   askConfirm,
-  askLicenseType,
   askAutonomyTier,
 } from '../../../src/cli/prompts.js';
 
@@ -101,38 +100,6 @@ describe('askConfirm', () => {
   it('returns false when response is "n"', async () => {
     const io = createMockIO(['n']);
     expect(await askConfirm(io, 'Confirm?')).toBe(false);
-  });
-});
-
-describe('askLicenseType', () => {
-  it('returns "MD" for index 0', async () => {
-    const io = createMockIO(['0']);
-    expect(await askLicenseType(io)).toBe('MD');
-  });
-
-  it('returns "DO" for index 1', async () => {
-    const io = createMockIO(['1']);
-    expect(await askLicenseType(io)).toBe('DO');
-  });
-
-  it('returns "NP" for index 2', async () => {
-    const io = createMockIO(['2']);
-    expect(await askLicenseType(io)).toBe('NP');
-  });
-
-  it('returns "PA" for index 3', async () => {
-    const io = createMockIO(['3']);
-    expect(await askLicenseType(io)).toBe('PA');
-  });
-
-  it('returns "CRNA" for index 4', async () => {
-    const io = createMockIO(['4']);
-    expect(await askLicenseType(io)).toBe('CRNA');
-  });
-
-  it('returns "PsyD" for index 7 (last)', async () => {
-    const io = createMockIO(['7']);
-    expect(await askLicenseType(io)).toBe('PsyD');
   });
 });
 

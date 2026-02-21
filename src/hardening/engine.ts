@@ -4,6 +4,9 @@
  * Implements HARD-05 (Safety Guard), HARD-06 (Audit Trail Integration),
  * and HARD-07 (before_tool_call canary) by wiring layers, audit logging,
  * canary lifecycle, and adapter hooks into a single integration point.
+ *
+ * Hardening is always on (deterministic, hardcoded in plugin) — not
+ * configurable via CANS.
  */
 
 import type { ToolCallEvent, ToolCallResult } from '../adapters/types.js';
@@ -94,10 +97,9 @@ export function createHardeningEngine(): HardeningEngine {
       });
 
       // Register bootstrap handler for CANS protocol injection (HARD-03)
+      // Always on — hardening is deterministic
       adapter.onAgentBootstrap((context) => {
-        if (cans.hardening.cans_protocol_injection) {
-          injectProtocol(context, cans);
-        }
+        injectProtocol(context, cans);
       });
     },
 

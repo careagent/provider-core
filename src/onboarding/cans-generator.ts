@@ -39,26 +39,25 @@ export function generateCANSContent(data: CANSDocument, philosophy: string): Gen
   // Step 3: Generate markdown body
   const provider = data.provider;
   const autonomy = data.autonomy;
-  const hardening = data.hardening;
 
+  const primaryOrg = provider.organizations.find((o) => o.primary) ?? provider.organizations[0];
+
+  const specialtyLine = provider.specialty
+    ? `Specialty: ${provider.specialty}\n`
+    : '';
   const subspecialtyLine = provider.subspecialty
     ? `Subspecialty: ${provider.subspecialty}\n`
     : '';
-  const institutionLine = provider.institution
-    ? `Institution: ${provider.institution}\n`
+  const orgLine = primaryOrg
+    ? `Organization: ${primaryOrg.name}\n`
     : '';
-
-  const hardeningLines = Object.entries(hardening)
-    .map(([flag, value]) => `- ${flag}: ${value ? 'enabled' : 'disabled'}`)
-    .join('\n');
 
   const body = `# Care Agent Nervous System
 
 ## Provider Summary
 
-${provider.name} (${provider.license.type})
-Specialty: ${provider.specialty}
-${subspecialtyLine}${institutionLine}
+${provider.name} (${provider.types.join(', ')})
+${specialtyLine}${subspecialtyLine}${orgLine}
 ## Clinical Philosophy
 
 ${philosophy}
@@ -71,11 +70,9 @@ ${philosophy}
 | Order | ${autonomy.order} |
 | Charge | ${autonomy.charge} |
 | Perform | ${autonomy.perform} |
-
-## Hardening Configuration
-
-All hardening layers are enabled by default for maximum safety.
-${hardeningLines}`;
+| Interpret | ${autonomy.interpret} |
+| Educate | ${autonomy.educate} |
+| Coordinate | ${autonomy.coordinate} |`;
 
   // Step 4: Assemble full content
   const content = `---\n${yaml}---\n\n${body}`;
@@ -91,8 +88,8 @@ ${hardeningLines}`;
 export function generatePreview(data: CANSDocument, philosophy: string): string {
   const provider = data.provider;
   const autonomy = data.autonomy;
-  const hardening = data.hardening;
   const consent = data.consent;
+  const primaryOrg = provider.organizations.find((o) => o.primary) ?? provider.organizations[0];
 
   const lines: string[] = [];
 
@@ -101,14 +98,25 @@ export function generatePreview(data: CANSDocument, philosophy: string): string 
   lines.push('================================================================================');
   lines.push('');
   lines.push('Provider');
-  lines.push(`  Name:     ${provider.name}`);
-  lines.push(`  License:  ${provider.license.type} — ${provider.license.state} #${provider.license.number}`);
-  lines.push(`  Specialty: ${provider.specialty}`);
-  if (provider.subspecialty) {
-    lines.push(`  Subspecialty: ${provider.subspecialty}`);
+  lines.push(`  Name:           ${provider.name}`);
+  lines.push(`  Types:          ${provider.types.join(', ')}`);
+  if (provider.degrees.length > 0) {
+    lines.push(`  Degrees:        ${provider.degrees.join(', ')}`);
   }
-  if (provider.institution) {
-    lines.push(`  Institution: ${provider.institution}`);
+  if (provider.licenses.length > 0) {
+    lines.push(`  Licenses:       ${provider.licenses.join(', ')}`);
+  }
+  if (provider.certifications.length > 0) {
+    lines.push(`  Certifications: ${provider.certifications.join(', ')}`);
+  }
+  if (provider.specialty) {
+    lines.push(`  Specialty:      ${provider.specialty}`);
+  }
+  if (provider.subspecialty) {
+    lines.push(`  Subspecialty:   ${provider.subspecialty}`);
+  }
+  if (primaryOrg) {
+    lines.push(`  Organization:   ${primaryOrg.name}`);
   }
 
   lines.push('');
@@ -117,22 +125,20 @@ export function generatePreview(data: CANSDocument, philosophy: string): string 
 
   lines.push('');
   lines.push('Autonomy Tiers');
-  lines.push(`  Chart:   ${autonomy.chart}`);
-  lines.push(`  Order:   ${autonomy.order}`);
-  lines.push(`  Charge:  ${autonomy.charge}`);
-  lines.push(`  Perform: ${autonomy.perform}`);
-
-  lines.push('');
-  lines.push('Hardening Flags');
-  for (const [flag, value] of Object.entries(hardening)) {
-    lines.push(`  ${flag}: ${value ? 'ON' : 'OFF'}`);
-  }
+  lines.push(`  Chart:      ${autonomy.chart}`);
+  lines.push(`  Order:      ${autonomy.order}`);
+  lines.push(`  Charge:     ${autonomy.charge}`);
+  lines.push(`  Perform:    ${autonomy.perform}`);
+  lines.push(`  Interpret:  ${autonomy.interpret}`);
+  lines.push(`  Educate:    ${autonomy.educate}`);
+  lines.push(`  Coordinate: ${autonomy.coordinate}`);
 
   lines.push('');
   lines.push('Consent');
   lines.push(`  HIPAA warning acknowledged: ${consent.hipaa_warning_acknowledged ? 'yes' : 'no'}`);
   lines.push(`  Synthetic data only:        ${consent.synthetic_data_only ? 'yes' : 'no'}`);
   lines.push(`  Audit consent:              ${consent.audit_consent ? 'yes' : 'no'}`);
+  lines.push(`  Acknowledged at:            ${consent.acknowledged_at}`);
 
   lines.push('');
   lines.push('================================================================================');

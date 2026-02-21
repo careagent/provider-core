@@ -144,7 +144,7 @@ describe('reviewLoop — edit provider then approve', () => {
 describe('reviewLoop — edit autonomy then approve', () => {
   it('written CANS.md reflects new autonomy tiers after editing', async () => {
     // Choice 7 → edit autonomy
-    // Then: 4 autonomy tier selects (all manual = index 2)
+    // Then: 7 autonomy tier selects (all manual = index 2)
     // Then: choice 0 → approve
     const io = createMockIO([
       '7',  // select "Edit autonomy tiers"
@@ -152,6 +152,9 @@ describe('reviewLoop — edit autonomy then approve', () => {
       '2',  // order: manual
       '2',  // charge: manual
       '2',  // perform: manual
+      '2',  // interpret: manual
+      '2',  // educate: manual
+      '2',  // coordinate: manual
       '0',  // approve
     ]);
 
@@ -165,6 +168,9 @@ describe('reviewLoop — edit autonomy then approve', () => {
     expect(frontmatter.autonomy.order).toBe('manual');
     expect(frontmatter.autonomy.charge).toBe('manual');
     expect(frontmatter.autonomy.perform).toBe('manual');
+    expect(frontmatter.autonomy.interpret).toBe('manual');
+    expect(frontmatter.autonomy.educate).toBe('manual');
+    expect(frontmatter.autonomy.coordinate).toBe('manual');
   });
 
   it('written CANS.md passes round-trip validation after autonomy edit', async () => {
@@ -174,6 +180,9 @@ describe('reviewLoop — edit autonomy then approve', () => {
       '1',  // supervised
       '1',  // supervised
       '2',  // manual
+      '2',  // manual
+      '2',  // manual
+      '2',  // manual
       '0',
     ]);
 
@@ -182,73 +191,6 @@ describe('reviewLoop — edit autonomy then approve', () => {
     const content = readCANS(workspacePath);
     const parsed = parseFrontmatter(content);
     expect(Value.Check(CANSSchema, parsed.frontmatter)).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Toggle hardening and approve
-// ---------------------------------------------------------------------------
-
-describe('reviewLoop — toggle hardening then approve', () => {
-  it('written CANS.md reflects toggled hardening flag', async () => {
-    // validCANSData.hardening.tool_policy_lockdown = true
-    // After toggle: it should become false
-
-    // Choice 8 → toggle hardening
-    // Inner loop: select index 0 (tool_policy_lockdown) to toggle
-    // Inner loop: select index 6 (Done) to exit
-    // Choice 0 → approve
-    const io = createMockIO([
-      '8',  // select "Toggle hardening flags"
-      '0',  // toggle flag at index 0 (tool_policy_lockdown)
-      '6',  // Done (index 6 = 7th option = Done)
-      '0',  // approve
-    ]);
-
-    await reviewLoop(io, makeResult(), workspacePath, audit);
-
-    const content = readCANS(workspacePath);
-    const parsed = parseFrontmatter(content);
-    const frontmatter = parsed.frontmatter as CANSDocument;
-
-    // tool_policy_lockdown was true, now should be false after toggle
-    expect(frontmatter.hardening.tool_policy_lockdown).toBe(false);
-  });
-
-  it('written CANS.md passes round-trip validation after hardening toggle', async () => {
-    const io = createMockIO([
-      '8',
-      '0',  // toggle tool_policy_lockdown
-      '6',  // Done
-      '0',
-    ]);
-
-    await reviewLoop(io, makeResult(), workspacePath, audit);
-
-    const content = readCANS(workspacePath);
-    const parsed = parseFrontmatter(content);
-    expect(Value.Check(CANSSchema, parsed.frontmatter)).toBe(true);
-  });
-
-  it('toggling docker_sandbox flag changes its value', async () => {
-    // validCANSData.hardening.docker_sandbox = false
-    // docker_sandbox is at index 3 in the hardening object entries
-    // Object.entries order: tool_policy_lockdown(0), exec_approval(1), cans_protocol_injection(2), docker_sandbox(3), safety_guard(4), audit_trail(5)
-    const io = createMockIO([
-      '8',  // toggle hardening
-      '3',  // toggle docker_sandbox (index 3)
-      '6',  // Done
-      '0',  // approve
-    ]);
-
-    await reviewLoop(io, makeResult(), workspacePath, audit);
-
-    const content = readCANS(workspacePath);
-    const parsed = parseFrontmatter(content);
-    const frontmatter = parsed.frontmatter as CANSDocument;
-
-    // docker_sandbox was false, now should be true
-    expect(frontmatter.hardening.docker_sandbox).toBe(true);
   });
 });
 

@@ -1,7 +1,7 @@
 /**
  * Security review integration tests (INTG-02).
  *
- * Validates all six hardening layers correctly block unauthorized actions
+ * Validates all hardening layers correctly block unauthorized actions
  * in realistic scenarios with the synthetic neurosurgeon persona.
  *
  * Layers tested:
@@ -218,16 +218,11 @@ describe('INTG-02: Security Review', () => {
 
   describe('Layer 4: Docker Sandbox Detection (HARD-04)', () => {
     it('reports Docker status without blocking', () => {
-      // Enable docker_sandbox flag
-      const cansWithDocker = {
-        ...cans,
-        hardening: { ...cans.hardening, docker_sandbox: true },
-      } as CANSDocument;
-
+      // Hardening is always on (hardcoded in plugin), no need to set cans.hardening
       const engine = createHardeningEngine();
       const localAdapter = createMockAdapter(tmpDir);
       const localAudit = new AuditPipeline(tmpDir, 'docker-test');
-      engine.activate({ cans: cansWithDocker, adapter: localAdapter, audit: localAudit });
+      engine.activate({ cans, adapter: localAdapter, audit: localAudit });
 
       // Check a permitted tool to go through all layers
       const result = engine.check({ toolName: 'chart_operative_note' });
@@ -314,7 +309,7 @@ describe('INTG-02: Security Review', () => {
       const engine = createHardeningEngine();
       engine.activate({ cans, adapter, audit });
 
-      // prescribe_controlled_substances is in prohibited_actions
+      // prescribe_controlled_substances is not in scope.permitted_actions (whitelist-only)
       const result = engine.check({ toolName: 'prescribe_controlled_substances' });
       expect(result.allowed).toBe(false);
       expect(result.layer).toBe('tool-policy');
@@ -402,13 +397,13 @@ describe('INTG-02: Security Review', () => {
         sessionId: 'scope-test',
       });
 
-      // Record 12 observations targeting scope.prohibited_actions
+      // Record 12 observations targeting scope.permitted_actions
       for (let i = 0; i < 12; i++) {
         engine.observe({
           category: 'voice',
-          field_path: 'scope.prohibited_actions',
-          declared_value: ['prescribe_controlled_substances'],
-          observed_value: [],
+          field_path: 'scope.permitted_actions',
+          declared_value: ['chart_operative_note'],
+          observed_value: ['chart_operative_note', 'prescribe_controlled_substances'],
         });
       }
 
@@ -428,8 +423,8 @@ describe('INTG-02: Security Review', () => {
       for (let i = 0; i < 6; i++) {
         engine.observe({
           category: 'voice',
-          field_path: 'clinical_voice.tone',
-          declared_value: 'formal',
+          field_path: 'voice.chart',
+          declared_value: 'formal, structured templates',
           observed_value: 'conversational',
         });
       }
@@ -447,7 +442,7 @@ describe('INTG-02: Security Review', () => {
       // Tamper with the proposal in the queue file to target scope field
       const queuePath = join(tmpDir, '.careagent', 'proposals.json');
       const queueContent = JSON.parse(readFileSync(queuePath, 'utf-8'));
-      queueContent.proposals[0].field_path = 'scope.prohibited_actions';
+      queueContent.proposals[0].field_path = 'scope.permitted_actions';
       queueContent.proposals[0].proposed_value = [];
       writeFileSync(queuePath, JSON.stringify(queueContent, null, 2));
 

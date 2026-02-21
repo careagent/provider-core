@@ -8,20 +8,35 @@ describe('CANSSchema', () => {
     expect(Value.Check(CANSSchema, validCANSData)).toBe(true);
   });
 
-  it('validates without optional clinical_voice', () => {
+  it('validates without optional voice', () => {
     const data = { ...validCANSData };
-    // clinical_voice is not set — should still pass
+    // voice is not set — should still pass
     expect(Value.Check(CANSSchema, data)).toBe(true);
   });
 
-  it('validates with clinical_voice present', () => {
+  it('validates with voice present', () => {
     const data = {
       ...validCANSData,
-      clinical_voice: {
-        tone: 'direct',
-        documentation_style: 'structured',
-        eponyms: true,
-        abbreviations: 'standard',
+      voice: {
+        chart: 'direct, structured operative notes',
+        order: 'formal order entry language',
+        interpret: 'concise radiology reads',
+      },
+    };
+    expect(Value.Check(CANSSchema, data)).toBe(true);
+  });
+
+  it('validates with voice containing all seven fields', () => {
+    const data = {
+      ...validCANSData,
+      voice: {
+        chart: 'structured',
+        order: 'formal',
+        charge: 'billing-precise',
+        perform: 'step-by-step',
+        interpret: 'concise',
+        educate: 'patient-friendly',
+        coordinate: 'interdisciplinary',
       },
     };
     expect(Value.Check(CANSSchema, data)).toBe(true);
@@ -30,6 +45,12 @@ describe('CANSSchema', () => {
   it('validates without optional provider.npi', () => {
     const data = structuredClone(validCANSData);
     delete (data.provider as Record<string, unknown>).npi;
+    expect(Value.Check(CANSSchema, data)).toBe(true);
+  });
+
+  it('validates without optional provider.specialty', () => {
+    const data = structuredClone(validCANSData);
+    delete (data.provider as Record<string, unknown>).specialty;
     expect(Value.Check(CANSSchema, data)).toBe(true);
   });
 
@@ -46,22 +67,40 @@ describe('CANSSchema', () => {
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
 
-    it('rejects invalid license type', () => {
+    it('rejects empty provider.types array (minItems: 1)', () => {
       const data = structuredClone(validCANSData);
-      (data.provider.license as Record<string, unknown>).type = 'RN';
+      data.provider.types = [];
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
 
-    it('rejects state that is too long', () => {
+    it('accepts provider with multiple types', () => {
       const data = structuredClone(validCANSData);
-      data.provider.license.state = 'California';
-      expect(Value.Check(CANSSchema, data)).toBe(false);
+      data.provider.types = ['Physician', 'Surgeon'];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
     });
 
-    it('rejects state that is too short', () => {
+    it('accepts provider with multiple degrees', () => {
       const data = structuredClone(validCANSData);
-      data.provider.license.state = 'T';
-      expect(Value.Check(CANSSchema, data)).toBe(false);
+      data.provider.degrees = ['MD', 'PhD'];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts provider with empty degrees array', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.degrees = [];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts provider with empty licenses array', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.licenses = [];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts provider with empty certifications array', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.certifications = [];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
     });
 
     it('rejects invalid NPI format (too short)', () => {
@@ -76,9 +115,59 @@ describe('CANSSchema', () => {
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
 
-    it('rejects empty privileges array', () => {
+    it('rejects empty organizations array (minItems: 1)', () => {
       const data = structuredClone(validCANSData);
-      data.provider.privileges = [];
+      data.provider.organizations = [];
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('accepts organization with only name (minimal)', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.organizations = [{ name: 'General Hospital', primary: true }];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('rejects organization with empty name', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.organizations = [{ name: '', primary: true }];
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('accepts organization with department and neuron fields', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.organizations = [
+        {
+          name: 'University Medical Center',
+          department: 'Neurosurgery',
+          privileges: ['neurosurgical procedures'],
+          neuron_endpoint: 'https://neuron.example.com',
+          neuron_registration_id: 'reg-123',
+          primary: true,
+        },
+      ];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts multiple organizations', () => {
+      const data = structuredClone(validCANSData);
+      data.provider.organizations = [
+        { name: 'University Medical Center', primary: true },
+        { name: 'Community Hospital', primary: false },
+      ];
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts valid credential_status values', () => {
+      for (const status of ['active', 'pending', 'expired'] as const) {
+        const data = structuredClone(validCANSData);
+        data.provider.credential_status = status;
+        expect(Value.Check(CANSSchema, data)).toBe(true);
+      }
+    });
+
+    it('rejects invalid credential_status value', () => {
+      const data = structuredClone(validCANSData);
+      (data.provider as Record<string, unknown>).credential_status = 'revoked';
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
   });
@@ -94,6 +183,12 @@ describe('CANSSchema', () => {
       const data = structuredClone(validCANSData);
       data.scope.permitted_actions = [];
       expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('accepts scope with only permitted_actions (no prohibited/limitations)', () => {
+      const data = structuredClone(validCANSData);
+      data.scope = { permitted_actions: ['chart_operative_note'] };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
     });
   });
 
@@ -115,101 +210,107 @@ describe('CANSSchema', () => {
       delete (data.autonomy as Record<string, unknown>).order;
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
-  });
 
-  describe('hardening validation', () => {
-    it('rejects missing hardening fields', () => {
+    it('rejects missing autonomy.charge', () => {
       const data = structuredClone(validCANSData);
-      delete (data.hardening as Record<string, unknown>).tool_policy_lockdown;
+      delete (data.autonomy as Record<string, unknown>).charge;
       expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects missing autonomy.perform', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.autonomy as Record<string, unknown>).perform;
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects missing autonomy.interpret', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.autonomy as Record<string, unknown>).interpret;
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects missing autonomy.educate', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.autonomy as Record<string, unknown>).educate;
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects missing autonomy.coordinate', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.autonomy as Record<string, unknown>).coordinate;
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('accepts all valid tier values for each action', () => {
+      for (const tier of ['autonomous', 'supervised', 'manual'] as const) {
+        const data = structuredClone(validCANSData);
+        data.autonomy.chart = tier;
+        data.autonomy.order = tier;
+        data.autonomy.charge = tier;
+        data.autonomy.perform = tier;
+        data.autonomy.interpret = tier;
+        data.autonomy.educate = tier;
+        data.autonomy.coordinate = tier;
+        expect(Value.Check(CANSSchema, data)).toBe(true);
+      }
     });
   });
 
   describe('consent validation', () => {
-    it('rejects missing consent fields', () => {
+    it('rejects missing hipaa_warning_acknowledged', () => {
       const data = structuredClone(validCANSData);
       delete (data.consent as Record<string, unknown>).hipaa_warning_acknowledged;
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
-  });
 
-  describe('neuron validation', () => {
-    it('accepts valid CANS data without neuron field', () => {
-      expect(Value.Check(CANSSchema, validCANSData)).toBe(true);
-    });
-
-    it('accepts valid neuron config with all fields', () => {
-      const data = {
-        ...validCANSData,
-        neuron: {
-          endpoint: 'https://neuron.example.com',
-          registration_id: 'reg-123',
-          auto_register: true,
-        },
-      };
-      expect(Value.Check(CANSSchema, data)).toBe(true);
-    });
-
-    it('accepts neuron config with only required endpoint', () => {
-      const data = {
-        ...validCANSData,
-        neuron: { endpoint: 'https://neuron.example.com' },
-      };
-      expect(Value.Check(CANSSchema, data)).toBe(true);
-    });
-
-    it('rejects neuron config without endpoint', () => {
-      const data = {
-        ...validCANSData,
-        neuron: {},
-      };
+    it('rejects missing acknowledged_at', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.consent as Record<string, unknown>).acknowledged_at;
       expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects missing synthetic_data_only', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.consent as Record<string, unknown>).synthetic_data_only;
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('rejects missing audit_consent', () => {
+      const data = structuredClone(validCANSData);
+      delete (data.consent as Record<string, unknown>).audit_consent;
+      expect(Value.Check(CANSSchema, data)).toBe(false);
+    });
+
+    it('accepts valid ISO 8601 timestamp for acknowledged_at', () => {
+      const data = structuredClone(validCANSData);
+      data.consent.acknowledged_at = '2026-02-21T12:30:00.000Z';
+      expect(Value.Check(CANSSchema, data)).toBe(true);
     });
   });
 
   describe('skills validation', () => {
-    it('accepts valid CANS data without skills field', () => {
-      expect(Value.Check(CANSSchema, validCANSData)).toBe(true);
-    });
-
-    it('accepts valid skill gating rules', () => {
-      const data = {
-        ...validCANSData,
-        skills: {
-          rules: [
-            {
-              skill_id: 'chart-skill',
-              requires_license: ['MD', 'DO'],
-              requires_specialty: ['neurosurgery'],
-            },
-          ],
-        },
-      };
+    it('accepts skills with empty authorized array', () => {
+      const data = structuredClone(validCANSData);
+      data.skills = { authorized: [] };
       expect(Value.Check(CANSSchema, data)).toBe(true);
     });
 
-    it('accepts empty skill gating rules array', () => {
-      const data = {
-        ...validCANSData,
-        skills: { rules: [] },
-      };
+    it('accepts skills with authorized skill IDs', () => {
+      const data = structuredClone(validCANSData);
+      data.skills = { authorized: ['chart-skill', 'order-skill'] };
       expect(Value.Check(CANSSchema, data)).toBe(true);
     });
 
-    it('rejects skill gating rule without skill_id', () => {
-      const data = {
-        ...validCANSData,
-        skills: { rules: [{}] },
-      };
+    it('rejects skills without authorized field', () => {
+      const data = structuredClone(validCANSData);
+      (data as Record<string, unknown>).skills = {};
       expect(Value.Check(CANSSchema, data)).toBe(false);
     });
 
-    it('accepts skill gating rule with only skill_id', () => {
-      const data = {
-        ...validCANSData,
-        skills: { rules: [{ skill_id: 'chart-skill' }] },
-      };
-      expect(Value.Check(CANSSchema, data)).toBe(true);
+    it('rejects skills with authorized containing empty string', () => {
+      const data = structuredClone(validCANSData);
+      data.skills = { authorized: ['chart-skill', ''] };
+      expect(Value.Check(CANSSchema, data)).toBe(false);
     });
   });
 
@@ -224,16 +325,7 @@ describe('CANSSchema', () => {
         cross_installation: {
           allow_inbound: true,
           allow_outbound: false,
-          require_neuron_verification: true,
         },
-      };
-      expect(Value.Check(CANSSchema, data)).toBe(true);
-    });
-
-    it('accepts cross_installation without require_neuron_verification', () => {
-      const data = {
-        ...validCANSData,
-        cross_installation: { allow_inbound: true, allow_outbound: true },
       };
       expect(Value.Check(CANSSchema, data)).toBe(true);
     });
@@ -255,30 +347,19 @@ describe('CANSSchema', () => {
     });
   });
 
-  describe('combined new fields', () => {
-    it('accepts CANS data with all three new optional fields', () => {
+  describe('voice validation', () => {
+    it('accepts voice with subset of fields', () => {
       const data = {
         ...validCANSData,
-        neuron: {
-          endpoint: 'https://neuron.example.com',
-          registration_id: 'reg-456',
-          auto_register: false,
-        },
-        skills: {
-          rules: [
-            {
-              skill_id: 'chart-skill',
-              requires_license: ['MD'],
-              requires_specialty: ['neurosurgery'],
-              requires_privilege: ['neurosurgical procedures'],
-            },
-          ],
-        },
-        cross_installation: {
-          allow_inbound: true,
-          allow_outbound: true,
-          require_neuron_verification: true,
-        },
+        voice: { chart: 'structured operative notes' },
+      };
+      expect(Value.Check(CANSSchema, data)).toBe(true);
+    });
+
+    it('accepts empty voice object (all fields optional)', () => {
+      const data = {
+        ...validCANSData,
+        voice: {},
       };
       expect(Value.Check(CANSSchema, data)).toBe(true);
     });

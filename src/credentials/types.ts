@@ -2,10 +2,8 @@
  * Credential validator types — interfaces for provider credential verification.
  *
  * Covers SKIL-01 requirement: validate that a provider's credentials
- * (license type, specialty, institutional privileges) satisfy a clinical
- * skill's minimum requirements before allowing activation.
- *
- * These are stub interfaces — implementation arrives in Phase 4.
+ * (types, licenses, certifications, specialty, institutional privileges)
+ * satisfy a clinical skill's minimum requirements before allowing activation.
  */
 
 import type { CANSDocument } from '../activation/cans-schema.js';
@@ -14,8 +12,10 @@ import type { CANSDocument } from '../activation/cans-schema.js';
 export interface CredentialCheckResult {
   valid: boolean;
   provider: string;
-  licenseType: string;
-  specialty: string;
+  types: string[];
+  licenses: string[];
+  certifications: string[];
+  specialty?: string;
   missingCredentials?: string[];
   reason?: string;
 }
@@ -31,7 +31,10 @@ export interface CredentialValidator {
   check(
     cans: CANSDocument,
     requiredCredentials: {
-      license?: string[];
+      types?: string[];
+      degrees?: string[];
+      licenses?: string[];
+      certifications?: string[];
       specialty?: string[];
       privilege?: string[];
     },

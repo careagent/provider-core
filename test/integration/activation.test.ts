@@ -110,13 +110,12 @@ describe('Activation Gate Integration', () => {
       expect(typeof result.document!.version).toBe('string');
       expect(typeof result.document!.provider.name).toBe('string');
       expect(typeof result.document!.autonomy.chart).toBe('string');
-      expect(typeof result.document!.hardening.tool_policy_lockdown).toBe('boolean');
       expect(typeof result.document!.consent.hipaa_warning_acknowledged).toBe('boolean');
     });
 
-    it('rejects CANS.md with missing required field (no provider.license)', () => {
+    it('rejects CANS.md with missing required field (no provider.types)', () => {
       const invalid = JSON.parse(JSON.stringify(validCANSData));
-      delete invalid.provider.license;
+      delete invalid.provider.types;
 
       createCANSFile(tmpDir, invalid);
       const gate = new ActivationGate(tmpDir, auditCallback);
@@ -127,7 +126,7 @@ describe('Activation Gate Integration', () => {
       expect(result.errors!.length).toBeGreaterThan(0);
       // Error path should reference the missing field
       const paths = result.errors!.map(e => e.path);
-      expect(paths.some(p => p.includes('provider') || p.includes('license'))).toBe(true);
+      expect(paths.some(p => p.includes('provider') || p.includes('types'))).toBe(true);
     });
 
     it('rejects CANS.md with wrong type (autonomy.chart as non-literal)', () => {
@@ -176,13 +175,15 @@ describe('Activation Gate Integration', () => {
       const doc = result.document!;
       expect(doc.provider.name).toBe('Dr. Test Provider');
       expect(doc.provider.npi).toBe('1234567890');
-      expect(doc.provider.license.type).toBe('MD');
-      expect(doc.provider.license.state).toBe('TX');
-      expect(doc.provider.license.number).toBe('A12345');
-      expect(doc.provider.license.verified).toBe(false);
+      expect(doc.provider.types).toEqual(['Physician']);
+      expect(doc.provider.degrees).toEqual(['MD']);
+      expect(doc.provider.licenses).toEqual(['MD-TX-A12345']);
+      expect(doc.provider.certifications).toEqual(['ABNS Board Certified']);
       expect(doc.provider.specialty).toBe('Neurosurgery');
-      expect(doc.provider.institution).toBe('University Medical Center');
-      expect(doc.provider.privileges).toEqual(['neurosurgical procedures', 'spine surgery']);
+      expect(doc.provider.organizations).toHaveLength(1);
+      expect(doc.provider.organizations[0].name).toBe('University Medical Center');
+      expect(doc.provider.organizations[0].privileges).toEqual(['neurosurgical procedures', 'spine surgery']);
+      expect(doc.provider.organizations[0].primary).toBe(true);
     });
 
     it('CANS-03: document has scope of practice fields', () => {
@@ -193,7 +194,6 @@ describe('Activation Gate Integration', () => {
       expect(result.active).toBe(true);
       const doc = result.document!;
       expect(doc.scope.permitted_actions).toContain('chart_operative_note');
-      expect(doc.scope.prohibited_actions).toContain('prescribe_controlled_substances');
     });
 
     it('CANS-04: document has autonomy tier fields', () => {
@@ -207,9 +207,12 @@ describe('Activation Gate Integration', () => {
       expect(doc.autonomy.order).toBe('supervised');
       expect(doc.autonomy.charge).toBe('supervised');
       expect(doc.autonomy.perform).toBe('manual');
+      expect(doc.autonomy.interpret).toBe('manual');
+      expect(doc.autonomy.educate).toBe('manual');
+      expect(doc.autonomy.coordinate).toBe('manual');
     });
 
-    it('CANS-05: document has hardening flags and consent config', () => {
+    it('CANS-05: document has consent config with acknowledged_at', () => {
       createCANSFile(tmpDir, validCANSData);
       const gate = new ActivationGate(tmpDir, auditCallback);
       const result = gate.check();
@@ -217,18 +220,11 @@ describe('Activation Gate Integration', () => {
       expect(result.active).toBe(true);
       const doc = result.document!;
 
-      // Hardening
-      expect(doc.hardening.tool_policy_lockdown).toBe(true);
-      expect(doc.hardening.exec_approval).toBe(true);
-      expect(doc.hardening.cans_protocol_injection).toBe(true);
-      expect(doc.hardening.docker_sandbox).toBe(false);
-      expect(doc.hardening.safety_guard).toBe(true);
-      expect(doc.hardening.audit_trail).toBe(true);
-
       // Consent
       expect(doc.consent.hipaa_warning_acknowledged).toBe(true);
       expect(doc.consent.synthetic_data_only).toBe(true);
       expect(doc.consent.audit_consent).toBe(true);
+      expect(doc.consent.acknowledged_at).toBe('2026-02-21T00:00:00.000Z');
     });
   });
 
@@ -317,7 +313,7 @@ describe('Activation Gate Integration', () => {
 
     it('triggers audit callback on validation error', () => {
       // Valid frontmatter structure but missing required fields
-      createCANSFile(tmpDir, { version: '1.0', provider: { name: 'Test' } });
+      createCANSFile(tmpDir, { version: '2.0', provider: { name: 'Test' } });
       const gate = new ActivationGate(tmpDir, auditCallback);
       gate.check();
 

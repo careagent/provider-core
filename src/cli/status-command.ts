@@ -80,10 +80,6 @@ function checkIntegrity(workspacePath: string): string {
   }
 }
 
-function onOff(value: boolean): string {
-  return value ? 'on' : 'off';
-}
-
 export function formatStatus(workspacePath: string): string {
   const gate = new ActivationGate(workspacePath, () => { /* no-op */ });
   const result = gate.check();
@@ -104,16 +100,19 @@ export function formatStatus(workspacePath: string): string {
   if (result.active && result.document) {
     const doc = result.document;
     lines.push('');
+    const primaryOrg = doc.provider.organizations.find((o) => o.primary) ?? doc.provider.organizations[0];
     lines.push(`Provider:         ${doc.provider.name}`);
-    lines.push(`License:          ${doc.provider.license.type} (${doc.provider.license.state}) #${doc.provider.license.number}`);
-    lines.push(`Specialty:        ${doc.provider.specialty}`);
+    lines.push(`Types:            ${doc.provider.types.join(', ')}`);
+    if (doc.provider.specialty) {
+      lines.push(`Specialty:        ${doc.provider.specialty}`);
+    }
 
     if (doc.provider.subspecialty) {
       lines.push(`Subspecialty:     ${doc.provider.subspecialty}`);
     }
 
-    if (doc.provider.institution) {
-      lines.push(`Institution:      ${doc.provider.institution}`);
+    if (primaryOrg) {
+      lines.push(`Organization:     ${primaryOrg.name}`);
     }
 
     lines.push('');
@@ -122,15 +121,12 @@ export function formatStatus(workspacePath: string): string {
     lines.push(`  Order:          ${doc.autonomy.order}`);
     lines.push(`  Charge:         ${doc.autonomy.charge}`);
     lines.push(`  Perform:        ${doc.autonomy.perform}`);
+    lines.push(`  Interpret:      ${doc.autonomy.interpret}`);
+    lines.push(`  Educate:        ${doc.autonomy.educate}`);
+    lines.push(`  Coordinate:     ${doc.autonomy.coordinate}`);
 
     lines.push('');
-    lines.push('Hardening Layers:');
-    lines.push(`  Tool Policy:    ${onOff(doc.hardening.tool_policy_lockdown)}`);
-    lines.push(`  Exec Approval:  ${onOff(doc.hardening.exec_approval)}`);
-    lines.push(`  CANS Injection: ${onOff(doc.hardening.cans_protocol_injection)}`);
-    lines.push(`  Docker Sandbox: ${onOff(doc.hardening.docker_sandbox)}`);
-    lines.push(`  Safety Guard:   ${onOff(doc.hardening.safety_guard)}`);
-    lines.push(`  Audit Trail:    ${onOff(doc.hardening.audit_trail)}`);
+    lines.push('Hardening: always on (deterministic)');
   }
 
   lines.push('');

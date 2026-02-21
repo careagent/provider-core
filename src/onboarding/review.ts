@@ -11,7 +11,7 @@ import type { InterviewResult, InterviewState } from './engine.js';
 import { InterviewStage, runSingleStage, runInterview } from './engine.js';
 import { generateCANSContent, generatePreview } from './cans-generator.js';
 import { updateKnownGoodHash } from '../activation/cans-integrity.js';
-import type { CANSDocument, Hardening } from '../activation/cans-schema.js';
+import type { CANSDocument } from '../activation/cans-schema.js';
 
 // ---------------------------------------------------------------------------
 // Stage-to-menu mapping
@@ -30,13 +30,12 @@ const MENU_TO_STAGE: Record<number, InterviewStage> = {
 const REVIEW_MENU_OPTIONS = [
   'Approve and save',
   'Edit provider information (name, NPI)',
-  'Edit credentials (license type, state, number)',
-  'Edit specialty and institution',
-  'Edit scope (permitted/prohibited actions)',
+  'Edit credentials (types, degrees, licenses, certifications)',
+  'Edit specialty and organizations',
+  'Edit scope (permitted actions)',
   'Edit clinical philosophy',
   'Edit clinical voice',
   'Edit autonomy tiers',
-  'Toggle hardening flags',
   'Start over (full re-interview)',
 ];
 
@@ -101,7 +100,7 @@ export async function reviewLoop(
         outcome: 'allowed',
         details: {
           provider: currentData.provider.name,
-          specialty: currentData.provider.specialty,
+          specialty: currentData.provider.specialty ?? 'none',
         },
       });
 
@@ -135,16 +134,8 @@ export async function reviewLoop(
       continue;
     }
 
-    // Step 7: Toggle hardening flags (8)
+    // Step 7: Start over (8)
     if (choice === 8) {
-      await toggleHardeningLoop(io, currentData, (updated) => {
-        currentData = { ...currentData, hardening: updated };
-      });
-      continue;
-    }
-
-    // Step 8: Start over (9)
-    if (choice === 9) {
       io.display('');
       io.display('Starting full re-interview...');
       io.display('');
@@ -152,44 +143,6 @@ export async function reviewLoop(
       currentData = newResult.data;
       currentPhilosophy = newResult.philosophy;
       continue;
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// toggleHardeningLoop — inner loop for flag toggling
-// ---------------------------------------------------------------------------
-
-async function toggleHardeningLoop(
-  io: InterviewIO,
-  currentData: CANSDocument,
-  onUpdate: (updated: Hardening) => void,
-): Promise<void> {
-  let hardening: Hardening = { ...currentData.hardening };
-
-  while (true) {
-    const flagEntries = Object.entries(hardening) as Array<[keyof Hardening, boolean]>;
-
-    io.display('');
-    io.display('Hardening Flags (select to toggle):');
-
-    const options = [
-      ...flagEntries.map(([flag, value]) => `${flag}: ${value ? 'enabled' : 'disabled'}`),
-      'Done',
-    ];
-
-    const idx = await io.select('Select a flag to toggle (or Done):', options);
-
-    // Last option is "Done"
-    if (idx === flagEntries.length) {
-      onUpdate(hardening);
-      return;
-    }
-
-    if (idx >= 0 && idx < flagEntries.length) {
-      const [flag] = flagEntries[idx];
-      hardening = { ...hardening, [flag]: !hardening[flag] };
-      io.display(`Toggled ${flag}: now ${hardening[flag] ? 'enabled' : 'disabled'}`);
     }
   }
 }

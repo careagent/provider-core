@@ -27,6 +27,11 @@ describe('generateSoulContent', () => {
     expect(result).toContain('Neurosurgery');
   });
 
+  it('includes provider types', () => {
+    const result = generateSoulContent(validCANSData, philosophy);
+    expect(result).toContain('Physician');
+  });
+
   it('includes philosophy text', () => {
     const result = generateSoulContent(validCANSData, philosophy);
     expect(result).toContain(philosophy);
@@ -38,66 +43,27 @@ describe('generateSoulContent', () => {
     expect(result).toContain('chart_progress_note');
   });
 
-  it('includes prohibited actions section when present', () => {
+  it('includes organization name', () => {
     const result = generateSoulContent(validCANSData, philosophy);
-    expect(result).toContain('prescribe_controlled_substances');
-    expect(result).toContain('NEVER');
+    expect(result).toContain('University Medical Center');
   });
 
-  it('omits prohibited actions section when empty', () => {
+  it('includes voice directives when present', () => {
     const data: CANSDocument = {
       ...validCANSData,
-      scope: {
-        ...validCANSData.scope,
-        prohibited_actions: [],
+      voice: {
+        chart: 'formal, structured templates',
+        order: 'concise',
       },
     };
     const result = generateSoulContent(data, philosophy);
-    expect(result).not.toContain('NEVER assist');
+    expect(result).toContain('chart: formal, structured templates');
+    expect(result).toContain('order: concise');
   });
 
-  it('omits prohibited actions section when field is undefined', () => {
-    const data: CANSDocument = {
-      ...validCANSData,
-      scope: {
-        permitted_actions: validCANSData.scope.permitted_actions,
-      },
-    };
-    const result = generateSoulContent(data, philosophy);
-    expect(result).not.toContain('NEVER assist');
-  });
-
-  it('includes clinical voice settings when present', () => {
-    const data: CANSDocument = {
-      ...validCANSData,
-      clinical_voice: {
-        tone: 'formal',
-        documentation_style: 'SOAP',
-        eponyms: true,
-        abbreviations: 'standard',
-      },
-    };
-    const result = generateSoulContent(data, philosophy);
-    expect(result).toContain('Tone: formal');
-    expect(result).toContain('Documentation style: SOAP');
-    expect(result).toContain('Use medical eponyms: yes');
-    expect(result).toContain('Abbreviation style: standard');
-  });
-
-  it('includes eponyms: no when eponyms is false', () => {
-    const data: CANSDocument = {
-      ...validCANSData,
-      clinical_voice: {
-        eponyms: false,
-      },
-    };
-    const result = generateSoulContent(data, philosophy);
-    expect(result).toContain('Use medical eponyms: no');
-  });
-
-  it('omits voice section when clinical_voice is undefined', () => {
-    const { clinical_voice: _cv, ...rest } = validCANSData as CANSDocument;
-    const data: CANSDocument = rest;
+  it('omits voice section when voice is undefined', () => {
+    const { voice: _v, ...rest } = validCANSData as CANSDocument;
+    const data: CANSDocument = rest as CANSDocument;
     const result = generateSoulContent(data, philosophy);
     expect(result).not.toContain('## Voice');
   });
@@ -128,34 +94,20 @@ describe('generateAgentsContent', () => {
     expect(result).toContain('NEVER provide clinical advice outside Neurosurgery scope');
   });
 
-  it('references correct autonomy tiers', () => {
+  it('references correct autonomy tiers for all 7 actions', () => {
     const result = generateAgentsContent(validCANSData);
     expect(result).toContain('Chart=autonomous');
     expect(result).toContain('Order=supervised');
     expect(result).toContain('Charge=supervised');
     expect(result).toContain('Perform=manual');
+    expect(result).toContain('Interpret=manual');
+    expect(result).toContain('Educate=manual');
+    expect(result).toContain('Coordinate=manual');
   });
 
   it('includes synthetic data warning', () => {
     const result = generateAgentsContent(validCANSData);
     expect(result).toContain('SYNTHETIC DATA ONLY');
-  });
-
-  it('includes prohibited actions in rule 2', () => {
-    const result = generateAgentsContent(validCANSData);
-    expect(result).toContain('prescribe_controlled_substances');
-  });
-
-  it('shows "none defined" when no prohibited actions', () => {
-    const data: CANSDocument = {
-      ...validCANSData,
-      scope: {
-        ...validCANSData.scope,
-        prohibited_actions: [],
-      },
-    };
-    const result = generateAgentsContent(data);
-    expect(result).toContain('none defined');
   });
 
   it('includes audit compliance section', () => {
@@ -176,11 +128,21 @@ describe('generateAgentsContent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateUserContent', () => {
-  it('includes provider name, license, and specialty', () => {
+  it('includes provider name, types, and specialty', () => {
     const result = generateUserContent(validCANSData);
     expect(result).toContain('Dr. Test Provider');
-    expect(result).toContain('MD (TX) #A12345');
+    expect(result).toContain('Physician');
     expect(result).toContain('Neurosurgery');
+  });
+
+  it('includes degrees when present', () => {
+    const result = generateUserContent(validCANSData);
+    expect(result).toContain('MD');
+  });
+
+  it('includes licenses when present', () => {
+    const result = generateUserContent(validCANSData);
+    expect(result).toContain('MD-TX-A12345');
   });
 
   it('includes NPI when present', () => {
@@ -197,12 +159,15 @@ describe('generateUserContent', () => {
     expect(result).not.toContain('NPI:');
   });
 
-  it('includes autonomy preferences', () => {
+  it('includes all 7 autonomy preferences', () => {
     const result = generateUserContent(validCANSData);
     expect(result).toContain('Chart autonomy: autonomous');
     expect(result).toContain('Order autonomy: supervised');
     expect(result).toContain('Charge autonomy: supervised');
     expect(result).toContain('Perform autonomy: manual');
+    expect(result).toContain('Interpret autonomy: manual');
+    expect(result).toContain('Educate autonomy: manual');
+    expect(result).toContain('Coordinate autonomy: manual');
   });
 
   it('includes subspecialty when present', () => {
@@ -219,9 +184,9 @@ describe('generateUserContent', () => {
     expect(result).not.toContain('Subspecialty:');
   });
 
-  it('includes institution when present', () => {
+  it('includes organization when present', () => {
     const result = generateUserContent(validCANSData);
-    expect(result).toContain('Institution: University Medical Center');
+    expect(result).toContain('University Medical Center');
   });
 
   it('shows "active" as default credential status', () => {

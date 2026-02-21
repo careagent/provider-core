@@ -11,38 +11,44 @@ export const completeInterviewResponses: string[] = [
   'Dr. Test Provider',
   // Identity: NPI (optional)
   '1234567890',
-  // Credentials: license type (0 = MD)
-  '0',
-  // Credentials: state
-  'TX',
-  // Credentials: license number
-  'A12345',
-  // Specialty: primary specialty
+  // Credentials: types (comma-separated)
+  'Physician',
+  // Credentials: degrees (optional, comma-separated)
+  'MD',
+  // Credentials: licenses (optional, comma-separated)
+  'MD-TX-A12345',
+  // Credentials: certifications (optional, comma-separated)
+  'ABNS Board Certified',
+  // Specialty: primary specialty (optional)
   'Neurosurgery',
   // Specialty: subspecialty (optional)
   'Spine',
-  // Specialty: institution (optional)
+  // Specialty: organization name
   'University Medical Center',
-  // Specialty: privileges (comma-separated)
+  // Specialty: department (optional)
+  '',
+  // Specialty: privileges (optional, comma-separated)
   'neurosurgical procedures, spine surgery',
   // Specialty: credential status (0 = active)
   '0',
   // Scope: permitted actions (comma-separated)
   'chart_operative_note, chart_progress_note, chart_h_and_p',
-  // Scope: prohibited actions (optional)
-  'prescribe_controlled_substances',
-  // Scope: institutional limitations (optional)
-  'no_pediatric_cases',
   // Philosophy: clinical philosophy
   'Evidence-based neurosurgical practice with emphasis on minimally invasive techniques and shared decision-making with patients.',
-  // Voice: tone (optional)
-  'formal',
-  // Voice: documentation style (0 = concise)
-  '0',
-  // Voice: eponyms
-  'y',
-  // Voice: abbreviation style (0 = standard)
-  '0',
+  // Voice: chart directive (optional)
+  'formal, structured templates',
+  // Voice: order directive (optional)
+  'concise',
+  // Voice: charge directive (optional)
+  '',
+  // Voice: perform directive (optional)
+  '',
+  // Voice: interpret directive (optional)
+  '',
+  // Voice: educate directive (optional)
+  '',
+  // Voice: coordinate directive (optional)
+  '',
   // Autonomy: chart tier (0 = autonomous)
   '0',
   // Autonomy: order tier (1 = supervised)
@@ -50,6 +56,12 @@ export const completeInterviewResponses: string[] = [
   // Autonomy: charge tier (1 = supervised)
   '1',
   // Autonomy: perform tier (2 = manual)
+  '2',
+  // Autonomy: interpret tier (2 = manual)
+  '2',
+  // Autonomy: educate tier (2 = manual)
+  '2',
+  // Autonomy: coordinate tier (2 = manual)
   '2',
   // Consent: HIPAA warning acknowledgment
   'y',
@@ -69,38 +81,44 @@ export const minimalInterviewResponses: string[] = [
   'Dr. Minimal Provider',
   // Identity: NPI (optional — skip)
   '',
-  // Credentials: license type (1 = DO)
-  '1',
-  // Credentials: state
-  'CA',
-  // Credentials: license number
-  'B99999',
-  // Specialty: primary specialty
-  'Internal Medicine',
+  // Credentials: types (comma-separated)
+  'Physician',
+  // Credentials: degrees (optional — skip)
+  '',
+  // Credentials: licenses (optional — skip)
+  '',
+  // Credentials: certifications (optional — skip)
+  '',
+  // Specialty: primary specialty (optional — skip)
+  '',
   // Specialty: subspecialty (optional — skip)
   '',
-  // Specialty: institution (optional — skip)
+  // Specialty: organization name
+  'Community Clinic',
+  // Specialty: department (optional — skip)
   '',
-  // Specialty: privileges
-  'general medical care',
+  // Specialty: privileges (optional — skip)
+  '',
   // Specialty: credential status (0 = active)
   '0',
   // Scope: permitted actions
   'chart_progress_note',
-  // Scope: prohibited actions (optional — skip)
-  '',
-  // Scope: institutional limitations (optional — skip)
-  '',
   // Philosophy: clinical philosophy
   'Patient-centered care with focus on preventive medicine and chronic disease management.',
-  // Voice: tone (optional — skip)
+  // Voice: chart (optional — skip)
   '',
-  // Voice: documentation style (1 = narrative)
-  '1',
-  // Voice: eponyms
-  'n',
-  // Voice: abbreviation style (1 = minimal)
-  '1',
+  // Voice: order (optional — skip)
+  '',
+  // Voice: charge (optional — skip)
+  '',
+  // Voice: perform (optional — skip)
+  '',
+  // Voice: interpret (optional — skip)
+  '',
+  // Voice: educate (optional — skip)
+  '',
+  // Voice: coordinate (optional — skip)
+  '',
   // Autonomy: chart (0 = autonomous)
   '0',
   // Autonomy: order (1 = supervised)
@@ -108,6 +126,12 @@ export const minimalInterviewResponses: string[] = [
   // Autonomy: charge (1 = supervised)
   '1',
   // Autonomy: perform (2 = manual)
+  '2',
+  // Autonomy: interpret (2 = manual)
+  '2',
+  // Autonomy: educate (2 = manual)
+  '2',
+  // Autonomy: coordinate (2 = manual)
   '2',
   // Consent: HIPAA
   'y',

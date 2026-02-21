@@ -1,33 +1,31 @@
 /**
- * Voice adapter — bridges ClinicalVoice (CANS schema) to VoiceDirectives
+ * Voice adapter — bridges Voice (CANS schema v2) to VoiceDirectives
  * (skill framework types) and generates human-readable voice instructions.
+ *
+ * In v2, Voice maps to 7 atomic actions (chart, order, charge, perform,
+ * interpret, educate, coordinate). For the chart skill, we extract the
+ * chart-specific directive.
  */
 
-import type { ClinicalVoice } from '../../activation/cans-schema.js';
+import type { Voice } from '../../activation/cans-schema.js';
 import type { VoiceDirectives } from '../types.js';
 
 /**
- * Extract VoiceDirectives from a ClinicalVoice configuration.
+ * Extract VoiceDirectives from a Voice configuration.
  *
- * Maps CANS schema field names (snake_case) to skill framework field
- * names (camelCase). Only includes fields that are defined in the input.
+ * In v2, the Voice schema contains per-action string directives.
+ * For backward compatibility with the VoiceDirectives interface,
+ * we map the chart action directive to the tone field.
  */
 export function extractVoiceDirectives(
-  voice?: ClinicalVoice | null,
+  voice?: Voice | null,
 ): VoiceDirectives {
   if (!voice) {
     return {};
   }
 
   return {
-    ...(voice.tone !== undefined && { tone: voice.tone }),
-    ...(voice.documentation_style !== undefined && {
-      documentationStyle: voice.documentation_style,
-    }),
-    ...(voice.eponyms !== undefined && { useEponyms: voice.eponyms }),
-    ...(voice.abbreviations !== undefined && {
-      abbreviationStyle: voice.abbreviations,
-    }),
+    ...(voice.chart !== undefined && { tone: voice.chart }),
   };
 }
 

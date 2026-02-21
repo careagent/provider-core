@@ -5,13 +5,13 @@
  * when the agent executes Bash/exec tool calls.
  *
  * Evaluation order:
- * 1. If exec_approval disabled -> pass-through
- * 2. If not a Bash/exec tool call -> pass-through (not an exec call)
- * 3. Extract first token from command
- * 4. If empty -> deny
- * 5. If token in BASE_ALLOWLIST -> allow
- * 6. Otherwise -> deny
+ * 1. If not a Bash/exec tool call -> pass-through (not an exec call)
+ * 2. Extract first token from command
+ * 3. If empty -> deny
+ * 4. If token in BASE_ALLOWLIST -> allow
+ * 5. Otherwise -> deny
  *
+ * Hardening is always on (deterministic, hardcoded in plugin).
  * The allowlist is conservative: read-only utilities and git.
  * Additional binaries can be added per-installation in future phases.
  */
@@ -41,12 +41,8 @@ const EXEC_TOOL_NAMES = new Set(['Bash', 'exec']);
 
 export function checkExecAllowlist(
   event: ToolCallEvent,
-  cans: CANSDocument,
+  _cans: CANSDocument,
 ): HardeningLayerResult {
-  if (!cans.hardening.exec_approval) {
-    return { layer: LAYER_NAME, allowed: true, reason: 'exec_approval disabled' };
-  }
-
   if (!EXEC_TOOL_NAMES.has(event.toolName)) {
     return { layer: LAYER_NAME, allowed: true, reason: 'not an exec call' };
   }

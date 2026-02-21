@@ -16,17 +16,18 @@ import type { CANSDocument } from '../activation/cans-schema.js';
 
 export function generateSoulContent(data: CANSDocument, philosophy: string): string {
   const { provider, scope } = data;
+  const primaryOrg = provider.organizations.find((o) => o.primary) ?? provider.organizations[0];
   const lines: string[] = [];
 
   lines.push('## Clinical Persona', '');
   lines.push(
-    `You are a clinical AI assistant for ${provider.name}, a ${provider.license.type} specializing in ${provider.specialty}.`,
+    `You are a clinical AI assistant for ${provider.name}, a ${provider.types.join('/')}${provider.specialty ? ` specializing in ${provider.specialty}` : ''}.`,
   );
   if (provider.subspecialty) {
     lines.push(`Your subspecialty focus is ${provider.subspecialty}.`);
   }
-  if (provider.institution) {
-    lines.push(`You operate within ${provider.institution}.`);
+  if (primaryOrg) {
+    lines.push(`You operate within ${primaryOrg.name}.`);
   }
   lines.push('');
 
@@ -38,32 +39,16 @@ export function generateSoulContent(data: CANSDocument, philosophy: string): str
   lines.push(
     `You are permitted to assist with: ${scope.permitted_actions.join(', ')}`,
   );
-  if (scope.prohibited_actions && scope.prohibited_actions.length > 0) {
-    lines.push(
-      `You must NEVER assist with: ${scope.prohibited_actions.join(', ')}`,
-    );
-  }
-  if (scope.institutional_limitations && scope.institutional_limitations.length > 0) {
-    lines.push(
-      `Institutional limitations: ${scope.institutional_limitations.join(', ')}`,
-    );
-  }
 
-  const voice = data.clinical_voice;
+  const voice = data.voice;
   if (voice) {
-    lines.push('');
-    lines.push('## Voice', '');
-    if (voice.tone) {
-      lines.push(`Tone: ${voice.tone}`);
-    }
-    if (voice.documentation_style) {
-      lines.push(`Documentation style: ${voice.documentation_style}`);
-    }
-    if (voice.eponyms !== undefined) {
-      lines.push(`Use medical eponyms: ${voice.eponyms ? 'yes' : 'no'}`);
-    }
-    if (voice.abbreviations) {
-      lines.push(`Abbreviation style: ${voice.abbreviations}`);
+    const voiceEntries = Object.entries(voice).filter(([, v]) => v !== undefined);
+    if (voiceEntries.length > 0) {
+      lines.push('');
+      lines.push('## Voice', '');
+      for (const [action, directive] of voiceEntries) {
+        lines.push(`${action}: ${directive}`);
+      }
     }
   }
 
@@ -75,21 +60,16 @@ export function generateSoulContent(data: CANSDocument, philosophy: string): str
 // ---------------------------------------------------------------------------
 
 export function generateAgentsContent(data: CANSDocument): string {
-  const { provider, scope, autonomy } = data;
-  const prohibitedList =
-    scope.prohibited_actions && scope.prohibited_actions.length > 0
-      ? scope.prohibited_actions.join(', ')
-      : 'none defined';
+  const { provider, autonomy } = data;
 
   const lines: string[] = [];
 
   lines.push('## Clinical Safety Rules', '');
-  lines.push(`1. NEVER provide clinical advice outside ${provider.specialty} scope`);
-  lines.push(`2. NEVER generate content for prohibited actions: ${prohibitedList}`);
-  lines.push('3. ALWAYS flag when a request may exceed institutional limitations');
-  lines.push('4. ALWAYS include appropriate disclaimers on generated clinical content');
+  lines.push(`1. NEVER provide clinical advice outside ${provider.specialty ?? 'your defined'} scope`);
+  lines.push('2. ALWAYS flag when a request may exceed scope boundaries');
+  lines.push('3. ALWAYS include appropriate disclaimers on generated clinical content');
   lines.push(
-    '5. This system operates on SYNTHETIC DATA ONLY — never process real patient information',
+    '4. This system operates on SYNTHETIC DATA ONLY — never process real patient information',
   );
   lines.push('');
 
@@ -97,7 +77,7 @@ export function generateAgentsContent(data: CANSDocument): string {
   lines.push("- All clinical notes must follow the provider's documentation style");
   lines.push('- Generated content is DRAFT until provider review');
   lines.push(
-    `- Autonomy tiers: Chart=${autonomy.chart}, Order=${autonomy.order}, Charge=${autonomy.charge}, Perform=${autonomy.perform}`,
+    `- Autonomy tiers: Chart=${autonomy.chart}, Order=${autonomy.order}, Charge=${autonomy.charge}, Perform=${autonomy.perform}, Interpret=${autonomy.interpret}, Educate=${autonomy.educate}, Coordinate=${autonomy.coordinate}`,
   );
   lines.push("- Actions at 'manual' tier require explicit provider initiation");
   lines.push("- Actions at 'supervised' tier require provider approval before execution");
@@ -117,22 +97,29 @@ export function generateAgentsContent(data: CANSDocument): string {
 
 export function generateUserContent(data: CANSDocument): string {
   const { provider, autonomy } = data;
+  const primaryOrg = provider.organizations.find((o) => o.primary) ?? provider.organizations[0];
   const lines: string[] = [];
 
   lines.push('## Provider Identity', '');
   lines.push(`- Name: ${provider.name}`);
-  lines.push(
-    `- License: ${provider.license.type} (${provider.license.state}) #${provider.license.number}`,
-  );
+  lines.push(`- Types: ${provider.types.join(', ')}`);
+  if (provider.degrees.length > 0) {
+    lines.push(`- Degrees: ${provider.degrees.join(', ')}`);
+  }
+  if (provider.licenses.length > 0) {
+    lines.push(`- Licenses: ${provider.licenses.join(', ')}`);
+  }
   if (provider.npi) {
     lines.push(`- NPI: ${provider.npi}`);
   }
-  lines.push(`- Specialty: ${provider.specialty}`);
+  if (provider.specialty) {
+    lines.push(`- Specialty: ${provider.specialty}`);
+  }
   if (provider.subspecialty) {
     lines.push(`- Subspecialty: ${provider.subspecialty}`);
   }
-  if (provider.institution) {
-    lines.push(`- Institution: ${provider.institution}`);
+  if (primaryOrg) {
+    lines.push(`- Organization: ${primaryOrg.name}`);
   }
   lines.push(
     `- Credential Status: ${provider.credential_status ?? 'active'}`,
@@ -144,6 +131,9 @@ export function generateUserContent(data: CANSDocument): string {
   lines.push(`- Order autonomy: ${autonomy.order}`);
   lines.push(`- Charge autonomy: ${autonomy.charge}`);
   lines.push(`- Perform autonomy: ${autonomy.perform}`);
+  lines.push(`- Interpret autonomy: ${autonomy.interpret}`);
+  lines.push(`- Educate autonomy: ${autonomy.educate}`);
+  lines.push(`- Coordinate autonomy: ${autonomy.coordinate}`);
 
   return lines.join('\n');
 }

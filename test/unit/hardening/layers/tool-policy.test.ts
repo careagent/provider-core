@@ -38,30 +38,7 @@ describe('checkToolPolicy', () => {
     expect(result).toEqual({ layer: 'tool-policy', allowed: true });
   });
 
-  it('denies a tool that is in prohibited_actions', () => {
-    const event = makeEvent('prescribe_controlled_substances');
-    const cans = makeCans();
-    const result = checkToolPolicy(event, cans);
-    expect(result.layer).toBe('tool-policy');
-    expect(result.allowed).toBe(false);
-    expect(result.reason).toContain('prohibited_actions');
-  });
-
-  it('denies a tool that is in BOTH permitted and prohibited (prohibited trumps)', () => {
-    const event = makeEvent('chart_operative_note');
-    const cans = makeCans({
-      scope: {
-        permitted_actions: ['chart_operative_note'],
-        prohibited_actions: ['chart_operative_note'],
-      },
-    });
-    const result = checkToolPolicy(event, cans);
-    expect(result.layer).toBe('tool-policy');
-    expect(result.allowed).toBe(false);
-    expect(result.reason).toContain('prohibited_actions');
-  });
-
-  it('denies a tool that is in neither list (allowlist model)', () => {
+  it('denies a tool that is not in permitted_actions (allowlist model)', () => {
     const event = makeEvent('unknown_tool');
     const cans = makeCans();
     const result = checkToolPolicy(event, cans);
@@ -70,26 +47,32 @@ describe('checkToolPolicy', () => {
     expect(result.reason).toContain('not in permitted_actions');
   });
 
-  it('passes through when tool_policy_lockdown is false', () => {
-    const event = makeEvent('any_tool');
-    const cans = makeCans({ hardening: { tool_policy_lockdown: false } });
+  it('denies a tool that exists but is not in the scope', () => {
+    const event = makeEvent('prescribe_controlled_substances');
+    const cans = makeCans();
     const result = checkToolPolicy(event, cans);
-    expect(result).toEqual({
-      layer: 'tool-policy',
-      allowed: true,
-      reason: 'tool_policy_lockdown disabled',
-    });
+    expect(result.layer).toBe('tool-policy');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('not in permitted_actions');
   });
 
-  it('allows a tool in permitted_actions when prohibited_actions is empty', () => {
+  it('allows all tools that are in permitted_actions', () => {
+    for (const action of validCANSData.scope.permitted_actions) {
+      const event = makeEvent(action);
+      const cans = makeCans();
+      const result = checkToolPolicy(event, cans);
+      expect(result).toEqual({ layer: 'tool-policy', allowed: true });
+    }
+  });
+
+  it('denies when permitted_actions is empty', () => {
     const event = makeEvent('chart_operative_note');
     const cans = makeCans({
-      scope: {
-        permitted_actions: ['chart_operative_note'],
-        prohibited_actions: [],
-      },
+      scope: { permitted_actions: [] },
     });
     const result = checkToolPolicy(event, cans);
-    expect(result).toEqual({ layer: 'tool-policy', allowed: true });
+    expect(result.layer).toBe('tool-policy');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('not in permitted_actions');
   });
 });

@@ -25,7 +25,7 @@ import {
 function makeState(overrides: Partial<InterviewState> = {}): InterviewState {
   return {
     stage: InterviewStage.WELCOME,
-    data: { version: '1.0' },
+    data: { version: '2.0' },
     philosophy: '',
     ...overrides,
   };
@@ -111,31 +111,61 @@ describe('identityStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('credentialsStage', () => {
-  it('sets license.type to valid literal', async () => {
-    // License type index 0 = MD
-    const io = createMockIO(['0', 'TX', 'LIC123']);
+  it('sets types array from comma-separated input', async () => {
+    const io = createMockIO([
+      'Physician',       // types (required)
+      'MD',              // degrees
+      'MD-TX-A12345',    // licenses
+      'ABNS Board Certified', // certifications
+    ]);
     const state = makeState({ stage: InterviewStage.CREDENTIALS });
     const newState = await credentialsStage(state, io);
-    expect(newState.data.provider?.license?.type).toBe('MD');
+    expect(newState.data.provider?.types).toEqual(['Physician']);
   });
 
-  it('sets license.state as uppercase', async () => {
-    // License type 0 = MD, state 'tx' should become 'TX'
-    const io = createMockIO(['0', 'tx', 'LIC456']);
+  it('sets degrees array from input', async () => {
+    const io = createMockIO([
+      'Physician',
+      'MD, DO',
+      'MD-TX-A12345',
+      '',
+    ]);
     const state = makeState({ stage: InterviewStage.CREDENTIALS });
     const newState = await credentialsStage(state, io);
-    expect(newState.data.provider?.license?.state).toBe('TX');
+    expect(newState.data.provider?.degrees).toEqual(['MD', 'DO']);
   });
 
-  it('sets license.verified to false', async () => {
-    const io = createMockIO(['0', 'CA', 'LIC789']);
+  it('sets licenses array from input', async () => {
+    const io = createMockIO([
+      'Physician',
+      'MD',
+      'MD-TX-A12345, DO-CA-B99999',
+      '',
+    ]);
     const state = makeState({ stage: InterviewStage.CREDENTIALS });
     const newState = await credentialsStage(state, io);
-    expect(newState.data.provider?.license?.verified).toBe(false);
+    expect(newState.data.provider?.licenses).toEqual(['MD-TX-A12345', 'DO-CA-B99999']);
+  });
+
+  it('sets certifications array from input', async () => {
+    const io = createMockIO([
+      'Physician',
+      '',
+      '',
+      'ABNS Board Certified',
+    ]);
+    const state = makeState({ stage: InterviewStage.CREDENTIALS });
+    const newState = await credentialsStage(state, io);
+    expect(newState.data.provider?.certifications).toEqual(['ABNS Board Certified']);
   });
 
   it('advances to SPECIALTY', async () => {
-    const io = createMockIO(['0', 'NY', 'LIC101']);
+    const io = createMockIO([
+      'Physician',
+      'MD',
+      'MD-TX-A12345',
+      '',
+    ]);
     const state = makeState({ stage: InterviewStage.CREDENTIALS });
     const newState = await credentialsStage(state, io);
     expect(newState.stage).toBe(InterviewStage.SPECIALTY);
@@ -147,25 +177,43 @@ describe('credentialsStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('specialtyStage', () => {
-  it('sets specialty and splits privileges', async () => {
+  it('sets specialty and organization with privileges', async () => {
     const io = createMockIO([
-      'Neurosurgery',                          // specialty
-      '',                                       // subspecialty (skip)
-      '',                                       // institution (skip)
-      'brain surgery, spine surgery',           // privileges
-      '0',                                      // credential status (active)
+      'Neurosurgery',                               // specialty (optional)
+      '',                                            // subspecialty (skip)
+      'University Medical Center',                   // organization name (required)
+      '',                                            // department (skip)
+      'brain surgery, spine surgery',                // privileges
+      '0',                                           // credential status (active)
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
     expect(newState.data.provider?.specialty).toBe('Neurosurgery');
-    expect(newState.data.provider?.privileges).toEqual(['brain surgery', 'spine surgery']);
+    expect(newState.data.provider?.organizations).toEqual([
+      { name: 'University Medical Center', privileges: ['brain surgery', 'spine surgery'], primary: true },
+    ]);
+  });
+
+  it('omits specialty when skipped', async () => {
+    const io = createMockIO([
+      '',                           // specialty (skip)
+      '',                           // subspecialty (skip)
+      'Community Clinic',           // organization name
+      '',                           // department (skip)
+      '',                           // privileges (skip)
+      '0',                          // credential status
+    ]);
+    const state = makeState({ stage: InterviewStage.SPECIALTY });
+    const newState = await specialtyStage(state, io);
+    expect(newState.data.provider).not.toHaveProperty('specialty');
   });
 
   it('omits subspecialty when skipped', async () => {
     const io = createMockIO([
       'Cardiology',
-      '',          // subspecialty (skip)
-      '',          // institution (skip)
+      '',                           // subspecialty (skip)
+      'Heart Hospital',
+      '',
       'cardiac procedures',
       '0',
     ]);
@@ -178,6 +226,7 @@ describe('specialtyStage', () => {
     const io = createMockIO([
       'Cardiology',
       'Electrophysiology',
+      'Heart Hospital',
       '',
       'cardiac procedures',
       '0',
@@ -191,6 +240,7 @@ describe('specialtyStage', () => {
     const io = createMockIO([
       'Internal Medicine',
       '',
+      'Community Clinic',
       '',
       'general care',
       '0',
@@ -209,41 +259,24 @@ describe('scopeStage', () => {
   it('splits permitted_actions', async () => {
     const io = createMockIO([
       'chart_note, chart_h_and_p',  // permitted
-      '',                            // prohibited (skip)
-      '',                            // limitations (skip)
     ]);
     const state = makeState({ stage: InterviewStage.SCOPE });
     const newState = await scopeStage(state, io);
     expect(newState.data.scope?.permitted_actions).toEqual(['chart_note', 'chart_h_and_p']);
   });
 
-  it('omits prohibited_actions when skipped', async () => {
+  it('sets single permitted action', async () => {
     const io = createMockIO([
       'chart_note',
-      '',
-      '',
     ]);
     const state = makeState({ stage: InterviewStage.SCOPE });
     const newState = await scopeStage(state, io);
-    expect(newState.data.scope).not.toHaveProperty('prohibited_actions');
-  });
-
-  it('sets prohibited_actions when provided', async () => {
-    const io = createMockIO([
-      'chart_note',
-      'prescribe_opioids',
-      '',
-    ]);
-    const state = makeState({ stage: InterviewStage.SCOPE });
-    const newState = await scopeStage(state, io);
-    expect(newState.data.scope?.prohibited_actions).toEqual(['prescribe_opioids']);
+    expect(newState.data.scope?.permitted_actions).toEqual(['chart_note']);
   });
 
   it('advances to PHILOSOPHY', async () => {
     const io = createMockIO([
       'chart_note',
-      '',
-      '',
     ]);
     const state = makeState({ stage: InterviewStage.SCOPE });
     const newState = await scopeStage(state, io);
@@ -282,35 +315,61 @@ describe('philosophyStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('voiceStage', () => {
-  it('sets all four clinical_voice fields', async () => {
+  it('sets voice directives for all 7 actions', async () => {
     const io = createMockIO([
-      'formal',  // tone
-      '0',       // documentation style (concise)
-      'y',       // eponyms
-      '0',       // abbreviations (standard)
+      'formal, structured templates',  // chart
+      'concise',                        // order
+      'detailed billing language',      // charge
+      'step-by-step procedural',        // perform
+      'systematic analysis',            // interpret
+      'plain language',                 // educate
+      'professional, collaborative',    // coordinate
     ]);
     const state = makeState({ stage: InterviewStage.VOICE });
     const newState = await voiceStage(state, io);
-    expect(newState.data.clinical_voice?.tone).toBe('formal');
-    expect(newState.data.clinical_voice?.documentation_style).toBe('concise');
-    expect(newState.data.clinical_voice?.eponyms).toBe(true);
-    expect(newState.data.clinical_voice?.abbreviations).toBe('standard');
+    expect(newState.data.voice?.chart).toBe('formal, structured templates');
+    expect(newState.data.voice?.order).toBe('concise');
+    expect(newState.data.voice?.charge).toBe('detailed billing language');
+    expect(newState.data.voice?.perform).toBe('step-by-step procedural');
+    expect(newState.data.voice?.interpret).toBe('systematic analysis');
+    expect(newState.data.voice?.educate).toBe('plain language');
+    expect(newState.data.voice?.coordinate).toBe('professional, collaborative');
   });
 
-  it('omits tone when skipped', async () => {
+  it('omits voice directives when skipped', async () => {
     const io = createMockIO([
-      '',   // tone (skip)
-      '1',  // narrative
-      'n',  // no eponyms
-      '1',  // minimal abbreviations
+      '',  // chart (skip)
+      '',  // order (skip)
+      '',  // charge (skip)
+      '',  // perform (skip)
+      '',  // interpret (skip)
+      '',  // educate (skip)
+      '',  // coordinate (skip)
     ]);
     const state = makeState({ stage: InterviewStage.VOICE });
     const newState = await voiceStage(state, io);
-    expect(newState.data.clinical_voice).not.toHaveProperty('tone');
+    expect(newState.data.voice?.chart).toBeUndefined();
+    expect(newState.data.voice?.order).toBeUndefined();
+  });
+
+  it('sets only provided voice directives', async () => {
+    const io = createMockIO([
+      'formal',  // chart
+      '',        // order (skip)
+      '',        // charge (skip)
+      '',        // perform (skip)
+      '',        // interpret (skip)
+      '',        // educate (skip)
+      '',        // coordinate (skip)
+    ]);
+    const state = makeState({ stage: InterviewStage.VOICE });
+    const newState = await voiceStage(state, io);
+    expect(newState.data.voice?.chart).toBe('formal');
+    expect(newState.data.voice).not.toHaveProperty('order');
   });
 
   it('advances to AUTONOMY', async () => {
-    const io = createMockIO(['', '0', 'y', '0']);
+    const io = createMockIO(['', '', '', '', '', '', '']);
     const state = makeState({ stage: InterviewStage.VOICE });
     const newState = await voiceStage(state, io);
     expect(newState.stage).toBe(InterviewStage.AUTONOMY);
@@ -322,12 +381,15 @@ describe('voiceStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('autonomyStage', () => {
-  it('sets chart, order, charge, perform tiers', async () => {
+  it('sets all 7 autonomy tiers', async () => {
     const io = createMockIO([
       '0',  // chart: autonomous
       '1',  // order: supervised
       '1',  // charge: supervised
       '2',  // perform: manual
+      '2',  // interpret: manual
+      '2',  // educate: manual
+      '2',  // coordinate: manual
     ]);
     const state = makeState({ stage: InterviewStage.AUTONOMY });
     const newState = await autonomyStage(state, io);
@@ -335,10 +397,13 @@ describe('autonomyStage', () => {
     expect(newState.data.autonomy?.order).toBe('supervised');
     expect(newState.data.autonomy?.charge).toBe('supervised');
     expect(newState.data.autonomy?.perform).toBe('manual');
+    expect(newState.data.autonomy?.interpret).toBe('manual');
+    expect(newState.data.autonomy?.educate).toBe('manual');
+    expect(newState.data.autonomy?.coordinate).toBe('manual');
   });
 
   it('advances to CONSENT', async () => {
-    const io = createMockIO(['0', '1', '1', '2']);
+    const io = createMockIO(['0', '1', '1', '2', '2', '2', '2']);
     const state = makeState({ stage: InterviewStage.AUTONOMY });
     const newState = await autonomyStage(state, io);
     expect(newState.stage).toBe(InterviewStage.CONSENT);
@@ -359,6 +424,17 @@ describe('consentStage', () => {
     expect(newState.data.consent?.audit_consent).toBe(true);
   });
 
+  it('sets acknowledged_at ISO 8601 timestamp', async () => {
+    const io = createMockIO(['y', 'y', 'y']);
+    const state = makeState({ stage: InterviewStage.CONSENT });
+    const newState = await consentStage(state, io);
+    expect(newState.data.consent?.acknowledged_at).toBeDefined();
+    expect(typeof newState.data.consent?.acknowledged_at).toBe('string');
+    // Verify it is a valid ISO 8601 date
+    const parsed = new Date(newState.data.consent!.acknowledged_at);
+    expect(parsed.toISOString()).toBe(newState.data.consent!.acknowledged_at);
+  });
+
   it('re-prompts if any consent refused then accepted', async () => {
     // First HIPAA consent refused, then accepted; others accepted
     const io = createMockIO(['n', 'y', 'y', 'y']);
@@ -368,17 +444,11 @@ describe('consentStage', () => {
     expect(io.getOutput().some((line) => line.includes('required to proceed'))).toBe(true);
   });
 
-  it('sets hardening with all flags true', async () => {
+  it('sets skills with empty authorized array', async () => {
     const io = createMockIO(['y', 'y', 'y']);
     const state = makeState({ stage: InterviewStage.CONSENT });
     const newState = await consentStage(state, io);
-    const h = newState.data.hardening;
-    expect(h?.tool_policy_lockdown).toBe(true);
-    expect(h?.exec_approval).toBe(true);
-    expect(h?.cans_protocol_injection).toBe(true);
-    expect(h?.docker_sandbox).toBe(true);
-    expect(h?.safety_guard).toBe(true);
-    expect(h?.audit_trail).toBe(true);
+    expect(newState.data.skills).toEqual({ authorized: [] });
   });
 
   it('advances to COMPLETE', async () => {

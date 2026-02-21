@@ -23,8 +23,8 @@ describe('runInterview', () => {
     expect(result.data).toHaveProperty('provider');
     expect(result.data).toHaveProperty('scope');
     expect(result.data).toHaveProperty('autonomy');
-    expect(result.data).toHaveProperty('hardening');
     expect(result.data).toHaveProperty('consent');
+    expect(result.data).toHaveProperty('skills');
   });
 
   it('data.provider.name matches the name from responses', async () => {
@@ -33,40 +33,53 @@ describe('runInterview', () => {
     expect(result.data.provider.name).toBe('Dr. Test Provider');
   });
 
-  it('data.provider.license.type is MD', async () => {
+  it('data.provider.types includes Physician', async () => {
     const io = createMockIO([...completeInterviewResponses]);
     const result = await runInterview(io);
-    expect(result.data.provider.license.type).toBe('MD');
+    expect(result.data.provider.types).toContain('Physician');
   });
 
-  it('data.autonomy has all four action tiers', async () => {
+  it('data.provider.degrees includes MD', async () => {
+    const io = createMockIO([...completeInterviewResponses]);
+    const result = await runInterview(io);
+    expect(result.data.provider.degrees).toContain('MD');
+  });
+
+  it('data.provider.organizations has at least one entry', async () => {
+    const io = createMockIO([...completeInterviewResponses]);
+    const result = await runInterview(io);
+    expect(result.data.provider.organizations.length).toBeGreaterThanOrEqual(1);
+    expect(result.data.provider.organizations[0].name).toBe('University Medical Center');
+  });
+
+  it('data.autonomy has all seven action tiers', async () => {
     const io = createMockIO([...completeInterviewResponses]);
     const result = await runInterview(io);
     expect(result.data.autonomy).toHaveProperty('chart');
     expect(result.data.autonomy).toHaveProperty('order');
     expect(result.data.autonomy).toHaveProperty('charge');
     expect(result.data.autonomy).toHaveProperty('perform');
+    expect(result.data.autonomy).toHaveProperty('interpret');
+    expect(result.data.autonomy).toHaveProperty('educate');
+    expect(result.data.autonomy).toHaveProperty('coordinate');
   });
 
-  it('data.hardening has all six boolean flags, all true', async () => {
-    const io = createMockIO([...completeInterviewResponses]);
-    const result = await runInterview(io);
-    const h = result.data.hardening;
-    expect(h.tool_policy_lockdown).toBe(true);
-    expect(h.exec_approval).toBe(true);
-    expect(h.cans_protocol_injection).toBe(true);
-    expect(h.docker_sandbox).toBe(true);
-    expect(h.safety_guard).toBe(true);
-    expect(h.audit_trail).toBe(true);
-  });
-
-  it('data.consent has all three boolean flags, all true', async () => {
+  it('data.consent has all three boolean flags, all true, plus acknowledged_at', async () => {
     const io = createMockIO([...completeInterviewResponses]);
     const result = await runInterview(io);
     const c = result.data.consent;
     expect(c.hipaa_warning_acknowledged).toBe(true);
     expect(c.synthetic_data_only).toBe(true);
     expect(c.audit_consent).toBe(true);
+    expect(typeof c.acknowledged_at).toBe('string');
+    expect(c.acknowledged_at.length).toBeGreaterThan(0);
+  });
+
+  it('data.skills has authorized array', async () => {
+    const io = createMockIO([...completeInterviewResponses]);
+    const result = await runInterview(io);
+    expect(result.data.skills).toHaveProperty('authorized');
+    expect(Array.isArray(result.data.skills.authorized)).toBe(true);
   });
 
   it('philosophy is a non-empty string', async () => {
@@ -81,7 +94,7 @@ describe('runSingleStage', () => {
   it('IDENTITY stage updates only provider identity fields', async () => {
     const initialState = {
       stage: InterviewStage.IDENTITY,
-      data: { version: '1.0' },
+      data: { version: '2.0' },
       philosophy: '',
     };
     const io = createMockIO([
@@ -93,7 +106,7 @@ describe('runSingleStage', () => {
     expect(newState.data.provider?.npi).toBe('9876543210');
     expect(newState.stage).toBe(InterviewStage.CREDENTIALS);
     // Other data fields should be unchanged
-    expect(newState.data.version).toBe('1.0');
+    expect(newState.data.version).toBe('2.0');
     expect(newState.data.scope).toBeUndefined();
     expect(newState.data.autonomy).toBeUndefined();
   });

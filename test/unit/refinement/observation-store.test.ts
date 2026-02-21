@@ -14,7 +14,7 @@ function makeObservation(overrides?: Partial<Observation>): Observation {
     timestamp: new Date().toISOString(),
     session_id: 'test-session-001',
     category: 'voice',
-    field_path: 'clinical_voice.tone',
+    field_path: 'voice.chart',
     declared_value: 'formal',
     observed_value: 'conversational',
     ...overrides,
@@ -48,8 +48,8 @@ describe('ObservationStore', () => {
   });
 
   it('appends observations in JSONL format with newline separator', () => {
-    const obs1 = makeObservation({ field_path: 'clinical_voice.tone' });
-    const obs2 = makeObservation({ field_path: 'clinical_voice.documentation_style' });
+    const obs1 = makeObservation({ field_path: 'voice.chart' });
+    const obs2 = makeObservation({ field_path: 'voice.order' });
 
     store.append(obs1);
     store.append(obs2);
@@ -64,7 +64,7 @@ describe('ObservationStore', () => {
   });
 
   it('queries all observations correctly', () => {
-    const obs1 = makeObservation({ field_path: 'clinical_voice.tone' });
+    const obs1 = makeObservation({ field_path: 'voice.chart' });
     const obs2 = makeObservation({ field_path: 'autonomy.chart', category: 'autonomy' });
 
     store.append(obs1);
@@ -77,9 +77,9 @@ describe('ObservationStore', () => {
   });
 
   it('queries with filter by category', () => {
-    store.append(makeObservation({ category: 'voice', field_path: 'clinical_voice.tone' }));
+    store.append(makeObservation({ category: 'voice', field_path: 'voice.chart' }));
     store.append(makeObservation({ category: 'autonomy', field_path: 'autonomy.chart' }));
-    store.append(makeObservation({ category: 'voice', field_path: 'clinical_voice.eponyms' }));
+    store.append(makeObservation({ category: 'voice', field_path: 'voice.educate' }));
 
     const voiceObs = store.query({ category: 'voice' });
     expect(voiceObs).toHaveLength(2);
@@ -91,13 +91,13 @@ describe('ObservationStore', () => {
   });
 
   it('queries with filter by field_path', () => {
-    store.append(makeObservation({ field_path: 'clinical_voice.tone' }));
-    store.append(makeObservation({ field_path: 'clinical_voice.tone' }));
+    store.append(makeObservation({ field_path: 'voice.chart' }));
+    store.append(makeObservation({ field_path: 'voice.chart' }));
     store.append(makeObservation({ field_path: 'autonomy.chart', category: 'autonomy' }));
 
-    const toneObs = store.query({ field_path: 'clinical_voice.tone' });
+    const toneObs = store.query({ field_path: 'voice.chart' });
     expect(toneObs).toHaveLength(2);
-    expect(toneObs.every((o) => o.field_path === 'clinical_voice.tone')).toBe(true);
+    expect(toneObs.every((o) => o.field_path === 'voice.chart')).toBe(true);
   });
 
   it('returns empty array when file does not exist', () => {

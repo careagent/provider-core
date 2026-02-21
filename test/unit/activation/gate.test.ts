@@ -48,7 +48,7 @@ describe('ActivationGate', () => {
     const result = gate.check();
     expect(result.active).toBe(true);
     expect(result.document).not.toBeNull();
-    expect(result.document!.version).toBe('1.0');
+    expect(result.document!.version).toBe('2.0');
     expect(result.document!.provider.name).toBe('Dr. Test Provider');
   });
 
@@ -143,31 +143,38 @@ describe('ActivationGate', () => {
     expect(result.active).toBe(true);
     const doc = result.document!;
 
-    // Provider fields
+    // Provider fields (v2.0 structure)
     expect(doc.provider.name).toBe('Dr. Test Provider');
     expect(doc.provider.npi).toBe('1234567890');
-    expect(doc.provider.license.type).toBe('MD');
-    expect(doc.provider.license.state).toBe('TX');
-    expect(doc.provider.license.number).toBe('A12345');
-    expect(doc.provider.license.verified).toBe(false);
+    expect(doc.provider.types).toEqual(['Physician']);
+    expect(doc.provider.degrees).toEqual(['MD']);
+    expect(doc.provider.licenses).toEqual(['MD-TX-A12345']);
+    expect(doc.provider.certifications).toEqual(['ABNS Board Certified']);
     expect(doc.provider.specialty).toBe('Neurosurgery');
-    expect(doc.provider.privileges).toEqual(['neurosurgical procedures', 'spine surgery']);
+    expect(doc.provider.organizations).toHaveLength(1);
+    expect(doc.provider.organizations[0].name).toBe('University Medical Center');
+    expect(doc.provider.organizations[0].privileges).toEqual(['neurosurgical procedures', 'spine surgery']);
+    expect(doc.provider.organizations[0].primary).toBe(true);
 
-    // Scope fields
+    // Scope fields (whitelist-only, no prohibited_actions or institutional_limitations)
     expect(doc.scope.permitted_actions).toContain('chart_operative_note');
-    expect(doc.scope.prohibited_actions).toContain('prescribe_controlled_substances');
 
-    // Autonomy fields
+    // Autonomy fields (7 atomic actions)
     expect(doc.autonomy.chart).toBe('autonomous');
     expect(doc.autonomy.order).toBe('supervised');
+    expect(doc.autonomy.charge).toBe('supervised');
     expect(doc.autonomy.perform).toBe('manual');
+    expect(doc.autonomy.interpret).toBe('manual');
+    expect(doc.autonomy.educate).toBe('manual');
+    expect(doc.autonomy.coordinate).toBe('manual');
 
-    // Hardening fields
-    expect(doc.hardening.tool_policy_lockdown).toBe(true);
-    expect(doc.hardening.audit_trail).toBe(true);
-
-    // Consent fields
+    // Consent fields (with acknowledged_at)
     expect(doc.consent.hipaa_warning_acknowledged).toBe(true);
     expect(doc.consent.synthetic_data_only).toBe(true);
+    expect(doc.consent.audit_consent).toBe(true);
+    expect(doc.consent.acknowledged_at).toBe('2026-02-21T00:00:00.000Z');
+
+    // Skills (flat authorized list)
+    expect(doc.skills.authorized).toEqual([]);
   });
 });

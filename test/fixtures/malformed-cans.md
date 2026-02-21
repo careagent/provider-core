@@ -1,16 +1,18 @@
 ---
-version: "1.0"
+version: "2.0"
 provider:
   name: Dr. Test Provider
   npi: "1234567890"
-  license:
-    type: RN
-    state: TX
-    number: A12345
-    verified: false
+  types: []
+  degrees:
+    - MD
+  licenses:
+    - MD-TX-A12345
+  certifications: []
   specialty: Neurosurgery
-  privileges:
-    - neurosurgical procedures
+  organizations:
+    - name: University Medical Center
+      primary: true
 scope:
   permitted_actions:
     - chart_operative_note
@@ -19,21 +21,20 @@ autonomy:
   order: supervised
   charge: supervised
   perform: manual
-hardening:
-  tool_policy_lockdown: true
-  exec_approval: true
-  cans_protocol_injection: true
-  docker_sandbox: false
-  safety_guard: true
-  audit_trail: true
+  interpret: manual
+  educate: manual
+  coordinate: manual
 consent:
   hipaa_warning_acknowledged: true
   synthetic_data_only: true
   audit_consent: true
+  acknowledged_at: "2026-02-21T00:00:00.000Z"
+skills:
+  authorized: []
 ---
 
 # Malformed CANS Document
 
 This document has validation errors:
-- license.type is "RN" (not in the valid union)
+- provider.types is empty (minItems: 1 required)
 - autonomy.chart is "auto" (not a valid tier)

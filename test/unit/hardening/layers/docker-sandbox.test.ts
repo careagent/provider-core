@@ -103,37 +103,30 @@ describe('checkDockerSandbox', () => {
     delete process.env.CONTAINER;
   });
 
-  it('returns allowed with disabled message when docker_sandbox is false', () => {
-    const result = checkDockerSandbox(event, cans);
-    expect(result).toEqual({
-      layer: 'docker-sandbox',
-      allowed: true,
-      reason: 'docker_sandbox disabled',
-    });
-  });
-
   it('returns allowed with sandbox active when container detected', () => {
-    const cansEnabled = {
-      ...cans,
-      hardening: { ...cans.hardening, docker_sandbox: true },
-    } as CANSDocument;
     mockExistsSync.mockImplementation((path) => path === '/.dockerenv');
 
-    const result = checkDockerSandbox(event, cansEnabled);
+    const result = checkDockerSandbox(event, cans);
     expect(result.layer).toBe('docker-sandbox');
     expect(result.allowed).toBe(true);
     expect(result.reason).toContain('sandbox active');
   });
 
   it('returns allowed with no container message when not in container', () => {
-    const cansEnabled = {
-      ...cans,
-      hardening: { ...cans.hardening, docker_sandbox: true },
-    } as CANSDocument;
-
-    const result = checkDockerSandbox(event, cansEnabled);
+    const result = checkDockerSandbox(event, cans);
     expect(result.layer).toBe('docker-sandbox');
     expect(result.allowed).toBe(true);
     expect(result.reason).toContain('no container detected');
+  });
+
+  it('never blocks tool calls regardless of container status', () => {
+    // Not in container
+    let result = checkDockerSandbox(event, cans);
+    expect(result.allowed).toBe(true);
+
+    // In container
+    mockExistsSync.mockImplementation((path) => path === '/.dockerenv');
+    result = checkDockerSandbox(event, cans);
+    expect(result.allowed).toBe(true);
   });
 });

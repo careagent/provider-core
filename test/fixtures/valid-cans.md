@@ -1,45 +1,45 @@
 ---
-version: "1.0"
+version: "2.0"
 provider:
   name: Dr. Test Provider
   npi: "1234567890"
-  license:
-    type: MD
-    state: TX
-    number: A12345
-    verified: false
+  types:
+    - Physician
+  degrees:
+    - MD
+  licenses:
+    - MD-TX-A12345
+  certifications:
+    - ABNS Board Certified
   specialty: Neurosurgery
   subspecialty: Spine
-  institution: University Medical Center
-  privileges:
-    - neurosurgical procedures
-    - spine surgery
+  organizations:
+    - name: University Medical Center
+      privileges:
+        - neurosurgical procedures
+        - spine surgery
+      primary: true
   credential_status: active
 scope:
   permitted_actions:
     - chart_operative_note
     - chart_progress_note
     - chart_h_and_p
-  prohibited_actions:
-    - prescribe_controlled_substances
-  institutional_limitations:
-    - no_pediatric_cases
 autonomy:
   chart: autonomous
   order: supervised
   charge: supervised
   perform: manual
-hardening:
-  tool_policy_lockdown: true
-  exec_approval: true
-  cans_protocol_injection: true
-  docker_sandbox: false
-  safety_guard: true
-  audit_trail: true
+  interpret: manual
+  educate: manual
+  coordinate: manual
 consent:
   hipaa_warning_acknowledged: true
   synthetic_data_only: true
   audit_consent: true
+  acknowledged_at: "2026-02-21T00:00:00.000Z"
+skills:
+  authorized: []
 ---
 
 # Clinical Activation and Notification System

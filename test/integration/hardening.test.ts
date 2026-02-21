@@ -9,6 +9,8 @@
  * - HARD-06: Audit trail integration
  * - HARD-07: Hook canary
  *
+ * Hardening layers are always on (deterministic, not configurable via CANS).
+ *
  * Uses real temp workspaces with AuditPipeline and createHardeningEngine
  * to verify the full integration from CANS activation through audit logging.
  */
@@ -173,19 +175,6 @@ describe('Hardening Integration', () => {
       const result = adapter._toolCallHandler!({ toolName: 'unknown_unpermitted_tool' });
       expect(result.block).toBe(true);
       expect(result.blockReason).toBeTruthy();
-
-      const entries = readAuditEntries(tmpDir);
-      const denied = entries.find(e => e.action === 'hardening_check' && e.outcome === 'denied');
-      expect(denied).toBeDefined();
-      expect(denied!.blocking_layer).toBe('tool-policy');
-    });
-
-    it('3. tool in prohibited_actions -> handler returns { block: true }, audit has blocking_layer', () => {
-      const engine = createHardeningEngine();
-      engine.activate({ cans, adapter, audit });
-
-      const result = adapter._toolCallHandler!({ toolName: 'prescribe_controlled_substances' });
-      expect(result.block).toBe(true);
 
       const entries = readAuditEntries(tmpDir);
       const denied = entries.find(e => e.action === 'hardening_check' && e.outcome === 'denied');

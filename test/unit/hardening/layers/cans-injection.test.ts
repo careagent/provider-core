@@ -11,28 +11,44 @@ import {
 const cans = validCANSData as CANSDocument;
 
 describe('extractProtocolRules', () => {
-  it('includes provider name and specialty', () => {
+  it('includes provider name and types', () => {
     const output = extractProtocolRules(cans);
     expect(output).toContain('Dr. Test Provider');
-    expect(output).toContain('Neurosurgery');
+    expect(output).toContain('Physician');
   });
 
-  it('includes PROHIBITED section with prohibited_actions', () => {
+  it('includes specialty and subspecialty', () => {
     const output = extractProtocolRules(cans);
-    expect(output).toContain('PROHIBITED');
-    expect(output).toContain('prescribe_controlled_substances');
+    expect(output).toContain('Neurosurgery');
+    expect(output).toContain('Spine');
   });
 
-  it('includes autonomy tiers', () => {
+  it('includes Organization from primary organization', () => {
+    const output = extractProtocolRules(cans);
+    expect(output).toContain('Organization:');
+    expect(output).toContain('University Medical Center');
+  });
+
+  it('includes permitted_actions in scope boundaries', () => {
+    const output = extractProtocolRules(cans);
+    expect(output).toContain('Permitted');
+    expect(output).toContain('chart_operative_note');
+    expect(output).toContain('chart_progress_note');
+    expect(output).toContain('chart_h_and_p');
+  });
+
+  it('includes autonomy tiers with all 7 actions', () => {
     const output = extractProtocolRules(cans);
     expect(output).toContain('autonomous');
     expect(output).toContain('supervised');
     expect(output).toContain('manual');
-  });
-
-  it('includes institutional limitations', () => {
-    const output = extractProtocolRules(cans);
-    expect(output).toContain('no_pediatric_cases');
+    expect(output).toContain('Chart');
+    expect(output).toContain('Order');
+    expect(output).toContain('Charge');
+    expect(output).toContain('Perform');
+    expect(output).toContain('Interpret');
+    expect(output).toContain('Educate');
+    expect(output).toContain('Coordinate');
   });
 
   it('includes "NEVER act outside these scope boundaries" instruction', () => {
@@ -43,18 +59,6 @@ describe('extractProtocolRules', () => {
   it('output length is under 2000 characters', () => {
     const output = extractProtocolRules(cans);
     expect(output.length).toBeLessThan(2000);
-  });
-
-  it('omits PROHIBITED section when prohibited_actions is empty', () => {
-    const cansNoProhibited = {
-      ...cans,
-      scope: {
-        ...cans.scope,
-        prohibited_actions: [],
-      },
-    } as CANSDocument;
-    const output = extractProtocolRules(cansNoProhibited);
-    expect(output).not.toContain('PROHIBITED');
   });
 });
 
@@ -87,7 +91,7 @@ describe('injectProtocol', () => {
 describe('checkCansInjection', () => {
   const event = { toolName: 'test-tool' };
 
-  it('returns allowed with injection status when cans_protocol_injection is true', () => {
+  it('returns allowed with injection status (always on)', () => {
     const result = checkCansInjection(event, cans);
     expect(result).toEqual({
       layer: 'cans-injection',
@@ -96,19 +100,8 @@ describe('checkCansInjection', () => {
     });
   });
 
-  it('returns allowed with disabled message when cans_protocol_injection is false', () => {
-    const cansDisabled = {
-      ...cans,
-      hardening: {
-        ...cans.hardening,
-        cans_protocol_injection: false,
-      },
-    } as CANSDocument;
-    const result = checkCansInjection(event, cansDisabled);
-    expect(result).toEqual({
-      layer: 'cans-injection',
-      allowed: true,
-      reason: 'cans_protocol_injection disabled',
-    });
+  it('never blocks tool calls', () => {
+    const result = checkCansInjection({ toolName: 'any_tool' }, cans);
+    expect(result.allowed).toBe(true);
   });
 });

@@ -1,24 +1,16 @@
 /**
  * Default values for CANS document fields populated during onboarding.
- * These are applied as final overrides — providers cannot opt out of hardening
- * or partially complete consent.
+ *
+ * Hardening is deterministic (always on, hardcoded in plugin) — not in CANS.
  */
 
-import type { Hardening, Consent, Autonomy } from '../activation/cans-schema.js';
-
-export const defaultHardening: Hardening = {
-  tool_policy_lockdown: true,
-  exec_approval: true,
-  cans_protocol_injection: true,
-  docker_sandbox: true,
-  safety_guard: true,
-  audit_trail: true,
-};
+import type { Consent, Autonomy, Voice } from '../activation/cans-schema.js';
 
 export const defaultConsent: Consent = {
   hipaa_warning_acknowledged: false,
   synthetic_data_only: false,
   audit_consent: false,
+  acknowledged_at: '',
 };
 
 export const defaultAutonomy: Autonomy = {
@@ -26,4 +18,9 @@ export const defaultAutonomy: Autonomy = {
   order: 'supervised' as const,
   charge: 'supervised' as const,
   perform: 'manual' as const,
+  interpret: 'manual' as const,
+  educate: 'manual' as const,
+  coordinate: 'manual' as const,
 };
+
+export const defaultVoice: Voice = {};

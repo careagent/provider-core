@@ -71,24 +71,28 @@ function addSkill(
 }
 
 function makeCANS(overrides?: {
-  provider?: Partial<CANSDocument['provider']> & {
-    license?: Partial<CANSDocument['provider']['license']>;
-  };
+  provider?: Partial<CANSDocument['provider']>;
   skills?: CANSDocument['skills'];
 }): CANSDocument {
   const base: CANSDocument = {
-    version: '1.0.0',
+    version: '2.0',
     provider: {
       name: 'Dr. Test',
-      license: {
-        type: 'MD',
-        state: 'CA',
-        number: '12345',
-        verified: false,
-      },
+      npi: '1234567890',
+      types: ['Physician'],
+      degrees: ['MD'],
+      licenses: ['MD-CA-12345'],
+      certifications: [],
       specialty: 'Neurosurgery',
       subspecialty: 'Spine',
-      privileges: ['surgical_procedures', 'craniotomy', 'spinal_fusion'],
+      organizations: [
+        {
+          name: 'University Medical Center',
+          privileges: ['surgical_procedures', 'craniotomy', 'spinal_fusion'],
+          primary: true,
+        },
+      ],
+      credential_status: 'active',
     },
     scope: {
       permitted_actions: ['chart_review', 'documentation'],
@@ -98,28 +102,23 @@ function makeCANS(overrides?: {
       order: 'supervised',
       charge: 'manual',
       perform: 'manual',
-    },
-    hardening: {
-      tool_policy_lockdown: true,
-      exec_approval: true,
-      cans_protocol_injection: true,
-      docker_sandbox: false,
-      safety_guard: true,
-      audit_trail: true,
+      interpret: 'manual',
+      educate: 'manual',
+      coordinate: 'manual',
     },
     consent: {
       hipaa_warning_acknowledged: true,
       synthetic_data_only: true,
       audit_consent: true,
+      acknowledged_at: '2026-02-21T00:00:00.000Z',
+    },
+    skills: {
+      authorized: [],
     },
   };
 
   if (overrides?.provider) {
-    const { license, ...providerRest } = overrides.provider;
-    Object.assign(base.provider, providerRest);
-    if (license) {
-      Object.assign(base.provider.license, license);
-    }
+    Object.assign(base.provider, overrides.provider);
   }
 
   if (overrides?.skills !== undefined) {
@@ -168,7 +167,7 @@ describe('loadClinicalSkills', () => {
       addSkill(baseDir, 'neuro-notes', {
         requires: { license: ['MD', 'DO'] },
       });
-      const cans = makeCANS({ provider: { license: { type: 'MD' } } });
+      const cans = makeCANS({ provider: { types: ['Physician'], degrees: ['MD'] } });
       const { audit } = makeMockAudit();
 
       const results = loadClinicalSkills(baseDir, cans, validator, audit);
@@ -185,7 +184,9 @@ describe('loadClinicalSkills', () => {
       });
       const cans = makeCANS({
         provider: {
-          license: { type: 'NP' },
+          types: ['Nurse Practitioner'],
+          degrees: ['MSN'],
+          licenses: ['NP-CA-99999'],
           specialty: 'Neurosurgery',
         },
       });
@@ -203,7 +204,7 @@ describe('loadClinicalSkills', () => {
       addSkill(baseDir, 'neuro-notes', {
         requires: { license: ['MD', 'DO'] },
       });
-      const cans = makeCANS({ provider: { license: { type: 'MD' } } });
+      const cans = makeCANS({ provider: { types: ['Physician'], degrees: ['MD'] } });
       const { audit, calls } = makeMockAudit();
 
       loadClinicalSkills(baseDir, cans, validator, audit);
@@ -222,7 +223,9 @@ describe('loadClinicalSkills', () => {
       });
       const cans = makeCANS({
         provider: {
-          license: { type: 'NP' },
+          types: ['Nurse Practitioner'],
+          degrees: ['MSN'],
+          licenses: ['NP-CA-99999'],
           specialty: 'Neurosurgery',
         },
       });
@@ -264,7 +267,12 @@ describe('loadClinicalSkills', () => {
       const baseDir = makeTempSkillsDir();
       addSkill(baseDir, 'generic-skill', { requires: {} });
       const cans = makeCANS({
-        provider: { license: { type: 'PA' }, specialty: 'Family Medicine' },
+        provider: {
+          types: ['Physician Assistant'],
+          degrees: ['PA'],
+          licenses: ['PA-TX-11111'],
+          specialty: 'Family Medicine',
+        },
       });
       const { audit } = makeMockAudit();
 
@@ -431,47 +439,14 @@ describe('loadClinicalSkills', () => {
   });
 
   // -----------------------------------------------------------------------
-  // CANS.md skills.rules augmentation
+  // CANS skills.authorized
   // -----------------------------------------------------------------------
 
-  describe('CANS.md skills.rules', () => {
-    it('CANS rules adding extra privilege blocks skill', () => {
-      const baseDir = makeTempSkillsDir();
-      addSkill(baseDir, 'restricted-skill', {
-        requires: { license: ['MD', 'DO'] },
-      });
-      const cans = makeCANS({
-        skills: {
-          rules: [
-            {
-              skill_id: 'restricted-skill',
-              requires_privilege: ['deep_brain_stimulation'],
-            },
-          ],
-        },
-      });
-      const { audit, calls } = makeMockAudit();
-
-      const results = loadClinicalSkills(baseDir, cans, validator, audit);
-
-      expect(results).toHaveLength(1);
-      expect(results[0].loaded).toBe(false);
-      expect(results[0].reason).toContain('credentials');
-
-      // Verify audit shows source: 'cans_rules'
-      const deniedChecks = calls.filter(
-        (c) =>
-          c.action === 'skill_credential_check' &&
-          c.outcome === 'denied' &&
-          (c.details as any)?.source === 'cans_rules',
-      );
-      expect(deniedChecks).toHaveLength(1);
-    });
-
-    it('CANS without skills section does not affect loading', () => {
+  describe('CANS skills.authorized', () => {
+    it('empty authorized list allows all skills (no restriction)', () => {
       const baseDir = makeTempSkillsDir();
       addSkill(baseDir, 'normal-skill');
-      const cans = makeCANS(); // No skills section
+      const cans = makeCANS({ skills: { authorized: [] } });
       const { audit } = makeMockAudit();
 
       const results = loadClinicalSkills(baseDir, cans, validator, audit);
@@ -480,19 +455,47 @@ describe('loadClinicalSkills', () => {
       expect(results[0].loaded).toBe(true);
     });
 
-    it('CANS rules for a different skill do not affect current skill', () => {
+    it('skill in authorized list is allowed', () => {
       const baseDir = makeTempSkillsDir();
       addSkill(baseDir, 'my-skill');
-      const cans = makeCANS({
-        skills: {
-          rules: [
-            {
-              skill_id: 'other-skill',
-              requires_privilege: ['deep_brain_stimulation'],
-            },
-          ],
-        },
-      });
+      const cans = makeCANS({ skills: { authorized: ['my-skill'] } });
+      const { audit } = makeMockAudit();
+
+      const results = loadClinicalSkills(baseDir, cans, validator, audit);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].loaded).toBe(true);
+    });
+
+    it('skill NOT in non-empty authorized list is blocked', () => {
+      const baseDir = makeTempSkillsDir();
+      addSkill(baseDir, 'unlisted-skill');
+      const cans = makeCANS({ skills: { authorized: ['other-skill'] } });
+      const { audit } = makeMockAudit();
+
+      const results = loadClinicalSkills(baseDir, cans, validator, audit);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].loaded).toBe(false);
+      expect(results[0].reason).toContain('not in the authorized skills list');
+    });
+
+    it('CANS without skills section defaults allow all', () => {
+      const baseDir = makeTempSkillsDir();
+      addSkill(baseDir, 'normal-skill');
+      const cans = makeCANS(); // default skills: { authorized: [] }
+      const { audit } = makeMockAudit();
+
+      const results = loadClinicalSkills(baseDir, cans, validator, audit);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].loaded).toBe(true);
+    });
+
+    it('authorized list for different skill does not affect current skill', () => {
+      const baseDir = makeTempSkillsDir();
+      addSkill(baseDir, 'my-skill');
+      const cans = makeCANS({ skills: { authorized: ['my-skill', 'other-skill'] } });
       const { audit } = makeMockAudit();
 
       const results = loadClinicalSkills(baseDir, cans, validator, audit);
@@ -604,7 +607,9 @@ describe('loadClinicalSkills', () => {
       });
       const cans = makeCANS({
         provider: {
-          license: { type: 'NP' },
+          types: ['Nurse Practitioner'],
+          degrees: ['MSN'],
+          licenses: ['NP-CA-99999'],
           specialty: 'Neurosurgery',
         },
       });

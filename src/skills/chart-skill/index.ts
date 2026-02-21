@@ -7,7 +7,7 @@
  * settings to template generation instructions.
  */
 
-import type { ClinicalVoice } from '../../activation/cans-schema.js';
+import type { Voice } from '../../activation/cans-schema.js';
 import type { ChartTemplate } from '../types.js';
 import { operativeNoteTemplate } from './templates/operative-note.js';
 import { hAndPTemplate } from './templates/h-and-p.js';
@@ -45,7 +45,7 @@ export function getAllTemplates(): ChartTemplate[] {
  *
  * Used by the skill loader to inject instructions into the LLM system prompt.
  */
-export function buildChartSkillInstructions(voice?: ClinicalVoice): string {
+export function buildChartSkillInstructions(voice?: Voice): string {
   const directives = extractVoiceDirectives(voice);
   const voiceInstructions = buildVoiceInstructions(directives);
 

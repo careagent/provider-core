@@ -150,8 +150,8 @@ export function createRefinementEngine(config: RefinementEngineConfig): Refineme
 
 /**
  * Set a value at a dot-separated path on a nested object.
- * e.g., setNestedValue(obj, 'clinical_voice.tone', 'formal')
- * sets obj.clinical_voice.tone = 'formal'.
+ * e.g., setNestedValue(obj, 'voice.chart', 'formal')
+ * sets obj.voice.chart = 'formal'.
  */
 function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: unknown): void {
   const keys = dotPath.split('.');

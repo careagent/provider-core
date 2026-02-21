@@ -11,7 +11,7 @@ function makeObservation(overrides?: Partial<Observation>): Observation {
     timestamp: new Date().toISOString(),
     session_id: 'test-session',
     category: 'voice',
-    field_path: 'clinical_voice.tone',
+    field_path: 'voice.chart',
     declared_value: 'formal',
     observed_value: 'conversational',
     ...overrides,
@@ -22,7 +22,7 @@ function makeProposal(overrides?: Partial<Proposal>): Proposal {
   return {
     id: 'test-proposal-001',
     created_at: new Date().toISOString(),
-    field_path: 'clinical_voice.tone',
+    field_path: 'voice.chart',
     category: 'voice',
     current_value: 'formal',
     proposed_value: 'conversational',
@@ -61,7 +61,7 @@ describe('detectDivergences', () => {
     const patterns = detectDivergences(observations, []);
 
     expect(patterns).toHaveLength(1);
-    expect(patterns[0].field_path).toBe('clinical_voice.tone');
+    expect(patterns[0].field_path).toBe('voice.chart');
     expect(patterns[0].observation_count).toBe(5);
     expect(patterns[0].declared_value).toBe('formal');
     expect(patterns[0].most_common_observed).toBe('conversational');
@@ -94,18 +94,6 @@ describe('detectDivergences', () => {
       category: 'identity',
       declared_value: { permitted: true },
       observed_value: { permitted: false },
-    });
-
-    const patterns = detectDivergences(scopeObs, []);
-    expect(patterns).toHaveLength(0);
-  });
-
-  it('excludes scope.institutional_limitations', () => {
-    const scopeObs = createDivergentObservations(10, {
-      field_path: 'scope.institutional_limitations',
-      category: 'identity',
-      declared_value: ['no_pediatric'],
-      observed_value: [],
     });
 
     const patterns = detectDivergences(scopeObs, []);
@@ -183,7 +171,7 @@ describe('detectDivergences', () => {
 
   it('sorts multiple fields by observation count descending', () => {
     const toneObs = createDivergentObservations(7, {
-      field_path: 'clinical_voice.tone',
+      field_path: 'voice.chart',
     });
     const autonomyObs = createDivergentObservations(10, {
       field_path: 'autonomy.chart',
@@ -192,7 +180,7 @@ describe('detectDivergences', () => {
       observed_value: 'autonomous',
     });
     const styleObs = createDivergentObservations(5, {
-      field_path: 'clinical_voice.documentation_style',
+      field_path: 'voice.order',
       declared_value: 'structured',
       observed_value: 'narrative',
     });
@@ -203,9 +191,9 @@ describe('detectDivergences', () => {
     expect(patterns).toHaveLength(3);
     expect(patterns[0].field_path).toBe('autonomy.chart');
     expect(patterns[0].observation_count).toBe(10);
-    expect(patterns[1].field_path).toBe('clinical_voice.tone');
+    expect(patterns[1].field_path).toBe('voice.chart');
     expect(patterns[1].observation_count).toBe(7);
-    expect(patterns[2].field_path).toBe('clinical_voice.documentation_style');
+    expect(patterns[2].field_path).toBe('voice.order');
     expect(patterns[2].observation_count).toBe(5);
   });
 
@@ -225,7 +213,7 @@ describe('detectDivergences', () => {
 
   it('uses deep comparison for object values', () => {
     const observations = createDivergentObservations(5, {
-      field_path: 'provider.privileges',
+      field_path: 'provider.credential_status',
       category: 'credential',
       declared_value: ['surgery', 'consultation'],
       observed_value: ['surgery', 'consultation', 'teaching'],

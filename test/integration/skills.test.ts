@@ -2,7 +2,7 @@
  * End-to-end skill loading integration tests.
  *
  * Verifies the complete skill loading pipeline:
- * - SKIL-01: Credential gating (license, specialty, privilege)
+ * - SKIL-01: Credential gating (types, licenses, specialty, privilege)
  * - SKIL-02: Regular skills (no manifest) silently skipped
  * - SKIL-03: Integrity verification (SHA-256 file hashes)
  * - SKIL-04: Version pinning (approved_version enforcement)
@@ -87,30 +87,29 @@ function addTestSkill(
 
 function makeCANS(overrides: Record<string, unknown> = {}): CANSDocument {
   const providerOverrides = (overrides.provider || {}) as Record<string, unknown>;
-  const licenseOverrides = providerOverrides.license
-    ? (providerOverrides.license as Record<string, unknown>)
-    : {};
-
-  // Build provider with license merged first, then overlay other provider overrides
-  const { license: _licenseFromOverrides, ...providerRest } = providerOverrides;
 
   const provider = {
     name: 'Dr. Test',
+    npi: '1234567890',
+    types: ['Physician'],
+    degrees: ['MD'],
+    licenses: ['MD-CA-12345'],
+    certifications: [],
     specialty: 'Neurosurgery',
     subspecialty: 'Spine',
-    privileges: ['surgical_procedures', 'craniotomy', 'spinal_fusion'],
-    ...providerRest,
-    license: {
-      type: 'MD' as const,
-      state: 'CA',
-      number: '12345',
-      verified: false,
-      ...licenseOverrides,
-    },
+    organizations: [
+      {
+        name: 'University Medical Center',
+        privileges: ['surgical_procedures', 'craniotomy', 'spinal_fusion'],
+        primary: true,
+      },
+    ],
+    credential_status: 'active' as const,
+    ...providerOverrides,
   };
 
   return {
-    version: '1.0.0',
+    version: '2.0',
     provider,
     scope: {
       permitted_actions: ['chart', 'order'],
@@ -121,24 +120,22 @@ function makeCANS(overrides: Record<string, unknown> = {}): CANSDocument {
       order: 'supervised',
       charge: 'manual',
       perform: 'manual',
+      interpret: 'manual',
+      educate: 'manual',
+      coordinate: 'manual',
       ...(overrides.autonomy as Record<string, unknown> || {}),
-    },
-    hardening: {
-      tool_policy_lockdown: true,
-      exec_approval: true,
-      cans_protocol_injection: true,
-      docker_sandbox: false,
-      safety_guard: true,
-      audit_trail: true,
-      ...(overrides.hardening as Record<string, unknown> || {}),
     },
     consent: {
       hipaa_warning_acknowledged: true,
       synthetic_data_only: true,
       audit_consent: true,
+      acknowledged_at: '2026-02-21T00:00:00.000Z',
       ...(overrides.consent as Record<string, unknown> || {}),
     },
-    ...(overrides.skills !== undefined ? { skills: overrides.skills } : {}),
+    skills: {
+      authorized: [],
+      ...(overrides.skills as Record<string, unknown> || {}),
+    },
   } as CANSDocument;
 }
 
@@ -201,9 +198,19 @@ describe('Skills Integration', () => {
       const cans = makeCANS({
         provider: {
           name: 'Nurse Practitioner',
-          license: { type: 'NP', state: 'CA', number: '99999', verified: false },
+          types: ['Nurse Practitioner'],
+          degrees: ['MSN'],
+          licenses: ['NP-CA-99999'],
+          certifications: [],
           specialty: 'Family Medicine',
-          privileges: ['primary_care'],
+          organizations: [
+            {
+              name: 'Community Clinic',
+              privileges: ['primary_care'],
+              primary: true,
+            },
+          ],
+          credential_status: 'active',
         },
       });
       const validator = createCredentialValidator();
@@ -456,26 +463,33 @@ describe('Skills Integration', () => {
   });
 
   // -------------------------------------------------------------------------
-  // CANS.md skills.rules integration
+  // CANS skills.authorized integration
   // -------------------------------------------------------------------------
 
-  describe('CANS.md skills.rules integration', () => {
-    it('CANS rules block skill that would otherwise pass credential check', () => {
-      // Skill requires MD license only -- our provider has that
+  describe('CANS skills.authorized integration', () => {
+    it('empty authorized list allows all skills', () => {
       addTestSkill(skillsDir, 'test-skill', {
         requires: { license: ['MD'] },
       });
 
-      // But CANS rules add a privilege requirement the provider lacks
       const cans = makeCANS({
-        skills: {
-          rules: [
-            {
-              skill_id: 'test-skill',
-              requires_privilege: ['laser_surgery'],
-            },
-          ],
-        },
+        skills: { authorized: [] },
+      });
+
+      const validator = createCredentialValidator();
+      const results = loadClinicalSkills(skillsDir, cans, validator, audit);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].loaded).toBe(true);
+    });
+
+    it('non-empty authorized list blocks skills not in the list', () => {
+      addTestSkill(skillsDir, 'test-skill', {
+        requires: { license: ['MD'] },
+      });
+
+      const cans = makeCANS({
+        skills: { authorized: ['other-skill'] },
       });
 
       const validator = createCredentialValidator();
@@ -483,17 +497,23 @@ describe('Skills Integration', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].loaded).toBe(false);
-      expect(results[0].reason).toContain('laser_surgery');
+      expect(results[0].reason).toContain('not in the authorized skills list');
+    });
 
-      // Audit should show CANS rules credential denial
-      const entries = readAuditLog(workspace);
-      const cansRulesDenied = entries.find(
-        (e) =>
-          e.action === 'skill_credential_check' &&
-          e.outcome === 'denied' &&
-          (e.details as Record<string, unknown>)?.source === 'cans_rules',
-      );
-      expect(cansRulesDenied).toBeDefined();
+    it('skill in authorized list is allowed', () => {
+      addTestSkill(skillsDir, 'test-skill', {
+        requires: { license: ['MD'] },
+      });
+
+      const cans = makeCANS({
+        skills: { authorized: ['test-skill'] },
+      });
+
+      const validator = createCredentialValidator();
+      const results = loadClinicalSkills(skillsDir, cans, validator, audit);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].loaded).toBe(true);
     });
   });
 

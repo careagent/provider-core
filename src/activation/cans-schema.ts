@@ -2,11 +2,19 @@
  * CANS.md TypeBox schema — the complete schema for Clinical Activation
  * and Notification System frontmatter.
  *
+ * v2.0 — Generalized for 49 clinical healthcare worker categories.
+ *
  * Covers:
- * - CANS-02: Provider identity (name, NPI, license, specialty, institution)
- * - CANS-03: Scope of practice (permitted/prohibited actions, limitations)
- * - CANS-04: Autonomy tiers (chart, order, charge, perform)
- * - CANS-05: Hardening flags and consent configuration
+ * - CANS-02: Provider identity (name, NPI, types, degrees, licenses,
+ *            certifications, organizations)
+ * - CANS-03: Scope of practice (whitelist-only permitted actions)
+ * - CANS-04: Autonomy tiers (7 atomic actions)
+ * - CANS-05: Consent configuration with attestation timestamp
+ * - Voice: 7 atomic-action-mapped voice directives
+ * - Skills: Flat authorized skill list
+ *
+ * Hardening is deterministic (always on, hardcoded in plugin) — not in CANS.
+ * Neuron config lives per-organization inside provider.organizations.
  *
  * All sub-schemas are exported individually for use by validation,
  * onboarding, and hardening subsystems.
@@ -15,35 +23,19 @@
 import { Type, type Static } from '@sinclair/typebox';
 
 // ---------------------------------------------------------------------------
-// CANS-02: Provider License
+// CANS-02: Organization (per-org privileges and neuron config)
 // ---------------------------------------------------------------------------
 
-export const ProviderLicenseSchema = Type.Object({
-  type: Type.Union([
-    Type.Literal('MD'),
-    Type.Literal('DO'),
-    Type.Literal('NP'),
-    Type.Literal('PA'),
-    Type.Literal('CRNA'),
-    Type.Literal('CNM'),
-    Type.Literal('PhD'),
-    Type.Literal('PsyD'),
-  ]),
-  state: Type.String({
-    minLength: 2,
-    maxLength: 2,
-    description: 'US state abbreviation',
-  }),
-  number: Type.String({
-    minLength: 1,
-    description: 'License number',
-  }),
-  verified: Type.Boolean({
-    description: 'Always false in dev — future Axon verification',
-  }),
+export const OrganizationSchema = Type.Object({
+  name: Type.String({ minLength: 1 }),
+  department: Type.Optional(Type.String()),
+  privileges: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
+  neuron_endpoint: Type.Optional(Type.String({ description: 'Neuron server URL' })),
+  neuron_registration_id: Type.Optional(Type.String()),
+  primary: Type.Optional(Type.Boolean()),
 });
 
-export type ProviderLicense = Static<typeof ProviderLicenseSchema>;
+export type Organization = Static<typeof OrganizationSchema>;
 
 // ---------------------------------------------------------------------------
 // CANS-02: Provider Identity
@@ -57,14 +49,13 @@ export const ProviderSchema = Type.Object({
       description: 'National Provider Identifier',
     }),
   ),
-  license: ProviderLicenseSchema,
-  specialty: Type.String({ minLength: 1 }),
+  types: Type.Array(Type.String({ minLength: 1 }), { minItems: 1 }),
+  degrees: Type.Array(Type.String({ minLength: 1 })),
+  licenses: Type.Array(Type.String({ minLength: 1 })),
+  certifications: Type.Array(Type.String({ minLength: 1 })),
+  specialty: Type.Optional(Type.String()),
   subspecialty: Type.Optional(Type.String()),
-  institution: Type.Optional(Type.String()),
-  privileges: Type.Array(Type.String({ minLength: 1 }), {
-    minItems: 1,
-    description: 'Institutional privileges',
-  }),
+  organizations: Type.Array(OrganizationSchema, { minItems: 1 }),
   credential_status: Type.Optional(
     Type.Union([
       Type.Literal('active'),
@@ -77,21 +68,19 @@ export const ProviderSchema = Type.Object({
 export type Provider = Static<typeof ProviderSchema>;
 
 // ---------------------------------------------------------------------------
-// CANS-03: Scope of Practice
+// CANS-03: Scope of Practice (whitelist-only)
 // ---------------------------------------------------------------------------
 
 export const ScopeSchema = Type.Object({
   permitted_actions: Type.Array(Type.String({ minLength: 1 }), {
     minItems: 1,
   }),
-  prohibited_actions: Type.Optional(Type.Array(Type.String())),
-  institutional_limitations: Type.Optional(Type.Array(Type.String())),
 });
 
 export type Scope = Static<typeof ScopeSchema>;
 
 // ---------------------------------------------------------------------------
-// CANS-04: Autonomy Tiers
+// CANS-04: Autonomy Tiers (7 atomic actions)
 // ---------------------------------------------------------------------------
 
 export const AutonomyTier = Type.Union([
@@ -107,24 +96,28 @@ export const AutonomySchema = Type.Object({
   order: AutonomyTier,
   charge: AutonomyTier,
   perform: AutonomyTier,
+  interpret: AutonomyTier,
+  educate: AutonomyTier,
+  coordinate: AutonomyTier,
 });
 
 export type Autonomy = Static<typeof AutonomySchema>;
 
 // ---------------------------------------------------------------------------
-// CANS-05: Hardening Flags
+// Voice (7 atomic-action-mapped voice directives)
 // ---------------------------------------------------------------------------
 
-export const HardeningSchema = Type.Object({
-  tool_policy_lockdown: Type.Boolean(),
-  exec_approval: Type.Boolean(),
-  cans_protocol_injection: Type.Boolean(),
-  docker_sandbox: Type.Boolean(),
-  safety_guard: Type.Boolean(),
-  audit_trail: Type.Boolean(),
+export const VoiceSchema = Type.Object({
+  chart: Type.Optional(Type.String()),
+  order: Type.Optional(Type.String()),
+  charge: Type.Optional(Type.String()),
+  perform: Type.Optional(Type.String()),
+  interpret: Type.Optional(Type.String()),
+  educate: Type.Optional(Type.String()),
+  coordinate: Type.Optional(Type.String()),
 });
 
-export type Hardening = Static<typeof HardeningSchema>;
+export type Voice = Static<typeof VoiceSchema>;
 
 // ---------------------------------------------------------------------------
 // CANS-05: Consent Configuration
@@ -134,53 +127,20 @@ export const ConsentSchema = Type.Object({
   hipaa_warning_acknowledged: Type.Boolean(),
   synthetic_data_only: Type.Boolean(),
   audit_consent: Type.Boolean(),
+  acknowledged_at: Type.String({ description: 'ISO 8601 timestamp of consent' }),
 });
 
 export type Consent = Static<typeof ConsentSchema>;
 
 // ---------------------------------------------------------------------------
-// Clinical Voice (optional — populated during onboarding)
+// Skills (flat authorized skill list)
 // ---------------------------------------------------------------------------
 
-export const ClinicalVoiceSchema = Type.Object({
-  tone: Type.Optional(Type.String()),
-  documentation_style: Type.Optional(Type.String()),
-  eponyms: Type.Optional(Type.Boolean()),
-  abbreviations: Type.Optional(Type.String()),
+export const SkillsSchema = Type.Object({
+  authorized: Type.Array(Type.String({ minLength: 1 })),
 });
 
-export type ClinicalVoice = Static<typeof ClinicalVoiceSchema>;
-
-// ---------------------------------------------------------------------------
-// Neuron Registration (optional — ecosystem readiness)
-// ---------------------------------------------------------------------------
-
-export const NeuronConfigSchema = Type.Object({
-  endpoint: Type.String({ description: 'Neuron server URL' }),
-  registration_id: Type.Optional(Type.String({ description: 'Registration ID assigned by Neuron' })),
-  auto_register: Type.Optional(Type.Boolean({ description: 'Register on Gateway startup' })),
-});
-
-export type NeuronConfig = Static<typeof NeuronConfigSchema>;
-
-// ---------------------------------------------------------------------------
-// Clinical Skill Gating (optional — ecosystem readiness)
-// ---------------------------------------------------------------------------
-
-export const SkillGatingRuleSchema = Type.Object({
-  skill_id: Type.String({ description: 'Skill package identifier' }),
-  requires_license: Type.Optional(Type.Array(Type.String())),
-  requires_specialty: Type.Optional(Type.Array(Type.String())),
-  requires_privilege: Type.Optional(Type.Array(Type.String())),
-});
-
-export type SkillGatingRule = Static<typeof SkillGatingRuleSchema>;
-
-export const SkillGatingSchema = Type.Object({
-  rules: Type.Array(SkillGatingRuleSchema, { description: 'Per-skill credential requirements' }),
-});
-
-export type SkillGating = Static<typeof SkillGatingSchema>;
+export type Skills = Static<typeof SkillsSchema>;
 
 // ---------------------------------------------------------------------------
 // Cross-Installation Consent (optional — ecosystem readiness)
@@ -189,7 +149,6 @@ export type SkillGating = Static<typeof SkillGatingSchema>;
 export const CrossInstallationConsentSchema = Type.Object({
   allow_inbound: Type.Boolean({ description: 'Accept patient CareAgent connections' }),
   allow_outbound: Type.Boolean({ description: 'Initiate connections to patient CareAgents' }),
-  require_neuron_verification: Type.Optional(Type.Boolean({ description: 'Require Neuron-verified identity' })),
 });
 
 export type CrossInstallationConsent = Static<typeof CrossInstallationConsentSchema>;
@@ -203,11 +162,9 @@ export const CANSSchema = Type.Object({
   provider: ProviderSchema,
   scope: ScopeSchema,
   autonomy: AutonomySchema,
-  hardening: HardeningSchema,
+  voice: Type.Optional(VoiceSchema),
   consent: ConsentSchema,
-  clinical_voice: Type.Optional(ClinicalVoiceSchema),
-  neuron: Type.Optional(NeuronConfigSchema),
-  skills: Type.Optional(SkillGatingSchema),
+  skills: SkillsSchema,
   cross_installation: Type.Optional(CrossInstallationConsentSchema),
 });
 

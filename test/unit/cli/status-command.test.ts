@@ -112,8 +112,8 @@ describe('formatStatus', () => {
   it('shows "No hash stored" when CANS.md exists but store not yet seeded (invalid CANS bypasses integrity step)', () => {
     // When CANS.md is malformed, gate.check() fails at parse/validation before reaching
     // the integrity step, so the integrity store is never created.
-    // checkIntegrity sees: CANS.md exists, store does not → "No hash stored"
-    writeFileSync(join(tmpDir, 'CANS.md'), '---\nversion: "1.0"\n---\n# incomplete CANS\n');
+    // checkIntegrity sees: CANS.md exists, store does not -> "No hash stored"
+    writeFileSync(join(tmpDir, 'CANS.md'), '---\nversion: "2.0"\n---\n# incomplete CANS\n');
     const output = formatStatus(tmpDir);
     expect(output).toContain('No hash stored');
   });
@@ -144,60 +144,49 @@ describe('formatStatus', () => {
     expect(output).toContain('Neurosurgery');
   });
 
-  it('shows license info for active workspace', () => {
+  it('shows types and organization for active workspace', () => {
     writeValidCANS(tmpDir);
     const output = formatStatus(tmpDir);
-    expect(output).toContain('MD (TX) #A12345');
-  });
-
-  it('shows subspecialty and institution for active workspace', () => {
-    writeValidCANS(tmpDir);
-    const output = formatStatus(tmpDir);
-    expect(output).toContain('Spine');
+    expect(output).toContain('Physician');
     expect(output).toContain('University Medical Center');
   });
 
-  it('contains all four autonomy tier labels for active workspace', () => {
+  it('shows subspecialty for active workspace', () => {
+    writeValidCANS(tmpDir);
+    const output = formatStatus(tmpDir);
+    expect(output).toContain('Spine');
+  });
+
+  it('contains all seven autonomy tier labels for active workspace', () => {
     writeValidCANS(tmpDir);
     const output = formatStatus(tmpDir);
     expect(output).toContain('Chart:');
     expect(output).toContain('Order:');
     expect(output).toContain('Charge:');
     expect(output).toContain('Perform:');
+    expect(output).toContain('Interpret:');
+    expect(output).toContain('Educate:');
+    expect(output).toContain('Coordinate:');
   });
 
   it('shows correct autonomy tier values for active workspace', () => {
     writeValidCANS(tmpDir);
     const output = formatStatus(tmpDir);
-    // validCANSData has chart:autonomous, order:supervised, charge:supervised, perform:manual
+    // validCANSData has chart:autonomous, order:supervised, charge:supervised,
+    // perform:manual, interpret:manual, educate:manual, coordinate:manual
     expect(output).toContain('Chart:          autonomous');
     expect(output).toContain('Order:          supervised');
     expect(output).toContain('Charge:         supervised');
     expect(output).toContain('Perform:        manual');
+    expect(output).toContain('Interpret:      manual');
+    expect(output).toContain('Educate:        manual');
+    expect(output).toContain('Coordinate:     manual');
   });
 
-  it('contains all six hardening flag labels for active workspace', () => {
+  it('shows hardening is always on (deterministic)', () => {
     writeValidCANS(tmpDir);
     const output = formatStatus(tmpDir);
-    expect(output).toContain('Tool Policy:');
-    expect(output).toContain('Exec Approval:');
-    expect(output).toContain('CANS Injection:');
-    expect(output).toContain('Docker Sandbox:');
-    expect(output).toContain('Safety Guard:');
-    expect(output).toContain('Audit Trail:');
-  });
-
-  it('shows correct hardening flag values for active workspace', () => {
-    writeValidCANS(tmpDir);
-    const output = formatStatus(tmpDir);
-    // validCANSData: tool_policy_lockdown:true, exec_approval:true, cans_protocol_injection:true,
-    // docker_sandbox:false, safety_guard:true, audit_trail:true
-    expect(output).toContain('Tool Policy:    on');
-    expect(output).toContain('Exec Approval:  on');
-    expect(output).toContain('CANS Injection: on');
-    expect(output).toContain('Docker Sandbox: off');
-    expect(output).toContain('Safety Guard:   on');
-    expect(output).toContain('Audit Trail:    on');
+    expect(output).toContain('Hardening: always on (deterministic)');
   });
 
   it('shows "Verified" in integrity section when hash matches', () => {

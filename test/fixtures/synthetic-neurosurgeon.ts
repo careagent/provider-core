@@ -18,18 +18,24 @@ export const syntheticNeurosurgeonCANS = {
     ...validCANSData.provider,
     name: 'Dr. Sarah Chen',
     npi: '1234567890',
-    license: { type: 'MD' as const, state: 'TX', number: 'TX-NS-2024-001', verified: false },
+    types: ['Physician'],
+    degrees: ['MD'],
+    licenses: ['MD-TX-NS-2024-001'],
+    certifications: ['ABNS Board Certified'],
     specialty: 'Neurosurgery',
     subspecialty: 'Spine',
-    institution: 'University Medical Center',
-    privileges: ['neurosurgical procedures', 'spine surgery', 'craniotomy'],
+    organizations: [
+      {
+        name: 'University Medical Center',
+        privileges: ['neurosurgical procedures', 'spine surgery', 'craniotomy'],
+        primary: true,
+      },
+    ],
     credential_status: 'active' as const,
   },
-  clinical_voice: {
-    tone: 'formal',
-    documentation_style: 'structured',
-    eponyms: true,
-    abbreviations: 'standard medical',
+  voice: {
+    chart: 'formal, structured templates',
+    order: 'concise',
   },
 };
 

@@ -35,23 +35,28 @@ export type ObservationCategory =
  */
 export const CATEGORY_FIELDS: Record<ObservationCategory, string[]> = {
   voice: [
-    'clinical_voice.tone',
-    'clinical_voice.documentation_style',
-    'clinical_voice.eponyms',
-    'clinical_voice.abbreviations',
+    'voice.chart',
+    'voice.order',
+    'voice.charge',
+    'voice.perform',
+    'voice.interpret',
+    'voice.educate',
+    'voice.coordinate',
   ],
   autonomy: [
     'autonomy.chart',
     'autonomy.order',
     'autonomy.charge',
     'autonomy.perform',
+    'autonomy.interpret',
+    'autonomy.educate',
+    'autonomy.coordinate',
   ],
   credential: [
     'provider.credential_status',
-    'provider.institution',
   ],
   skill_usage: [
-    // Dynamic: populated from skills.rules entries at runtime
+    // Dynamic: populated from skills.authorized entries at runtime
   ],
   identity: [
     'provider.name',
@@ -73,8 +78,6 @@ export const CATEGORY_FIELDS: Record<ObservationCategory, string[]> = {
 export const SACROSANCT_FIELDS = new Set([
   'scope',
   'scope.permitted_actions',
-  'scope.prohibited_actions',
-  'scope.institutional_limitations',
 ]);
 
 /**

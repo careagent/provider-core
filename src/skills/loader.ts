@@ -150,7 +150,11 @@ export function loadClinicalSkills(
     // Step 3: Credential check
     // -----------------------------------------------------------------------
 
-    const credResult = validator.check(cans, manifest.requires);
+    const credResult = validator.check(cans, {
+      degrees: manifest.requires.license,
+      specialty: manifest.requires.specialty,
+      privilege: manifest.requires.privilege,
+    });
 
     if (!credResult.valid) {
       results.push({
@@ -176,61 +180,24 @@ export function loadClinicalSkills(
       details: {
         skill_id: manifest.skill_id,
         provider: credResult.provider,
-        license: credResult.licenseType,
+        types: credResult.types,
         specialty: credResult.specialty,
       },
     });
 
     // -----------------------------------------------------------------------
-    // Step 4: CANS.md skills.rules augmentation
+    // Step 4: CANS.md skills.authorized check
     // -----------------------------------------------------------------------
 
-    const rule = cans.skills?.rules?.find(
-      (r) => r.skill_id === manifest.skill_id,
-    );
-
-    if (rule) {
-      const merged = {
-        license: [
-          ...new Set([
-            ...(manifest.requires.license || []),
-            ...(rule.requires_license || []),
-          ]),
-        ],
-        specialty: [
-          ...new Set([
-            ...(manifest.requires.specialty || []),
-            ...(rule.requires_specialty || []),
-          ]),
-        ],
-        privilege: [
-          ...new Set([
-            ...(manifest.requires.privilege || []),
-            ...(rule.requires_privilege || []),
-          ]),
-        ],
-      };
-
-      const rulesCheck = validator.check(cans, merged);
-
-      if (!rulesCheck.valid) {
-        results.push({
-          skillId: manifest.skill_id,
-          loaded: false,
-          reason: rulesCheck.reason,
-        });
-        audit.log({
-          action: 'skill_credential_check',
-          outcome: 'denied',
-          details: {
-            skill_id: manifest.skill_id,
-            source: 'cans_rules',
-            missing_credentials: rulesCheck.missingCredentials,
-            reason: rulesCheck.reason,
-          },
-        });
-        continue;
-      }
+    if (cans.skills.authorized.length > 0 && !cans.skills.authorized.includes(manifest.skill_id)) {
+      const reason = `Skill '${manifest.skill_id}' is not in the authorized skills list`;
+      results.push({ skillId: manifest.skill_id, loaded: false, reason });
+      audit.log({
+        action: 'skill_authorization_check',
+        outcome: 'denied',
+        details: { skill_id: manifest.skill_id, reason },
+      });
+      continue;
     }
 
     // -----------------------------------------------------------------------

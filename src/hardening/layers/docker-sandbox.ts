@@ -6,6 +6,8 @@
  *
  * This layer is report-only: it NEVER blocks tool calls. It reports
  * sandbox status for audit logging and engine composition.
+ *
+ * Hardening is always on (deterministic, hardcoded in plugin).
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -68,12 +70,8 @@ export function detectDocker(): DockerDetectionResult {
  */
 export function checkDockerSandbox(
   _event: ToolCallEvent,
-  cans: CANSDocument,
+  _cans: CANSDocument,
 ): HardeningLayerResult {
-  if (!cans.hardening.docker_sandbox) {
-    return { layer: LAYER_NAME, allowed: true, reason: 'docker_sandbox disabled' };
-  }
-
   const detection = detectDocker();
   if (detection.inContainer) {
     return {

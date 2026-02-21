@@ -79,11 +79,11 @@ describe('ONBD-04: careagent status command', () => {
     expect(output).toContain('manual');
   });
 
-  it('status after init contains hardening flags section', async () => {
+  it('status after init contains provider types and organization', async () => {
     await initWorkspace(tmpDir);
     const output = formatStatus(tmpDir);
-    expect(output).toContain('Hardening Layers');
-    expect(output).toContain('Tool Policy');
+    expect(output).toContain('Physician');
+    expect(output).toContain('University Medical Center');
   });
 
   it('status after init contains audit stats', async () => {

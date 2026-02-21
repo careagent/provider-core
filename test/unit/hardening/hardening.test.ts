@@ -100,13 +100,13 @@ describe('createHardeningEngine', () => {
     expect(result.allowed).toBe(true);
   });
 
-  it('check() with a tool in prohibited_actions returns deny with layer "tool-policy"', () => {
+  it('check() with a tool not in permitted_actions returns deny with layer "tool-policy"', () => {
     const engine = createHardeningEngine();
     engine.activate({ cans, adapter, audit });
     const result = engine.check({ toolName: 'prescribe_controlled_substances' });
     expect(result.allowed).toBe(false);
     expect(result.layer).toBe('tool-policy');
-    expect(result.reason).toContain('prohibited_actions');
+    expect(result.reason).toContain('not in permitted_actions');
   });
 
   it('check() with a non-allowlisted exec command returns deny', () => {

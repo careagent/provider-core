@@ -12,7 +12,7 @@ function makeProposal(overrides?: Partial<Proposal>): Proposal {
   return {
     id: 'proposal-001',
     created_at: '2026-02-19T00:00:00Z',
-    field_path: 'clinical_voice.tone',
+    field_path: 'voice.chart',
     category: 'voice',
     current_value: 'formal',
     proposed_value: 'conversational',
@@ -80,8 +80,8 @@ describe('runProposalsCommand', () => {
 
   it('shows batch summary with all proposals', async () => {
     const proposals = [
-      makeProposal({ id: 'p1', field_path: 'clinical_voice.tone' }),
-      makeProposal({ id: 'p2', field_path: 'clinical_voice.abbreviations', evidence_summary: 'Changed abbreviations' }),
+      makeProposal({ id: 'p1', field_path: 'voice.chart' }),
+      makeProposal({ id: 'p2', field_path: 'voice.order', evidence_summary: 'Changed order style' }),
     ];
     const engine = createMockEngine(proposals);
     const io = createMockIO(['s', 's']); // Skip both
@@ -90,8 +90,8 @@ describe('runProposalsCommand', () => {
 
     const output = io.getOutput().join('\n');
     expect(output).toContain('CANS.md Refinement Proposals (2 pending)');
-    expect(output).toContain('clinical_voice.tone');
-    expect(output).toContain('clinical_voice.abbreviations');
+    expect(output).toContain('voice.chart');
+    expect(output).toContain('voice.order');
   });
 
   it('accept action calls resolveProposal with accept', async () => {
@@ -105,7 +105,7 @@ describe('runProposalsCommand', () => {
     expect(engine.resolveCalls[0]).toEqual({ id: 'p1', action: 'accept' });
 
     const output = io.getOutput().join('\n');
-    expect(output).toContain('Proposal accepted: clinical_voice.tone');
+    expect(output).toContain('Proposal accepted: voice.chart');
   });
 
   it('reject action calls resolveProposal with reject', async () => {
@@ -119,7 +119,7 @@ describe('runProposalsCommand', () => {
     expect(engine.resolveCalls[0]).toEqual({ id: 'p1', action: 'reject' });
 
     const output = io.getOutput().join('\n');
-    expect(output).toContain('Proposal rejected: clinical_voice.tone');
+    expect(output).toContain('Proposal rejected: voice.chart');
   });
 
   it('defer action calls resolveProposal with defer', async () => {
@@ -133,7 +133,7 @@ describe('runProposalsCommand', () => {
     expect(engine.resolveCalls[0]).toEqual({ id: 'p1', action: 'defer' });
 
     const output = io.getOutput().join('\n');
-    expect(output).toContain('Proposal deferred: clinical_voice.tone');
+    expect(output).toContain('Proposal deferred: voice.chart');
   });
 
   it('skip action does not call resolveProposal', async () => {
@@ -148,10 +148,10 @@ describe('runProposalsCommand', () => {
 
   it('summary counts are correct after review', async () => {
     const proposals = [
-      makeProposal({ id: 'p1', field_path: 'clinical_voice.tone' }),
-      makeProposal({ id: 'p2', field_path: 'clinical_voice.abbreviations' }),
-      makeProposal({ id: 'p3', field_path: 'clinical_voice.eponyms' }),
-      makeProposal({ id: 'p4', field_path: 'clinical_voice.documentation_style' }),
+      makeProposal({ id: 'p1', field_path: 'voice.chart' }),
+      makeProposal({ id: 'p2', field_path: 'voice.order' }),
+      makeProposal({ id: 'p3', field_path: 'voice.educate' }),
+      makeProposal({ id: 'p4', field_path: 'voice.coordinate' }),
     ];
     const engine = createMockEngine(proposals);
     // Accept p1, reject p2, defer p3, skip p4

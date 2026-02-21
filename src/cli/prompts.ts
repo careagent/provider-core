@@ -55,13 +55,43 @@ export async function askConfirm(
   return io.confirm(prompt);
 }
 
-const LICENSE_TYPES = ['MD', 'DO', 'NP', 'PA', 'CRNA', 'CNM', 'PhD', 'PsyD'] as const;
-
-export async function askLicenseType(
+/**
+ * Ask for a comma-separated list of strings, returned as a trimmed array.
+ * If required, ensures at least one non-empty entry.
+ */
+export async function askStringArray(
   io: InterviewIO,
-): Promise<typeof LICENSE_TYPES[number]> {
-  const index = await io.select('License type:', [...LICENSE_TYPES]);
-  return LICENSE_TYPES[index];
+  prompt: string,
+  opts?: { required?: boolean },
+): Promise<string[]> {
+  const raw = await io.question(prompt);
+  const items = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (opts?.required && items.length === 0) {
+    io.display('At least one entry is required.');
+    return askStringArray(io, prompt, opts);
+  }
+
+  return items;
+}
+
+/**
+ * Ask for an optional comma-separated list. Returns empty array if skipped.
+ */
+export async function askOptionalStringArray(
+  io: InterviewIO,
+  prompt: string,
+): Promise<string[]> {
+  const raw = await io.question(prompt + ' (press Enter to skip) ');
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return [];
+  return trimmed
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 const AUTONOMY_OPTIONS = [
@@ -77,4 +107,14 @@ export async function askAutonomyTier(
   const index = await io.select(`Autonomy tier for ${actionName}:`, [...AUTONOMY_OPTIONS]);
   const tiers = ['autonomous', 'supervised', 'manual'] as const;
   return tiers[index];
+}
+
+/**
+ * Ask for an optional voice directive for an atomic action.
+ */
+export async function askVoiceDirective(
+  io: InterviewIO,
+  actionName: string,
+): Promise<string | undefined> {
+  return askOptionalText(io, `Voice directive for ${actionName}:`);
 }

@@ -63,15 +63,28 @@ describe('generateCANSContent', () => {
     expect(result.document?.provider.name).toBe('Dr. Test Provider');
   });
 
-  it('all hardening flags appear in generated content', () => {
+  it('generated content includes provider types', () => {
     const result = generateCANSContent(validCANSData as CANSDocument, PHILOSOPHY);
     const content = result.content!;
-    expect(content).toContain('tool_policy_lockdown');
-    expect(content).toContain('exec_approval');
-    expect(content).toContain('cans_protocol_injection');
-    expect(content).toContain('docker_sandbox');
-    expect(content).toContain('safety_guard');
-    expect(content).toContain('audit_trail');
+    expect(content).toContain('Physician');
+  });
+
+  it('generated content includes organization name', () => {
+    const result = generateCANSContent(validCANSData as CANSDocument, PHILOSOPHY);
+    const content = result.content!;
+    expect(content).toContain('University Medical Center');
+  });
+
+  it('generated content includes all 7 autonomy tiers', () => {
+    const result = generateCANSContent(validCANSData as CANSDocument, PHILOSOPHY);
+    const content = result.content!;
+    expect(content).toContain('Chart');
+    expect(content).toContain('Order');
+    expect(content).toContain('Charge');
+    expect(content).toContain('Perform');
+    expect(content).toContain('Interpret');
+    expect(content).toContain('Educate');
+    expect(content).toContain('Coordinate');
   });
 
   it('philosophy text appears in body (after closing ---), not in YAML frontmatter', () => {
@@ -90,14 +103,18 @@ describe('generateCANSContent', () => {
     expect(yamlPart).not.toContain(PHILOSOPHY);
   });
 
-  it('optional fields omitted from YAML when not present (no subspecialty/institution)', () => {
+  it('optional fields omitted from YAML when not present (no subspecialty)', () => {
     const minimalData: CANSDocument = {
-      version: '1.0',
+      version: '2.0',
       provider: {
         name: 'Dr. Minimal',
-        license: { type: 'DO', state: 'CA', number: 'B99999', verified: false },
-        specialty: 'Internal Medicine',
-        privileges: ['general medical care'],
+        types: ['Physician'],
+        degrees: ['DO'],
+        licenses: ['DO-CA-B99999'],
+        certifications: [],
+        organizations: [
+          { name: 'Community Clinic', primary: true },
+        ],
       },
       scope: {
         permitted_actions: ['chart_progress_note'],
@@ -107,19 +124,18 @@ describe('generateCANSContent', () => {
         order: 'supervised',
         charge: 'supervised',
         perform: 'manual',
-      },
-      hardening: {
-        tool_policy_lockdown: true,
-        exec_approval: true,
-        cans_protocol_injection: true,
-        docker_sandbox: true,
-        safety_guard: true,
-        audit_trail: true,
+        interpret: 'manual',
+        educate: 'manual',
+        coordinate: 'manual',
       },
       consent: {
         hipaa_warning_acknowledged: true,
         synthetic_data_only: true,
         audit_consent: true,
+        acknowledged_at: '2026-02-21T00:00:00.000Z',
+      },
+      skills: {
+        authorized: [],
       },
     };
 
@@ -132,7 +148,6 @@ describe('generateCANSContent', () => {
 
     // Optional fields not present in original data should not appear in YAML
     expect(provider.subspecialty).toBeUndefined();
-    expect(provider.institution).toBeUndefined();
     expect(provider.npi).toBeUndefined();
   });
 
@@ -141,9 +156,9 @@ describe('generateCANSContent', () => {
     expect(result.content).toContain('Subspecialty: Spine');
   });
 
-  it('includes institution in body when present', () => {
+  it('includes organization in body when present', () => {
     const result = generateCANSContent(validCANSData as CANSDocument, PHILOSOPHY);
-    expect(result.content).toContain('Institution: University Medical Center');
+    expect(result.content).toContain('University Medical Center');
   });
 });
 
@@ -169,15 +184,12 @@ describe('generateCANSContent with invalid data', () => {
     expect(result.content).toBeUndefined();
   });
 
-  it('returns success: false with errors when license type is invalid', () => {
+  it('returns success: false with errors when types array is empty', () => {
     const invalidData = {
       ...validCANSData,
       provider: {
         ...validCANSData.provider,
-        license: {
-          ...validCANSData.provider.license,
-          type: 'RN' as 'MD',  // not a valid literal
-        },
+        types: [],  // violates minItems: 1
       },
     };
 
@@ -218,23 +230,28 @@ describe('generatePreview', () => {
     expect(preview).toContain('Neurosurgery');
   });
 
-  it('preview contains all autonomy tiers', () => {
+  it('preview contains provider types', () => {
+    const preview = generatePreview(validCANSData as CANSDocument, PHILOSOPHY);
+    expect(preview).toContain('Physician');
+  });
+
+  it('preview contains organization name', () => {
+    const preview = generatePreview(validCANSData as CANSDocument, PHILOSOPHY);
+    expect(preview).toContain('University Medical Center');
+  });
+
+  it('preview contains all 7 autonomy tiers', () => {
     const preview = generatePreview(validCANSData as CANSDocument, PHILOSOPHY);
     expect(preview).toContain('Chart:');
     expect(preview).toContain('Order:');
     expect(preview).toContain('Charge:');
     expect(preview).toContain('Perform:');
+    expect(preview).toContain('Interpret:');
+    expect(preview).toContain('Educate:');
+    expect(preview).toContain('Coordinate:');
     expect(preview).toContain('autonomous');
     expect(preview).toContain('supervised');
     expect(preview).toContain('manual');
-  });
-
-  it('preview contains hardening flags', () => {
-    const preview = generatePreview(validCANSData as CANSDocument, PHILOSOPHY);
-    expect(preview).toContain('tool_policy_lockdown');
-    expect(preview).toContain('exec_approval');
-    expect(preview).toContain('safety_guard');
-    expect(preview).toContain('audit_trail');
   });
 
   it('preview contains consent status', () => {
@@ -243,10 +260,9 @@ describe('generatePreview', () => {
     expect(preview).toContain('yes');
   });
 
-  it('preview shows ON/OFF for hardening flags', () => {
+  it('preview contains acknowledged_at timestamp', () => {
     const preview = generatePreview(validCANSData as CANSDocument, PHILOSOPHY);
-    // validCANSData has docker_sandbox: false
-    expect(preview).toContain('docker_sandbox: OFF');
-    expect(preview).toContain('tool_policy_lockdown: ON');
+    expect(preview).toContain('Acknowledged at:');
+    expect(preview).toContain('2026-02-21T00:00:00.000Z');
   });
 });

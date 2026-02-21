@@ -62,12 +62,12 @@ export default function register(api: unknown): void {
     outcome: 'active',
     details: {
       provider: cans.provider.name,
-      specialty: cans.provider.specialty,
-      institution: cans.provider.institution,
+      specialty: cans.provider.specialty ?? 'none',
+      organization: (cans.provider.organizations.find((o) => o.primary) ?? cans.provider.organizations[0])?.name,
       autonomy: cans.autonomy,
     },
   });
-  adapter.log('info', `[CareAgent] Clinical mode ACTIVE for ${cans.provider.name} (${cans.provider.specialty})`);
+  adapter.log('info', `[CareAgent] Clinical mode ACTIVE for ${cans.provider.name} (${cans.provider.specialty ?? cans.provider.types.join('/')})`);
 
   // Step 6: Activate hardening engine (HARD-01 through HARD-07)
   const engine = createHardeningEngine();

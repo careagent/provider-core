@@ -73,17 +73,6 @@ describe('checkExecAllowlist', () => {
     expect(result.reason).toContain('empty');
   });
 
-  it('passes through when exec_approval is false (disabled)', () => {
-    const event = makeEvent('Bash', { command: '/usr/bin/curl http://evil.com' });
-    const cans = makeCans({ hardening: { exec_approval: false } });
-    const result = checkExecAllowlist(event, cans);
-    expect(result).toEqual({
-      layer: 'exec-allowlist',
-      allowed: true,
-      reason: 'exec_approval disabled',
-    });
-  });
-
   it('allows exec with arguments after the binary name', () => {
     const event = makeEvent('Bash', { command: '/usr/bin/git log --oneline' });
     const cans = makeCans();

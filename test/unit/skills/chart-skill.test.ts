@@ -108,26 +108,33 @@ describe('extractVoiceDirectives', () => {
     expect(extractVoiceDirectives(undefined)).toEqual({});
   });
 
-  it('returns all directives when voice has all fields', () => {
+  it('returns tone from voice.chart when chart is set', () => {
     const result = extractVoiceDirectives({
-      tone: 'professional',
-      documentation_style: 'detailed',
-      eponyms: true,
-      abbreviations: 'standard',
+      chart: 'professional',
     });
     expect(result).toEqual({
       tone: 'professional',
-      documentationStyle: 'detailed',
-      useEponyms: true,
-      abbreviationStyle: 'standard',
     });
   });
 
-  it('returns only defined directives for partial voice', () => {
+  it('returns empty object when voice has no chart field', () => {
     const result = extractVoiceDirectives({
-      tone: 'concise',
+      order: 'concise',
+      charge: 'brief',
     });
-    expect(result).toEqual({ tone: 'concise' });
+    expect(result).toEqual({});
+  });
+
+  it('maps only voice.chart to directives.tone', () => {
+    const result = extractVoiceDirectives({
+      chart: 'formal',
+      order: 'concise',
+      perform: 'detailed',
+      interpret: 'technical',
+      educate: 'plain language',
+      coordinate: 'collaborative',
+    });
+    expect(result).toEqual({ tone: 'formal' });
     expect(result).not.toHaveProperty('documentationStyle');
     expect(result).not.toHaveProperty('useEponyms');
     expect(result).not.toHaveProperty('abbreviationStyle');

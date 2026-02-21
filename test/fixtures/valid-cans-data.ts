@@ -2,42 +2,47 @@
  * Valid CANS document fixture for reuse across tests.
  *
  * Represents a neurosurgeon at a university medical center with
- * spine subspecialty, standard hardening flags, and synthetic-data-only consent.
+ * spine subspecialty, standard consent, and synthetic-data-only.
  */
 export const validCANSData = {
-  version: '1.0',
+  version: '2.0',
   provider: {
     name: 'Dr. Test Provider',
     npi: '1234567890',
-    license: { type: 'MD' as const, state: 'TX', number: 'A12345', verified: false },
+    types: ['Physician'],
+    degrees: ['MD'],
+    licenses: ['MD-TX-A12345'],
+    certifications: ['ABNS Board Certified'],
     specialty: 'Neurosurgery',
     subspecialty: 'Spine',
-    institution: 'University Medical Center',
-    privileges: ['neurosurgical procedures', 'spine surgery'],
+    organizations: [
+      {
+        name: 'University Medical Center',
+        privileges: ['neurosurgical procedures', 'spine surgery'],
+        primary: true,
+      },
+    ],
     credential_status: 'active' as const,
   },
   scope: {
     permitted_actions: ['chart_operative_note', 'chart_progress_note', 'chart_h_and_p'],
-    prohibited_actions: ['prescribe_controlled_substances'],
-    institutional_limitations: ['no_pediatric_cases'],
   },
   autonomy: {
     chart: 'autonomous' as const,
     order: 'supervised' as const,
     charge: 'supervised' as const,
     perform: 'manual' as const,
-  },
-  hardening: {
-    tool_policy_lockdown: true,
-    exec_approval: true,
-    cans_protocol_injection: true,
-    docker_sandbox: false,
-    safety_guard: true,
-    audit_trail: true,
+    interpret: 'manual' as const,
+    educate: 'manual' as const,
+    coordinate: 'manual' as const,
   },
   consent: {
     hipaa_warning_acknowledged: true,
     synthetic_data_only: true,
     audit_consent: true,
+    acknowledged_at: '2026-02-21T00:00:00.000Z',
+  },
+  skills: {
+    authorized: [],
   },
 };

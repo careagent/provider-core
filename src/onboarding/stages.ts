@@ -5,17 +5,19 @@
  */
 
 import type { InterviewIO } from '../cli/io.js';
+import type { CANSDocument } from '../activation/cans-schema.js';
 import {
   askText,
   askOptionalText,
   askSelect,
   askConfirm,
-  askLicenseType,
+  askStringArray,
+  askOptionalStringArray,
   askAutonomyTier,
+  askVoiceDirective,
 } from '../cli/prompts.js';
 import type { InterviewState } from './engine.js';
 import { InterviewStage } from './engine.js';
-import { defaultHardening } from './defaults.js';
 
 // ---------------------------------------------------------------------------
 // Welcome Stage
@@ -88,11 +90,11 @@ export async function identityStage(
   const updatedData = {
     ...state.data,
     provider: {
-      ...state.data.provider,
+      ...(state.data.provider ?? {}),
       name,
       ...(npiValue !== undefined ? { npi: npiValue } : {}),
     },
-  };
+  } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.CREDENTIALS, data: updatedData };
 }
@@ -108,30 +110,37 @@ export async function credentialsStage(
   io.display('');
   io.display('--- Credentials ---');
 
-  const licenseType = await askLicenseType(io);
+  const types = await askStringArray(
+    io,
+    'Provider type(s) (comma-separated, e.g., Physician, Nurse Practitioner): ',
+    { required: true },
+  );
 
-  const licenseState = (
-    await askText(io, 'License state (2-letter abbreviation, e.g., TX): ', {
-      required: true,
-      minLength: 2,
-      maxLength: 2,
-    })
-  ).toUpperCase();
+  const degrees = await askOptionalStringArray(
+    io,
+    'Degree(s) (comma-separated, e.g., MD, DO, DNP):',
+  );
 
-  const licenseNumber = await askText(io, 'License number: ', { required: true });
+  const licenses = await askOptionalStringArray(
+    io,
+    'License(s) (comma-separated, e.g., MD-TX-A12345):',
+  );
+
+  const certifications = await askOptionalStringArray(
+    io,
+    'Certification(s) (comma-separated, e.g., ABNS Board Certified):',
+  );
 
   const updatedData = {
     ...state.data,
     provider: {
-      ...state.data.provider,
-      license: {
-        type: licenseType,
-        state: licenseState,
-        number: licenseNumber,
-        verified: false,
-      },
+      ...(state.data.provider ?? {}),
+      types,
+      degrees,
+      licenses,
+      certifications,
     },
-  };
+  } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.SPECIALTY, data: updatedData };
 }
@@ -145,26 +154,32 @@ export async function specialtyStage(
   io: InterviewIO,
 ): Promise<InterviewState> {
   io.display('');
-  io.display('--- Specialty ---');
+  io.display('--- Specialty & Organizations ---');
 
-  const specialty = await askText(
+  const specialtyRaw = await askOptionalText(
     io,
-    'Primary specialty (e.g., Neurosurgery, Internal Medicine): ',
-    { required: true },
+    'Primary specialty (e.g., Neurosurgery, Internal Medicine):',
   );
-
   const subspecialtyRaw = await askOptionalText(io, 'Subspecialty:');
-  const institutionRaw = await askOptionalText(io, 'Institution/Hospital:');
 
-  const privilegesRaw = await askText(
+  // Collect primary organization
+  io.display('');
+  io.display('--- Primary Organization ---');
+  const orgName = await askText(io, 'Organization name (e.g., University Medical Center): ', {
+    required: true,
+  });
+  const departmentRaw = await askOptionalText(io, 'Department:');
+  const orgPrivilegesRaw = await askOptionalStringArray(
     io,
-    'List your clinical privileges (comma-separated, e.g., neurosurgical procedures, spine surgery): ',
-    { required: true },
+    'Privileges at this organization (comma-separated):',
   );
-  const privileges = privilegesRaw
-    .split(',')
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
+
+  const primaryOrg = {
+    name: orgName,
+    ...(departmentRaw !== undefined ? { department: departmentRaw } : {}),
+    ...(orgPrivilegesRaw.length > 0 ? { privileges: orgPrivilegesRaw } : {}),
+    primary: true,
+  };
 
   const credentialStatusIndex = await askSelect(io, 'Credential status:', [
     'active',
@@ -177,14 +192,13 @@ export async function specialtyStage(
   const updatedData = {
     ...state.data,
     provider: {
-      ...state.data.provider,
-      specialty,
+      ...(state.data.provider ?? {}),
+      ...(specialtyRaw !== undefined ? { specialty: specialtyRaw } : {}),
       ...(subspecialtyRaw !== undefined ? { subspecialty: subspecialtyRaw } : {}),
-      ...(institutionRaw !== undefined ? { institution: institutionRaw } : {}),
-      privileges,
+      organizations: [primaryOrg],
       credential_status: credentialStatus,
     },
-  };
+  } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.SCOPE, data: updatedData };
 }
@@ -199,47 +213,18 @@ export async function scopeStage(
 ): Promise<InterviewState> {
   io.display('');
   io.display('--- Scope of Practice ---');
-  io.display('Define what CareAgent is permitted and prohibited from doing.');
+  io.display('Define what CareAgent is permitted to do (whitelist-only model).');
 
-  const permittedRaw = await askText(
+  const permittedActions = await askStringArray(
     io,
     'Permitted actions (comma-separated, e.g., chart_operative_note, chart_progress_note): ',
     { required: true },
   );
-  const permittedActions = permittedRaw
-    .split(',')
-    .map((a) => a.trim())
-    .filter((a) => a.length > 0);
-
-  const prohibitedRaw = await askOptionalText(io, 'Prohibited actions (comma-separated):');
-  const prohibitedActions =
-    prohibitedRaw !== undefined
-      ? prohibitedRaw
-          .split(',')
-          .map((a) => a.trim())
-          .filter((a) => a.length > 0)
-      : undefined;
-
-  const limitationsRaw = await askOptionalText(
-    io,
-    'Institutional limitations (comma-separated):',
-  );
-  const institutionalLimitations =
-    limitationsRaw !== undefined
-      ? limitationsRaw
-          .split(',')
-          .map((l) => l.trim())
-          .filter((l) => l.length > 0)
-      : undefined;
 
   const updatedData = {
     ...state.data,
     scope: {
       permitted_actions: permittedActions,
-      ...(prohibitedActions !== undefined ? { prohibited_actions: prohibitedActions } : {}),
-      ...(institutionalLimitations !== undefined
-        ? { institutional_limitations: institutionalLimitations }
-        : {}),
     },
   };
 
@@ -277,42 +262,28 @@ export async function voiceStage(
 ): Promise<InterviewState> {
   io.display('');
   io.display('--- Clinical Voice ---');
-  io.display('Configure how CareAgent writes clinical documentation in your voice.');
+  io.display('Configure voice directives for each atomic action.');
+  io.display('These describe how CareAgent should write/communicate for each action type.');
+  io.display('Press Enter to skip any action.');
 
-  const toneRaw = await askOptionalText(
-    io,
-    'Documentation tone (e.g., formal, conversational, concise):',
-  );
-
-  const docStyleIndex = await askSelect(io, 'Documentation style:', [
-    'Concise bullet-point notes',
-    'Narrative paragraphs',
-    'Structured templates',
-    'Mixed',
-  ]);
-  const docStyleValues = ['concise', 'narrative', 'structured', 'mixed'] as const;
-  const documentationStyle = docStyleValues[docStyleIndex];
-
-  const eponyms = await askConfirm(
-    io,
-    'Use medical eponyms (e.g., Babinski sign vs. extensor plantar response)?',
-  );
-
-  const abbreviationsIndex = await askSelect(io, 'Abbreviation style:', [
-    'Standard medical abbreviations',
-    'Minimal abbreviations',
-    'Spelled out',
-  ]);
-  const abbreviationsValues = ['standard', 'minimal', 'spelled-out'] as const;
-  const abbreviations = abbreviationsValues[abbreviationsIndex];
+  const chart = await askVoiceDirective(io, 'chart');
+  const order = await askVoiceDirective(io, 'order');
+  const charge = await askVoiceDirective(io, 'charge');
+  const perform = await askVoiceDirective(io, 'perform');
+  const interpret = await askVoiceDirective(io, 'interpret');
+  const educate = await askVoiceDirective(io, 'educate');
+  const coordinate = await askVoiceDirective(io, 'coordinate');
 
   const updatedData = {
     ...state.data,
-    clinical_voice: {
-      ...(toneRaw !== undefined ? { tone: toneRaw } : {}),
-      documentation_style: documentationStyle,
-      eponyms,
-      abbreviations,
+    voice: {
+      ...(chart !== undefined ? { chart } : {}),
+      ...(order !== undefined ? { order } : {}),
+      ...(charge !== undefined ? { charge } : {}),
+      ...(perform !== undefined ? { perform } : {}),
+      ...(interpret !== undefined ? { interpret } : {}),
+      ...(educate !== undefined ? { educate } : {}),
+      ...(coordinate !== undefined ? { coordinate } : {}),
     },
   };
 
@@ -329,7 +300,7 @@ export async function autonomyStage(
 ): Promise<InterviewState> {
   io.display('');
   io.display('--- Autonomy Tiers ---');
-  io.display('Configure autonomy tiers for CareAgent\'s four atomic actions.');
+  io.display("Configure autonomy tiers for CareAgent's seven atomic actions.");
   io.display('');
   io.display('Tiers:');
   io.display('  autonomous  - AI acts independently with post-hoc review');
@@ -340,10 +311,13 @@ export async function autonomyStage(
   const order = await askAutonomyTier(io, 'order');
   const charge = await askAutonomyTier(io, 'charge');
   const perform = await askAutonomyTier(io, 'perform');
+  const interpret = await askAutonomyTier(io, 'interpret');
+  const educate = await askAutonomyTier(io, 'educate');
+  const coordinate = await askAutonomyTier(io, 'coordinate');
 
   const updatedData = {
     ...state.data,
-    autonomy: { chart, order, charge, perform },
+    autonomy: { chart, order, charge, perform, interpret, educate, coordinate },
   };
 
   return { ...state, stage: InterviewStage.CONSENT, data: updatedData };
@@ -397,8 +371,9 @@ export async function consentStage(
       hipaa_warning_acknowledged: true,
       synthetic_data_only: true,
       audit_consent: true,
+      acknowledged_at: new Date().toISOString(),
     },
-    hardening: defaultHardening,
+    skills: state.data.skills ?? { authorized: [] },
   };
 
   return { ...state, stage: InterviewStage.COMPLETE, data: updatedData };
