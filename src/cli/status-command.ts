@@ -80,11 +80,35 @@ function checkIntegrity(workspacePath: string): string {
   }
 }
 
+interface SkillCacheEntry {
+  skillId: string;
+  loaded: boolean;
+  version?: string;
+  reason?: string;
+}
+
+interface SkillCache {
+  timestamp: string;
+  results: SkillCacheEntry[];
+}
+
+function readSkillCache(workspacePath: string): SkillCacheEntry[] {
+  const cachePath = join(workspacePath, '.careagent', 'skill-load-results.json');
+  if (!existsSync(cachePath)) return [];
+  try {
+    const data = JSON.parse(readFileSync(cachePath, 'utf-8')) as SkillCache;
+    return Array.isArray(data.results) ? data.results : [];
+  } catch {
+    return [];
+  }
+}
+
 export function formatStatus(workspacePath: string): string {
   const gate = new ActivationGate(workspacePath, () => { /* no-op */ });
   const result = gate.check();
   const auditStats = readAuditStats(workspacePath);
   const integrityStatus = checkIntegrity(workspacePath);
+  const skillCache = readSkillCache(workspacePath);
 
   const lines: string[] = [];
 
@@ -95,6 +119,16 @@ export function formatStatus(workspacePath: string): string {
 
   if (!result.active && result.reason) {
     lines.push(`Reason:           ${result.reason}`);
+  }
+
+  if (!result.active && skillCache.length > 0) {
+    lines.push('');
+    lines.push('Clinical Skills (last session):');
+    for (const entry of skillCache) {
+      const status = entry.loaded ? 'Loaded' : `Not Loaded — ${entry.reason ?? 'unknown'}`;
+      const version = entry.version ? ` (${entry.version})` : '';
+      lines.push(`  ${entry.skillId}${version}:`.padEnd(22) + status);
+    }
   }
 
   if (result.active && result.document) {
@@ -127,6 +161,18 @@ export function formatStatus(workspacePath: string): string {
 
     lines.push('');
     lines.push('Hardening: always on (deterministic)');
+
+    lines.push('');
+    lines.push('Clinical Skills:');
+    if (skillCache.length === 0) {
+      lines.push('  Not loaded in this session');
+    } else {
+      for (const entry of skillCache) {
+        const status = entry.loaded ? 'Loaded' : `Not Loaded — ${entry.reason ?? 'unknown'}`;
+        const version = entry.version ? ` (${entry.version})` : '';
+        lines.push(`  ${entry.skillId}${version}:`.padEnd(22) + status);
+      }
+    }
   }
 
   lines.push('');
