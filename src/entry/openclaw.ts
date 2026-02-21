@@ -10,6 +10,7 @@
  * Phase 5 wires: Refinement Engine (CANS-08 through CANS-10).
  */
 
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { detectPlatform } from '../adapters/detect.js';
@@ -104,6 +105,32 @@ export default function register(api: unknown): void {
         context.addFile('CHART_SKILL_INSTRUCTIONS', instructions);
       });
       adapter.log('info', '[CareAgent] Chart-skill instructions registered for agent bootstrap');
+    }
+
+    // ONBD-04: Persist skill results so careagent status can display loaded skills
+    try {
+      const cacheDir = join(workspacePath, '.careagent');
+      mkdirSync(cacheDir, { recursive: true });
+      writeFileSync(
+        join(cacheDir, 'skill-load-results.json'),
+        JSON.stringify(
+          {
+            timestamp: new Date().toISOString(),
+            results: skillResults.map(r => ({
+              skillId: r.skillId,
+              loaded: r.loaded,
+              version: r.version,
+              reason: r.reason,
+            })),
+          },
+          null,
+          2,
+        ),
+        'utf-8',
+      );
+    } catch (cacheErr) {
+      const msg = cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
+      adapter.log('warn', `[CareAgent] Failed to write skill cache: ${msg}`);
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

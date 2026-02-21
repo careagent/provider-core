@@ -8,6 +8,7 @@
  * Phase 5 wires: Refinement Engine (CANS-08 through CANS-10).
  */
 
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { detectPlatform } from '../adapters/detect.js';
@@ -92,6 +93,31 @@ export function activate(workspacePath?: string): ActivateResult {
         adapter.onAgentBootstrap((context) => {
           context.addFile('CHART_SKILL_INSTRUCTIONS', instructions);
         });
+      }
+
+      // ONBD-04: Persist skill results for status command
+      try {
+        const cacheDir = join(resolvedPath, '.careagent');
+        mkdirSync(cacheDir, { recursive: true });
+        writeFileSync(
+          join(cacheDir, 'skill-load-results.json'),
+          JSON.stringify(
+            {
+              timestamp: new Date().toISOString(),
+              results: skills.map(r => ({
+                skillId: r.skillId,
+                loaded: r.loaded,
+                version: r.version,
+                reason: r.reason,
+              })),
+            },
+            null,
+            2,
+          ),
+          'utf-8',
+        );
+      } catch {
+        // Non-fatal: status will show "Not loaded in this session"
       }
     } catch {
       // Skills loading is non-fatal in standalone mode
