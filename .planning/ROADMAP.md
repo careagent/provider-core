@@ -2,7 +2,7 @@
 
 **Created:** 2026-02-17
 **Depth:** Comprehensive
-**Phases:** 7
+**Phases:** 8
 **Coverage:** 52/52 v1 requirements mapped
 
 ---
@@ -17,6 +17,7 @@
 - [x] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
 - [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
 - [x] **Phase 7: Production Wiring Gap Closure** - All orphaned subsystem functions are connected to their production call sites (completed 2026-02-21)
+- [ ] **Phase 8: Workspace Profile Selection Wiring** - detectPlatform() result drives workspace profile selection so supplementation adapts per platform
 
 ---
 
@@ -157,6 +158,18 @@ Plans:
 - [ ] 07-01-PLAN.md — Entry point wiring: detectPlatform, buildChartSkillInstructions, refinement.observe, skill cache write (PORT-02, SKIL-05, SKIL-06, CANS-08, ONBD-04)
 - [ ] 07-02-PLAN.md — Status command skill display and integration tests for all five gaps (ONBD-04, CANS-08, SKIL-05, SKIL-06, PORT-02)
 
+### Phase 8: Workspace Profile Selection Wiring
+**Goal:** Wire detectPlatform() result into getWorkspaceProfile() so workspace supplementation selects the correct profile per platform, making agentsStandardProfile and standaloneProfile reachable at runtime
+**Depends on:** Phase 7 (requires detectPlatform() to be called in entry points)
+**Requirements:** PORT-03
+**Gap Closure:** Closes PORT-03 partial gap and detectPlatform→getWorkspaceProfile integration gap from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. detectPlatform() result is passed to getWorkspaceProfile() so the returned profile matches the detected platform
+  2. OpenClaw entry point selects openclawProfile, standalone entry point selects standaloneProfile, AGENTS.md-standard environments select agentsStandardProfile
+  3. All existing 706+ tests continue passing; no regressions
+Plans:
+- [ ] 08-01-PLAN.md — Wire detectPlatform result to profile selection and add platform-specific profile tests (PORT-03)
+
 ---
 
 ## Progress
@@ -171,6 +184,7 @@ Plans:
 | 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
 | 6. Documentation and Release | 0/3 | Planned | - |
 | 7. Production Wiring Gap Closure | 0/? | Complete    | 2026-02-21 |
+| 8. Workspace Profile Selection Wiring | 0/1 | Planned | - |
 
 ---
 
@@ -203,7 +217,7 @@ Plans:
 | ONBD-05 | Phase 2 |
 | PORT-01 | Portability |
 | PORT-02 | Phase 7 |
-| PORT-03 | Portability |
+| PORT-03 | Phase 8 |
 | PORT-04 | Portability |
 | HARD-01 | Phase 3 |
 | HARD-02 | Phase 3 |
@@ -236,4 +250,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-19 (gap closure Phase 7 added per v1.0 milestone audit — 5 partial requirements reassigned)*
+*Last updated: 2026-02-21 (gap closure Phase 8 added per v1.0 re-audit — PORT-03 partial requirement reassigned)*
