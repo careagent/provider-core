@@ -1,5 +1,6 @@
 import type { PlatformAdapter } from '../adapters/types.js';
 import type { AuditPipeline } from '../audit/pipeline.js';
+import type { WorkspaceProfile } from '../onboarding/workspace-profiles.js';
 import { createTerminalIO } from './io.js';
 import { runInitCommand } from './init-command.js';
 import { runStatusCommand } from './status-command.js';
@@ -8,13 +9,14 @@ export function registerCLI(
   adapter: PlatformAdapter,
   workspacePath: string,
   audit: AuditPipeline,
+  profile?: WorkspaceProfile,
 ): void {
   adapter.registerCliCommand({
     name: 'careagent init',
     description: 'Initialize CareAgent with a clinical onboarding interview',
     handler: async () => {
       const io = createTerminalIO();
-      await runInitCommand(io, workspacePath, audit);
+      await runInitCommand(io, workspacePath, audit, profile);
     },
   });
 

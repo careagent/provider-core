@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { detectPlatform } from '../adapters/detect.js';
 import { createStandaloneAdapter } from '../adapters/standalone/index.js';
+import { getWorkspaceProfile } from '../onboarding/workspace-profiles.js';
+import type { WorkspaceProfile } from '../onboarding/workspace-profiles.js';
 import type { PlatformAdapter } from '../adapters/types.js';
 import { ActivationGate, type ActivationResult } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
@@ -32,6 +34,7 @@ export interface ActivateResult {
   engine?: HardeningEngine;
   skills?: SkillLoadResult[];
   refinement?: RefinementEngine;
+  profile: WorkspaceProfile;
 }
 
 /**
@@ -44,8 +47,9 @@ export interface ActivateResult {
  * @param workspacePath - The workspace directory. Defaults to process.cwd().
  */
 export function activate(workspacePath?: string): ActivateResult {
-  // Step 0: Detect platform (PORT-02)
+  // Step 0: Detect platform (PORT-02) and resolve workspace profile (PORT-03)
   const platform = detectPlatform(undefined);
+  const profile = getWorkspaceProfile(platform);
 
   const adapter = createStandaloneAdapter(workspacePath);
   adapter.log('info', `[CareAgent] Platform detected: ${platform}`);
@@ -140,7 +144,7 @@ export function activate(workspacePath?: string): ActivateResult {
       });
     });
 
-    return { adapter, audit, activation, engine, skills, refinement };
+    return { adapter, audit, activation, engine, skills, refinement, profile };
   } else {
     audit.log({
       action: 'activation_check',
@@ -150,5 +154,5 @@ export function activate(workspacePath?: string): ActivateResult {
     });
   }
 
-  return { adapter, audit, activation };
+  return { adapter, audit, activation, profile };
 }

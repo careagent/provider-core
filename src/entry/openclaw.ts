@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { detectPlatform } from '../adapters/detect.js';
 import { createAdapter } from '../adapters/openclaw/index.js';
+import { getWorkspaceProfile } from '../onboarding/workspace-profiles.js';
 import { ActivationGate } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
 import { createAuditIntegrityService } from '../audit/integrity-service.js';
@@ -26,8 +27,9 @@ import { CHART_SKILL_ID, buildChartSkillInstructions } from '../skills/chart-ski
 import { createRefinementEngine } from '../refinement/index.js';
 
 export default function register(api: unknown): void {
-  // Step 0: Detect platform (PORT-02)
+  // Step 0: Detect platform (PORT-02) and resolve workspace profile (PORT-03)
   const platform = detectPlatform(api);
+  const profile = getWorkspaceProfile(platform);
 
   // Step 1: Create adapter
   const adapter = createAdapter(api);
@@ -38,7 +40,7 @@ export default function register(api: unknown): void {
   const audit = new AuditPipeline(workspacePath);
 
   // Step 3: Register CLI commands (always available — needed before CANS.md exists)
-  registerCLI(adapter, workspacePath, audit);
+  registerCLI(adapter, workspacePath, audit, profile);
 
   // Step 4: Check activation gate
   const gate = new ActivationGate(workspacePath, (entry) => audit.log({
