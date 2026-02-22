@@ -1,8 +1,11 @@
 /**
- * Integration tests for Phase 7 production wiring gap closure.
+ * Integration tests for production wiring gap closure.
  *
- * Verifies that all five orphaned subsystem functions are reachable
+ * Phase 7: Verifies that all five orphaned subsystem functions are reachable
  * from their production call sites after the wiring changes.
+ *
+ * Phase 8 (PORT-03): Verifies that workspace profile selection is wired
+ * end-to-end — detectPlatform -> getWorkspaceProfile -> supplementWorkspaceFiles.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
@@ -20,7 +23,15 @@ import { detectPlatform } from '../../src/adapters/detect.js';
 import { activate } from '../../src/entry/standalone.js';
 import { buildChartSkillInstructions } from '../../src/skills/chart-skill/index.js';
 import { formatStatus } from '../../src/cli/status-command.js';
-import { createTestWorkspace } from '../fixtures/synthetic-neurosurgeon.js';
+import {
+  openclawProfile,
+  standaloneProfile,
+  agentsStandardProfile,
+  getWorkspaceProfile,
+} from '../../src/onboarding/workspace-profiles.js';
+import { supplementWorkspaceFiles } from '../../src/onboarding/workspace-writer.js';
+import { createTestWorkspace, syntheticNeurosurgeonCANS } from '../fixtures/synthetic-neurosurgeon.js';
+import { validCANSData } from '../fixtures/valid-cans-data.js';
 
 // ---------------------------------------------------------------------------
 // PORT-02: detectPlatform production call site
@@ -171,5 +182,93 @@ describe('ONBD-04: formatStatus() skill display', () => {
     const output = formatStatus(tmpDir);
     expect(output).toContain('Clinical Skills');
     expect(output).toContain('Not loaded in this session');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PORT-03: workspace profile selection
+// ---------------------------------------------------------------------------
+
+describe('PORT-03: workspace profile selection', () => {
+  it('getWorkspaceProfile("openclaw") returns openclawProfile', () => {
+    expect(getWorkspaceProfile('openclaw')).toBe(openclawProfile);
+  });
+
+  it('getWorkspaceProfile("standalone") returns standaloneProfile', () => {
+    expect(getWorkspaceProfile('standalone')).toBe(standaloneProfile);
+  });
+
+  it('getWorkspaceProfile("agents-standard") returns agentsStandardProfile', () => {
+    expect(getWorkspaceProfile('agents-standard')).toBe(agentsStandardProfile);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PORT-03: activate() returns correct workspace profile on ActivateResult
+// ---------------------------------------------------------------------------
+
+describe('PORT-03: activate() returns correct workspace profile', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'careagent-wiring-profile-'));
+    createTestWorkspace(tmpDir);
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('activate() returns standaloneProfile on ActivateResult', () => {
+    const result = activate(tmpDir);
+    expect(result.profile).toBeDefined();
+    expect(result.profile.platform).toBe('standalone');
+    expect(result.profile.files).toHaveLength(0);
+  });
+
+  it('activate() profile is the same object as standaloneProfile', () => {
+    const result = activate(tmpDir);
+    expect(result.profile).toBe(standaloneProfile);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PORT-03: supplementWorkspaceFiles respects profile selection
+// ---------------------------------------------------------------------------
+
+describe('PORT-03: supplementWorkspaceFiles respects profile selection', () => {
+  let tmpDir: string;
+  const philosophy = 'Patient safety above all else.';
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'careagent-profile-supplement-'));
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('openclawProfile supplements SOUL.md, AGENTS.md, USER.md', () => {
+    const supplemented = supplementWorkspaceFiles(tmpDir, validCANSData, philosophy, openclawProfile);
+    expect(supplemented).toEqual(['SOUL.md', 'AGENTS.md', 'USER.md']);
+    expect(existsSync(join(tmpDir, 'SOUL.md'))).toBe(true);
+    expect(existsSync(join(tmpDir, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(tmpDir, 'USER.md'))).toBe(true);
+  });
+
+  it('standaloneProfile supplements zero files', () => {
+    const supplemented = supplementWorkspaceFiles(tmpDir, validCANSData, philosophy, standaloneProfile);
+    expect(supplemented).toHaveLength(0);
+    expect(existsSync(join(tmpDir, 'SOUL.md'))).toBe(false);
+    expect(existsSync(join(tmpDir, 'AGENTS.md'))).toBe(false);
+    expect(existsSync(join(tmpDir, 'USER.md'))).toBe(false);
+  });
+
+  it('agentsStandardProfile supplements only AGENTS.md', () => {
+    const supplemented = supplementWorkspaceFiles(tmpDir, validCANSData, philosophy, agentsStandardProfile);
+    expect(supplemented).toEqual(['AGENTS.md']);
+    expect(existsSync(join(tmpDir, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(tmpDir, 'SOUL.md'))).toBe(false);
+    expect(existsSync(join(tmpDir, 'USER.md'))).toBe(false);
   });
 });
