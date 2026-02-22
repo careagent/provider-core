@@ -38,7 +38,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **PORT-01**: PlatformAdapter interface abstracts host platform interactions; CareAgent subsystems never depend on a specific platform's raw API
 - [x] **PORT-02**: Platform detection duck-types the API object to automatically select the correct adapter (OpenClaw, standalone)
-- [ ] **PORT-03**: Workspace file supplementation is configurable per platform via workspace profiles (OpenClaw: SOUL.md + AGENTS.md + USER.md; AGENTS.md standard: single AGENTS.md; standalone: no supplementation)
+- [x] **PORT-03**: Workspace file supplementation is configurable per platform via workspace profiles (OpenClaw: SOUL.md + AGENTS.md + USER.md; AGENTS.md standard: single AGENTS.md; standalone: no supplementation)
 - [x] **PORT-04**: Multiple entry points allow platform-specific or pure-library usage (`@careagent/provider-core`, `@careagent/provider-core/standalone`, `@careagent/provider-core/core`)
 
 ### Runtime Hardening
@@ -160,7 +160,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ONBD-05 | Phase 2 | Complete |
 | PORT-01 | Portability | Complete |
 | PORT-02 | Phase 7 | Complete |
-| PORT-03 | Phase 8 | Pending |
+| PORT-03 | Phase 8 | Complete |
 | PORT-04 | Portability | Complete |
 | HARD-01 | Phase 3 | Complete |
 | HARD-02 | Phase 3 | Complete |
