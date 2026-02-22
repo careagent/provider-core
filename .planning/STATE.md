@@ -8,8 +8,8 @@ See: .planning/PROJECT.md
 
 **Milestone:** v1.0 milestone
 **Current phase:** 08-workspace-profile-selection-wiring
-**Current Plan:** 02 (complete)
-**Status:** Phase complete
+**Current Plan:** Not started
+**Status:** Milestone complete
 **Progress:** [█████████░] 91%
 
 ## Decisions
