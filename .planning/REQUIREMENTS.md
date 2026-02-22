@@ -81,7 +81,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DOCS-02**: Installation guide covers OpenClaw setup, plugin installation, and VPS deployment
 - [x] **DOCS-03**: Onboarding walkthrough guides a provider through `careagent init` to first clinical interaction
 - [x] **DOCS-04**: Configuration reference documents CANS.md schema, skill metadata format, and plugin settings
-- [ ] **DOCS-05**: Repository is prepared for open-source release with LICENSE, README, CONTRIBUTING guide
+- [x] **DOCS-05**: Repository is prepared for open-source release with LICENSE, README, CONTRIBUTING guide
 
 ### Integration
 
@@ -186,7 +186,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOCS-02 | Phase 6 | Complete |
 | DOCS-03 | Phase 6 | Complete |
 | DOCS-04 | Phase 6 | Complete |
-| DOCS-05 | Phase 6 | Pending |
+| DOCS-05 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 52 total (48 original + 4 portability)
