@@ -165,10 +165,12 @@ Plans:
 **Gap Closure:** Closes PORT-03 partial gap and detectPlatform→getWorkspaceProfile integration gap from v1.0 audit
 **Success Criteria** (what must be TRUE):
   1. detectPlatform() result is passed to getWorkspaceProfile() so the returned profile matches the detected platform
-  2. OpenClaw entry point selects openclawProfile, standalone entry point selects standaloneProfile, AGENTS.md-standard environments select agentsStandardProfile
+  2. OpenClaw entry point selects openclawProfile, standalone entry point selects standaloneProfile. The agents-standard profile is reachable via explicit `getWorkspaceProfile('agents-standard')` call and is integration-tested end-to-end; agents-standard auto-detection (extending `detectPlatform()` to distinguish AGENTS.md-standard hosts from generic standalone) is deferred to a future phase per research recommendation (Option D)
   3. All existing 706+ tests continue passing; no regressions
+**Plans:** 2 plans
 Plans:
-- [ ] 08-01-PLAN.md — Wire detectPlatform result to profile selection and add platform-specific profile tests (PORT-03)
+- [x] 08-01-PLAN.md — Wire detectPlatform result to profile selection and add platform-specific profile tests (PORT-03)
+- [ ] 08-02-PLAN.md — Close verification gap: document agents-standard auto-detection deferral (PORT-03)
 
 ---
 
@@ -184,7 +186,7 @@ Plans:
 | 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
 | 6. Documentation and Release | 0/3 | Planned | - |
 | 7. Production Wiring Gap Closure | 0/? | Complete    | 2026-02-21 |
-| 8. Workspace Profile Selection Wiring | 0/1 | Planned | - |
+| 8. Workspace Profile Selection Wiring | 1/2 | In Progress | - |
 
 ---
 
