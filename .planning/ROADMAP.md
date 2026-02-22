@@ -15,7 +15,7 @@
 - [x] **Phase 3: Runtime Hardening** - Six defense layers prevent any action outside the provider's credentialed scope
 - [x] **Phase 4: Clinical Skills** - chart-skill generates template-constrained clinical documentation gated on provider credentials
 - [x] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
-- [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
+- [x] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone (completed 2026-02-22)
 - [x] **Phase 7: Production Wiring Gap Closure** - All orphaned subsystem functions are connected to their production call sites (completed 2026-02-21)
 - [x] **Phase 8: Workspace Profile Selection Wiring** - detectPlatform() result drives workspace profile selection so supplementation adapts per platform
 
@@ -136,7 +136,7 @@ Plans:
   3. Onboarding walkthrough guides a provider from `careagent init` through their first clinical documentation generation
   4. CANS.md schema, skill metadata format, and plugin configuration are fully documented with examples
   5. Repository has LICENSE (Apache 2.0), README, and CONTRIBUTING guide ready for public release
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 06-01-PLAN.md — Architecture guide and installation guide (DOCS-01, DOCS-02)
 - [ ] 06-02-PLAN.md — Onboarding walkthrough and configuration reference (DOCS-03, DOCS-04)
@@ -184,7 +184,7 @@ Plans:
 | 3. Runtime Hardening | 4/4 | Complete | 2026-02-19 |
 | 4. Clinical Skills | 5/5 | Complete | 2026-02-19 |
 | 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
-| 6. Documentation and Release | 0/3 | Planned | - |
+| 6. Documentation and Release | 0/3 | Complete    | 2026-02-22 |
 | 7. Production Wiring Gap Closure | 0/? | Complete    | 2026-02-21 |
 | 8. Workspace Profile Selection Wiring | 2/2 | Complete | 2026-02-22 |
 

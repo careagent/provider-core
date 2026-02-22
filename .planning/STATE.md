@@ -8,8 +8,8 @@ See: .planning/PROJECT.md
 
 **Milestone:** v1.0 milestone
 **Current phase:** 06-documentation-and-release
-**Current Plan:** Plan 03 complete (all 3 plans complete)
-**Status:** Phase complete
+**Current Plan:** Not started
+**Status:** Ready to plan
 **Progress:** [██████████] 100%
 
 ## Decisions
