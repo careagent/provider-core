@@ -17,7 +17,7 @@
 - [x] **Phase 5: CANS Continuous Improvement and Integration** - CareAgent proposes refinements to CANS.md and the full end-to-end flow is verified
 - [ ] **Phase 6: Documentation and Release** - A developer can install, onboard, and use CareAgent by following documentation alone
 - [x] **Phase 7: Production Wiring Gap Closure** - All orphaned subsystem functions are connected to their production call sites (completed 2026-02-21)
-- [ ] **Phase 8: Workspace Profile Selection Wiring** - detectPlatform() result drives workspace profile selection so supplementation adapts per platform
+- [x] **Phase 8: Workspace Profile Selection Wiring** - detectPlatform() result drives workspace profile selection so supplementation adapts per platform
 
 ---
 
@@ -170,7 +170,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 08-01-PLAN.md — Wire detectPlatform result to profile selection and add platform-specific profile tests (PORT-03)
-- [ ] 08-02-PLAN.md — Close verification gap: document agents-standard auto-detection deferral (PORT-03)
+- [x] 08-02-PLAN.md — Close verification gap: document agents-standard auto-detection deferral (PORT-03)
 
 ---
 
@@ -186,7 +186,7 @@ Plans:
 | 5. CANS Continuous Improvement and Integration | 3/3 | Complete | 2026-02-19 |
 | 6. Documentation and Release | 0/3 | Planned | - |
 | 7. Production Wiring Gap Closure | 0/? | Complete    | 2026-02-21 |
-| 8. Workspace Profile Selection Wiring | 1/2 | In Progress | - |
+| 8. Workspace Profile Selection Wiring | 2/2 | Complete | 2026-02-22 |
 
 ---
 

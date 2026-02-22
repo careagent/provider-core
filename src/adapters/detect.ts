@@ -3,7 +3,16 @@
  * host platform CareAgent is running under.
  */
 
-/** Supported platform identifiers. */
+/**
+ * Supported platform identifiers.
+ *
+ * Extension point: To support AGENTS.md-standard environments (Claude Code,
+ * Cursor, Windsurf) as a distinct platform, add `'agents-standard'` to this
+ * union and extend the duck-typing logic in {@link detectPlatform}. The
+ * downstream wiring (getWorkspaceProfile -> runInitCommand ->
+ * supplementWorkspaceFiles) already handles `'agents-standard'` with no
+ * code changes needed.
+ */
 export type DetectedPlatform = 'openclaw' | 'standalone';
 
 /**
