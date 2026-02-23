@@ -59,7 +59,11 @@ Plans:
   3. Questions with show_when conditions only appear when the referenced prior answer matches the specified value
   4. Action assignments accumulate granted taxonomy actions based on the provider's answers to each question
   5. When a stub questionnaire is fetched (empty questions array), onboarding blocks with a message explaining the type is not yet available and suggests types that have full questionnaires
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 10-01-PLAN.md — Questionnaire runner logic (show_when evaluation, action assignment collection) via TDD
+- [ ] 10-02-PLAN.md — Onboarding v2.0 flow refactor (name-first, Axon type selection, dynamic questionnaire, stub blocking)
+- [ ] 10-03-PLAN.md — Unit and integration tests proving ONBD-01 through ONBD-07
 
 ### Phase 11: CANS v2.0 Generation
 **Goal**: Questionnaire answers are deterministically mapped to CANS.md fields, producing a schema-validated v2.0 CANS document with integrity hash
@@ -87,9 +91,9 @@ Plans:
 | 7. Production Wiring Gap Closure | v1.0 | 2/2 | Complete | 2026-02-21 |
 | 8. Workspace Profile Selection | v1.0 | 2/2 | Complete | 2026-02-22 |
 | 9. Axon Client Layer | v2.0 | 2/2 | Complete | 2026-02-23 |
-| 10. Questionnaire Execution Engine | v2.0 | 0/0 | Not started | - |
+| 10. Questionnaire Execution Engine | v2.0 | 0/3 | Planning complete | - |
 | 11. CANS v2.0 Generation | v2.0 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-23 after Phase 9 completion*
+*Last updated: 2026-02-23 after Phase 10 planning*
