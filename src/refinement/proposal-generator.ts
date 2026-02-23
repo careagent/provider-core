@@ -23,7 +23,7 @@ import type { DivergencePattern, Proposal } from './types.js';
  */
 export function generateProposals(
   divergences: DivergencePattern[],
-  sessionId: string,
+  _sessionId: string,
 ): Proposal[] {
   return divergences.map((divergence) => {
     // CRITICAL safety check (defense layer 2):
