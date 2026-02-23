@@ -63,28 +63,28 @@ Requirements for Axon-integrated questionnaire onboarding. Each maps to roadmap 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ONBD-01 | TBD | Pending |
-| ONBD-02 | TBD | Pending |
-| ONBD-03 | TBD | Pending |
-| ONBD-04 | TBD | Pending |
-| ONBD-05 | TBD | Pending |
-| ONBD-06 | TBD | Pending |
-| ONBD-07 | TBD | Pending |
-| CANS-01 | TBD | Pending |
-| CANS-02 | TBD | Pending |
-| CANS-03 | TBD | Pending |
-| CANS-04 | TBD | Pending |
-| CANS-05 | TBD | Pending |
-| AXON-01 | TBD | Pending |
-| AXON-02 | TBD | Pending |
-| AXON-03 | TBD | Pending |
-| AXON-04 | TBD | Pending |
+| ONBD-01 | Phase 10 | Pending |
+| ONBD-02 | Phase 10 | Pending |
+| ONBD-03 | Phase 10 | Pending |
+| ONBD-04 | Phase 10 | Pending |
+| ONBD-05 | Phase 10 | Pending |
+| ONBD-06 | Phase 10 | Pending |
+| ONBD-07 | Phase 10 | Pending |
+| CANS-01 | Phase 11 | Pending |
+| CANS-02 | Phase 11 | Pending |
+| CANS-03 | Phase 11 | Pending |
+| CANS-04 | Phase 11 | Pending |
+| CANS-05 | Phase 11 | Pending |
+| AXON-01 | Phase 9 | Pending |
+| AXON-02 | Phase 9 | Pending |
+| AXON-03 | Phase 11 | Pending |
+| AXON-04 | Phase 9 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-23*
-*Last updated: 2026-02-23 after initial definition*
+*Last updated: 2026-02-23 after roadmap phase mapping*
