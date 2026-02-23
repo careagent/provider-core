@@ -82,3 +82,17 @@ export type {
   Skills,
   CrossInstallationConsent,
 } from '../activation/cans-schema.js';
+
+// Axon client (implementation — Phase 9)
+export { createAxonClient, AxonClientError } from '../axon/index.js';
+export type {
+  AxonClient,
+  AxonClientConfig,
+  AxonProviderType,
+  AxonQuestionnaire,
+  AxonQuestion,
+  AxonQuestionOption,
+  AxonQuestionCondition,
+  AxonActionAssignment,
+  AxonClientErrorCode,
+} from '../axon/index.js';
