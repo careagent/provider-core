@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    # The double .github is correct: repo name is ".github",
+    # path format is {owner}/{repo}/.github/workflows/{file}@{ref}
+    uses: careagent/.github/.github/workflows/ci.yml@main

@@ -13,6 +13,7 @@ import {
   askLicenseType,
   askAutonomyTier,
 } from '../cli/prompts.js';
+import type { CANSDocument } from '../activation/cans-schema.js';
 import type { InterviewState } from './engine.js';
 import { InterviewStage } from './engine.js';
 import { defaultHardening } from './defaults.js';
@@ -85,13 +86,13 @@ export async function identityStage(
     }
   }
 
-  const updatedData = {
+  const updatedData: Partial<CANSDocument> = {
     ...state.data,
     provider: {
       ...state.data.provider,
       name,
       ...(npiValue !== undefined ? { npi: npiValue } : {}),
-    },
+    } as CANSDocument['provider'],
   };
 
   return { ...state, stage: InterviewStage.CREDENTIALS, data: updatedData };
@@ -120,7 +121,7 @@ export async function credentialsStage(
 
   const licenseNumber = await askText(io, 'License number: ', { required: true });
 
-  const updatedData = {
+  const updatedData: Partial<CANSDocument> = {
     ...state.data,
     provider: {
       ...state.data.provider,
@@ -130,7 +131,7 @@ export async function credentialsStage(
         number: licenseNumber,
         verified: false,
       },
-    },
+    } as CANSDocument['provider'],
   };
 
   return { ...state, stage: InterviewStage.SPECIALTY, data: updatedData };
@@ -174,7 +175,7 @@ export async function specialtyStage(
   const credentialStatusValues = ['active', 'pending', 'expired'] as const;
   const credentialStatus = credentialStatusValues[credentialStatusIndex];
 
-  const updatedData = {
+  const updatedData: Partial<CANSDocument> = {
     ...state.data,
     provider: {
       ...state.data.provider,
@@ -183,7 +184,7 @@ export async function specialtyStage(
       ...(institutionRaw !== undefined ? { institution: institutionRaw } : {}),
       privileges,
       credential_status: credentialStatus,
-    },
+    } as CANSDocument['provider'],
   };
 
   return { ...state, stage: InterviewStage.SCOPE, data: updatedData };
