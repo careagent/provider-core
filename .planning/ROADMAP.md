@@ -30,7 +30,7 @@ Full details: milestones/v1.0-ROADMAP.md
 
 ### v2.0 Axon-Integrated Questionnaire Onboarding
 
-- [ ] **Phase 9: Axon Client Layer** - Provider-core fetches taxonomy and questionnaires from Axon at runtime with graceful error handling
+- [x] **Phase 9: Axon Client Layer** - Provider-core fetches taxonomy and questionnaires from Axon at runtime with graceful error handling
 - [ ] **Phase 10: Questionnaire Execution Engine** - Onboarding runs Axon questionnaires dynamically with conditional logic, action assignments, and stub blocking
 - [ ] **Phase 11: CANS v2.0 Generation** - Questionnaire answers deterministically produce a validated v2.0 CANS.md
 
@@ -46,8 +46,8 @@ Full details: milestones/v1.0-ROADMAP.md
   3. When Axon is unreachable or returns invalid data, provider-core surfaces a clear error message and does not crash or proceed with stale data
 **Plans**: 2 plans
 Plans:
-- [ ] 09-01-PLAN.md — Axon client interface, HTTP implementation, and core.ts wiring
-- [ ] 09-02-PLAN.md — Unit and integration tests proving AXON-01, AXON-02, AXON-04
+- [x] 09-01-PLAN.md — Axon client interface, HTTP implementation, and core.ts wiring
+- [x] 09-02-PLAN.md — Unit and integration tests proving AXON-01, AXON-02, AXON-04
 
 ### Phase 10: Questionnaire Execution Engine
 **Goal**: Onboarding asks only name and provider type, then dynamically runs the fetched questionnaire with conditional logic and scope determination
@@ -86,10 +86,10 @@ Plans:
 | 6. Documentation and Release | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 7. Production Wiring Gap Closure | v1.0 | 2/2 | Complete | 2026-02-21 |
 | 8. Workspace Profile Selection | v1.0 | 2/2 | Complete | 2026-02-22 |
-| 9. Axon Client Layer | v2.0 | 0/2 | Planning complete | - |
+| 9. Axon Client Layer | v2.0 | 2/2 | Complete | 2026-02-23 |
 | 10. Questionnaire Execution Engine | v2.0 | 0/0 | Not started | - |
 | 11. CANS v2.0 Generation | v2.0 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-17*
-*Last updated: 2026-02-23 after Phase 9 planning*
+*Last updated: 2026-02-23 after Phase 9 completion*
