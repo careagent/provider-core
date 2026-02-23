@@ -12,5 +12,6 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   external: ['openclaw', 'openclaw/*'],
+  inlineOnly: false,
   outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
 });
