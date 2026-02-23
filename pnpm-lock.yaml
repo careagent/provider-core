@@ -12,6 +12,9 @@ importers:
         specifier: '>=2026.1.0'
         version: 2026.2.17(@napi-rs/canvas@0.1.93)(@types/express@5.0.6)(hono@4.11.9)(node-llama-cpp@3.15.1(typescript@5.7.3))(signal-polyfill@0.2.2)
     devDependencies:
+      '@careagent/axon':
+        specifier: link:/Users/medomatic/Documents/Projects/axon
+        version: link:../axon
       '@sinclair/typebox':
         specifier: ~0.34.0
         version: 0.34.48

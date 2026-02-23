@@ -39,6 +39,7 @@
     }
   },
   "devDependencies": {
+    "@careagent/axon": "link:/Users/medomatic/Documents/Projects/axon",
     "@sinclair/typebox": "~0.34.0",
     "@vitest/coverage-v8": "~4.0.0",
     "tsdown": "~0.20.0",
