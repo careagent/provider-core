@@ -27,10 +27,10 @@ Requirements for Axon-integrated questionnaire onboarding. Each maps to roadmap 
 
 ### Axon Integration
 
-- [ ] **AXON-01**: Provider-core fetches provider type list from Axon at runtime
-- [ ] **AXON-02**: Provider-core fetches questionnaire for selected type from Axon at runtime
+- [x] **AXON-01**: Provider-core fetches provider type list from Axon at runtime
+- [x] **AXON-02**: Provider-core fetches questionnaire for selected type from Axon at runtime
 - [ ] **AXON-03**: Questionnaire answers validated against Axon's schema before CANS generation
-- [ ] **AXON-04**: Graceful error handling when Axon is unreachable
+- [x] **AXON-04**: Graceful error handling when Axon is unreachable
 
 ## Future Requirements
 
@@ -75,10 +75,10 @@ Requirements for Axon-integrated questionnaire onboarding. Each maps to roadmap 
 | CANS-03 | Phase 11 | Pending |
 | CANS-04 | Phase 11 | Pending |
 | CANS-05 | Phase 11 | Pending |
-| AXON-01 | Phase 9 | Pending |
-| AXON-02 | Phase 9 | Pending |
+| AXON-01 | Phase 9 | Complete |
+| AXON-02 | Phase 9 | Complete |
 | AXON-03 | Phase 11 | Pending |
-| AXON-04 | Phase 9 | Pending |
+| AXON-04 | Phase 9 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 16 total
