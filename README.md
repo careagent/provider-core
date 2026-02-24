@@ -136,7 +136,7 @@ docs/
 
 ## Contributing
 
-Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+Contributions welcome. See [CONTRIBUTING.md](https://github.com/careagent/.github/blob/main/CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
