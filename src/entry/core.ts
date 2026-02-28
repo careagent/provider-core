@@ -100,6 +100,37 @@ export type { RegistrationConfig, RegistrationResult, RegistrationErrorCode } fr
 export type { ProtocolServer, ProtocolSession } from '../protocol/index.js';
 export { createProtocolServer } from '../protocol/index.js';
 
+// Messaging (Session 07b)
+export {
+  InjectaVoxDataSchema,
+  ClinicalSummarySchema,
+  AppointmentReminderSchema,
+  CarePlanUpdateSchema,
+  ClinicalMessageSchema,
+  SignedMessageEnvelopeSchema,
+  MessageSendResultSchema,
+  generateMessage,
+  signMessage,
+  canonicalize,
+  verifyConsent,
+  createMessagingPipeline,
+} from '../messaging/index.js';
+export type {
+  InjectaVoxData,
+  ClinicalSummary,
+  AppointmentReminder,
+  CarePlanUpdate,
+  ClinicalMessage,
+  SignedMessageEnvelope,
+  MessageSendResult,
+  ConsentCheckConfig,
+  ConsentCheckResult,
+  TransportConfig,
+  TransportResult,
+  MessagingPipelineConfig,
+  MessagingPipeline,
+} from '../messaging/index.js';
+
 // CANS schema extensions
 export type {
   Organization,
