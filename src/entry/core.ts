@@ -67,9 +67,34 @@ export { ProposalQueue } from '../refinement/index.js';
 export { detectDivergences } from '../refinement/index.js';
 export { generateDiffView } from '../refinement/index.js';
 
-// Neuron (interface-only — implementation in Phase 5)
-export type { NeuronClient, NeuronRegistration } from '../neuron/index.js';
-export { createNeuronClient } from '../neuron/index.js';
+// Neuron (implementation — Session 07a)
+export type {
+  NeuronClient,
+  NeuronRegistration,
+  NeuronRegisterConfig,
+  NeuronRegisterResult,
+  NeuronHeartbeatResult,
+  NeuronCredential,
+  NeuronClientErrorCode,
+  NeuronClientConfig,
+} from '../neuron/index.js';
+export { NeuronClientError, createNeuronClient } from '../neuron/index.js';
+
+// NPI validation
+export { validateNPI } from '../credentials/npi-validator.js';
+export type { NPIValidationResult } from '../credentials/npi-validator.js';
+
+// Ed25519 identity
+export { generateProviderKeyPair } from '../credentials/identity.js';
+export type { ProviderKeyPair } from '../credentials/identity.js';
+
+// Provider profile
+export { loadProviderProfile, saveProviderProfile, ProviderProfileSchema } from '../credentials/profile.js';
+export type { ProviderProfile } from '../credentials/profile.js';
+
+// Registration orchestrator (Session 07a)
+export { registerProvider } from '../registration/index.js';
+export type { RegistrationConfig, RegistrationResult, RegistrationErrorCode } from '../registration/index.js';
 
 // Protocol (interface-only — implementation in Phase 5)
 export type { ProtocolServer, ProtocolSession } from '../protocol/index.js';
