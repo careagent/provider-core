@@ -110,12 +110,34 @@ export class AxonClientError extends Error {
 }
 
 // ---------------------------------------------------------------------------
+// NPI lookup response (from Axon's NPPES proxy endpoint)
+// ---------------------------------------------------------------------------
+
+/** Structured result from an NPI lookup via Axon. */
+export interface AxonNpiLookupResult {
+  npi: string;
+  enumeration_type: 'NPI-1' | 'NPI-2';
+  status: string;
+  name: string;
+  first_name?: string;
+  last_name?: string;
+  credential?: string;
+  organization_name?: string;
+  specialty?: string;
+  taxonomy_code?: string;
+  license_state?: string;
+  license_number?: string;
+  practice_state?: string;
+  practice_city?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Client interface
 // ---------------------------------------------------------------------------
 
 /**
- * The Axon client — fetches provider taxonomy and questionnaires
- * from an Axon server over HTTP.
+ * The Axon client — fetches provider taxonomy, questionnaires, and NPI
+ * lookups from an Axon server over HTTP.
  *
  * Lifecycle: create via `createAxonClient(config)`, then call methods
  * as needed. No persistent connection — each call is a standalone HTTP request.
@@ -126,6 +148,9 @@ export interface AxonClient {
 
   /** Fetch the questionnaire for a specific provider type. */
   getQuestionnaire(providerTypeId: string): Promise<AxonQuestionnaire>;
+
+  /** Look up a provider by NPI via the NPPES registry (proxied through Axon). */
+  lookupNpi(npi: string): Promise<AxonNpiLookupResult>;
 
   /** Health check — verify the Axon server is reachable. */
   checkHealth(): Promise<{ status: string; version: string }>;

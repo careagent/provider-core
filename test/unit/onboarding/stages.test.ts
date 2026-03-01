@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { createMockIO } from '../../../src/cli/io.js';
 import { InterviewStage } from '../../../src/onboarding/engine.js';
 import type { InterviewState } from '../../../src/onboarding/engine.js';
+import type { CANSDocument } from '../../../src/activation/cans-schema.js';
 import {
   welcomeStage,
   identityStage,
@@ -62,10 +63,10 @@ describe('welcomeStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('identityStage', () => {
-  it('sets provider.name and advances to CREDENTIALS', async () => {
+  it('asks provider type first, then name, and advances to CREDENTIALS', async () => {
     const io = createMockIO([
-      'Dr. Identity Test', // name
-      '',                  // NPI (skip)
+      '7',                  // provider type: Other (index 7, not NPI-eligible)
+      'Dr. Identity Test',  // name (manual entry since "Other" has no NPI)
     ]);
     const state = makeState({ stage: InterviewStage.IDENTITY });
     const newState = await identityStage(state, io);
@@ -73,35 +74,39 @@ describe('identityStage', () => {
     expect(newState.stage).toBe(InterviewStage.CREDENTIALS);
   });
 
-  it('sets npi when 10-digit value provided', async () => {
+  it('asks for NPI when NPI-eligible type selected, skips when empty', async () => {
     const io = createMockIO([
-      'Dr. NPI Test',
-      '1234567890',
+      '0',                  // provider type: Physician (NPI-eligible)
+      '',                   // NPI: skip
+      'Dr. No NPI',         // name (manual since no NPI)
     ]);
     const state = makeState({ stage: InterviewStage.IDENTITY });
     const newState = await identityStage(state, io);
-    expect(newState.data.provider?.npi).toBe('1234567890');
-  });
-
-  it('omits npi when empty', async () => {
-    const io = createMockIO([
-      'Dr. No NPI',
-      '',
-    ]);
-    const state = makeState({ stage: InterviewStage.IDENTITY });
-    const newState = await identityStage(state, io);
+    expect(newState.data.provider?.name).toBe('Dr. No NPI');
     expect(newState.data.provider).not.toHaveProperty('npi');
   });
 
-  it('re-prompts when NPI is not 10 digits, then accepts valid NPI', async () => {
+  it('does not ask for NPI when non-NPI-eligible type selected', async () => {
     const io = createMockIO([
-      'Dr. Retry NPI',
-      '12345',        // invalid - not 10 digits
-      '1234567890',   // valid
+      '7',                  // provider type: Other
+      'Nurse Helper',       // name
     ]);
     const state = makeState({ stage: InterviewStage.IDENTITY });
     const newState = await identityStage(state, io);
-    expect(newState.data.provider?.npi).toBe('1234567890');
+    expect(newState.data.provider?.name).toBe('Nurse Helper');
+    expect(newState.data.provider).not.toHaveProperty('npi');
+  });
+
+  it('re-prompts when NPI is not 10 digits', async () => {
+    const io = createMockIO([
+      '0',                  // provider type: Physician
+      '12345',              // invalid NPI
+      '',                   // skip NPI on retry
+      'Dr. Retry NPI',      // name
+    ]);
+    const state = makeState({ stage: InterviewStage.IDENTITY });
+    const newState = await identityStage(state, io);
+    expect(newState.data.provider?.name).toBe('Dr. Retry NPI');
     expect(io.getOutput().some((line) => line.includes('10 digits'))).toBe(true);
   });
 });
@@ -111,40 +116,52 @@ describe('identityStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('credentialsStage', () => {
-  it('sets types array from comma-separated input', async () => {
+  it('pre-fills type from identity stage selection and advances to SPECIALTY', async () => {
     const io = createMockIO([
-      'Physician',       // types (required)
+      'n',               // add more types? no
       'MD',              // degrees
       'MD-TX-A12345',    // licenses
       'ABNS Board Certified', // certifications
     ]);
+    const state = makeState({
+      stage: InterviewStage.CREDENTIALS,
+      data: { version: '2.0', _selectedTypeLabel: 'Physician' } as Partial<CANSDocument>,
+    });
+    const newState = await credentialsStage(state, io);
+    expect(newState.data.provider?.types).toEqual(['Physician']);
+    expect(newState.stage).toBe(InterviewStage.SPECIALTY);
+  });
+
+  it('falls back to manual type entry when no pre-fill', async () => {
+    const io = createMockIO([
+      'Physician',       // types (manual)
+      'MD, DO',          // degrees
+      'MD-TX-A12345',    // licenses
+      '',                // certifications (skip)
+    ]);
     const state = makeState({ stage: InterviewStage.CREDENTIALS });
     const newState = await credentialsStage(state, io);
     expect(newState.data.provider?.types).toEqual(['Physician']);
-  });
-
-  it('sets degrees array from input', async () => {
-    const io = createMockIO([
-      'Physician',
-      'MD, DO',
-      'MD-TX-A12345',
-      '',
-    ]);
-    const state = makeState({ stage: InterviewStage.CREDENTIALS });
-    const newState = await credentialsStage(state, io);
     expect(newState.data.provider?.degrees).toEqual(['MD', 'DO']);
   });
 
-  it('sets licenses array from input', async () => {
+  it('pre-fills credential from NPI lookup as degree', async () => {
     const io = createMockIO([
-      'Physician',
-      'MD',
-      'MD-TX-A12345, DO-CA-B99999',
-      '',
+      'n',               // add more types? no
+      '',                // additional degrees (none, keep MD from NPI)
+      '',                // licenses
+      '',                // certifications
     ]);
-    const state = makeState({ stage: InterviewStage.CREDENTIALS });
+    const state = makeState({
+      stage: InterviewStage.CREDENTIALS,
+      data: {
+        version: '2.0',
+        _selectedTypeLabel: 'Physician',
+        _credential: 'MD',
+      } as Partial<CANSDocument>,
+    });
     const newState = await credentialsStage(state, io);
-    expect(newState.data.provider?.licenses).toEqual(['MD-TX-A12345', 'DO-CA-B99999']);
+    expect(newState.data.provider?.degrees).toEqual(['MD']);
   });
 
   it('sets certifications array from input', async () => {
@@ -157,18 +174,6 @@ describe('credentialsStage', () => {
     const state = makeState({ stage: InterviewStage.CREDENTIALS });
     const newState = await credentialsStage(state, io);
     expect(newState.data.provider?.certifications).toEqual(['ABNS Board Certified']);
-  });
-
-  it('advances to SPECIALTY', async () => {
-    const io = createMockIO([
-      'Physician',
-      'MD',
-      'MD-TX-A12345',
-      '',
-    ]);
-    const state = makeState({ stage: InterviewStage.CREDENTIALS });
-    const newState = await credentialsStage(state, io);
-    expect(newState.stage).toBe(InterviewStage.SPECIALTY);
   });
 });
 

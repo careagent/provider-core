@@ -11,6 +11,7 @@ import type {
   AxonClientConfig,
   AxonProviderType,
   AxonQuestionnaire,
+  AxonNpiLookupResult,
 } from './types.js';
 import { AxonClientError } from './types.js';
 
@@ -105,6 +106,18 @@ export function createAxonClient(config: AxonClientConfig): AxonClient {
       }
       return fetchJson<AxonQuestionnaire>(
         `/v1/questionnaires/${encodeURIComponent(providerTypeId)}`,
+      );
+    },
+
+    async lookupNpi(npi: string): Promise<AxonNpiLookupResult> {
+      if (!npi || !/^\d{10}$/.test(npi)) {
+        throw new AxonClientError(
+          `${LAYER_NAME}: NPI must be exactly 10 digits`,
+          'INVALID_RESPONSE',
+        );
+      }
+      return fetchJson<AxonNpiLookupResult>(
+        `/v1/npi/lookup/${encodeURIComponent(npi)}`,
       );
     },
 

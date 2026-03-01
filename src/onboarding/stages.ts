@@ -19,7 +19,31 @@ import {
 import type { InterviewState } from './engine.js';
 import { InterviewStage } from './engine.js';
 import { createAxonClient } from '../axon/client.js';
-import type { AxonQuestionnaire, AxonQuestion } from '../axon/types.js';
+import type { AxonQuestionnaire, AxonQuestion, AxonNpiLookupResult } from '../axon/types.js';
+
+// ---------------------------------------------------------------------------
+// NPI-eligible provider types — types that typically have individual NPIs.
+// Used to determine whether to ask for NPI during identity stage.
+// ---------------------------------------------------------------------------
+
+const NPI_ELIGIBLE_TYPES = new Set([
+  'physician',
+  'advanced_practice_provider',
+  'nursing',
+  'pharmacy',
+  'dental',
+  'behavioral_mental_health',
+  'physical_rehabilitation',
+  'occupational_therapy',
+  'speech_language',
+  'respiratory',
+  'audiology',
+  'vision_optometry',
+  'podiatry',
+  'chiropractic',
+  'midwifery',
+  'nutrition_dietetics',
+]);
 
 // ---------------------------------------------------------------------------
 // Welcome Stage
@@ -62,6 +86,24 @@ export async function welcomeStage(
 // Identity Stage
 // ---------------------------------------------------------------------------
 
+/**
+ * Attempt NPI lookup via Axon (which proxies to NPPES).
+ * Returns the lookup result or null on any failure.
+ */
+async function tryNpiLookup(npi: string, io: InterviewIO): Promise<AxonNpiLookupResult | null> {
+  const axonUrl = process.env.AXON_URL;
+  if (!axonUrl) return null;
+
+  try {
+    io.display('Looking up NPI in the national registry...');
+    const axonClient = createAxonClient({ baseUrl: axonUrl, timeoutMs: 15_000 });
+    return await axonClient.lookupNpi(npi);
+  } catch {
+    io.display('Could not reach the NPI registry — you can enter your details manually.');
+    return null;
+  }
+}
+
 export async function identityStage(
   state: InterviewState,
   io: InterviewIO,
@@ -69,24 +111,79 @@ export async function identityStage(
   io.display('');
   io.display('--- Provider Identity ---');
 
-  const name = await askText(io, 'Your full name (e.g., Dr. Jane Smith): ', {
-    required: true,
-    minLength: 2,
-  });
+  // Step 1: Ask for provider type
+  const providerTypeOptions = [
+    'Physician',
+    'Advanced Practice Provider (NP, PA, CRNA, CNM)',
+    'Nursing',
+    'Pharmacy',
+    'Dental',
+    'Behavioral/Mental Health',
+    'Physical Rehabilitation',
+    'Other',
+  ];
+  const typeIndex = await askSelect(io, 'What type of provider are you?', providerTypeOptions);
+  const typeIds = [
+    'physician', 'advanced_practice_provider', 'nursing', 'pharmacy',
+    'dental', 'behavioral_mental_health', 'physical_rehabilitation', 'other',
+  ];
+  const selectedTypeId = typeIds[typeIndex] ?? 'other';
+  const selectedTypeLabel = providerTypeOptions[typeIndex] ?? 'Other';
 
+  // Step 2: If NPI-eligible, ask for NPI and attempt lookup
   let npiValue: string | undefined;
-  let npiValid = false;
-  while (!npiValid) {
-    const npi = await askOptionalText(io, 'National Provider Identifier (NPI, 10 digits):');
-    if (npi === undefined) {
-      npiValue = undefined;
-      npiValid = true;
-    } else if (/^\d{10}$/.test(npi)) {
-      npiValue = npi;
-      npiValid = true;
-    } else {
-      io.display('NPI must be exactly 10 digits. Please try again or press Enter to skip.');
+  let npiLookup: AxonNpiLookupResult | null = null;
+
+  if (NPI_ELIGIBLE_TYPES.has(selectedTypeId)) {
+    let npiValid = false;
+    while (!npiValid) {
+      const npi = await askOptionalText(io, 'Enter your NPI number (10 digits):');
+      if (npi === undefined) {
+        npiValue = undefined;
+        npiValid = true;
+      } else if (/^\d{10}$/.test(npi)) {
+        npiValue = npi;
+        npiValid = true;
+        npiLookup = await tryNpiLookup(npi, io);
+      } else {
+        io.display('NPI must be exactly 10 digits. Please try again or press Enter to skip.');
+      }
     }
+  }
+
+  // Step 3: If lookup succeeded, show what we found and confirm
+  let name: string;
+  let specialty: string | undefined;
+  let credential: string | undefined;
+  let licenseState: string | undefined;
+  let licenseNumber: string | undefined;
+
+  if (npiLookup && npiLookup.enumeration_type === 'NPI-1') {
+    io.display('');
+    io.display(`Found: ${npiLookup.name}`);
+    if (npiLookup.specialty) io.display(`Specialty: ${npiLookup.specialty}`);
+    if (npiLookup.practice_state) io.display(`State: ${npiLookup.practice_state}`);
+    io.display('');
+
+    const confirmed = await askConfirm(io, 'Is this you?');
+    if (confirmed) {
+      name = npiLookup.name;
+      specialty = npiLookup.specialty;
+      credential = npiLookup.credential;
+      licenseState = npiLookup.license_state;
+      licenseNumber = npiLookup.license_number;
+    } else {
+      name = await askText(io, 'Your full name (e.g., Dr. Jane Smith): ', {
+        required: true,
+        minLength: 2,
+      });
+    }
+  } else {
+    // No lookup or NPI-2 (org) — ask manually
+    name = await askText(io, 'Your full name (e.g., Dr. Jane Smith): ', {
+      required: true,
+      minLength: 2,
+    });
   }
 
   const updatedData = {
@@ -95,7 +192,15 @@ export async function identityStage(
       ...(state.data.provider ?? {}),
       name,
       ...(npiValue !== undefined ? { npi: npiValue } : {}),
+      ...(specialty !== undefined ? { specialty } : {}),
     },
+    // Carry forward NPI lookup data for later stages to use
+    _npiLookup: npiLookup ?? undefined,
+    _selectedTypeId: selectedTypeId,
+    _selectedTypeLabel: selectedTypeLabel,
+    _credential: credential,
+    _licenseState: licenseState,
+    _licenseNumber: licenseNumber,
   } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.CREDENTIALS, data: updatedData };
@@ -112,21 +217,69 @@ export async function credentialsStage(
   io.display('');
   io.display('--- Credentials ---');
 
-  const types = await askStringArray(
-    io,
-    'Provider type(s) (comma-separated, e.g., Physician, Nurse Practitioner): ',
-    { required: true },
-  );
+  // Pre-fill provider type from identity stage selection
+  const extra = state.data as Record<string, unknown>;
+  const selectedTypeLabel = extra._selectedTypeLabel as string | undefined;
+  const credential = extra._credential as string | undefined;
+  const licenseState = extra._licenseState as string | undefined;
+  const licenseNumber = extra._licenseNumber as string | undefined;
 
-  const degrees = await askOptionalStringArray(
-    io,
-    'Degree(s) (comma-separated, e.g., MD, DO, DNP):',
-  );
+  let types: string[];
+  if (selectedTypeLabel && selectedTypeLabel !== 'Other') {
+    // Clean up display label (e.g., "Advanced Practice Provider (NP, PA, CRNA, CNM)" → "Advanced Practice Provider")
+    const cleanType = selectedTypeLabel.replace(/\s*\(.*\)$/, '');
+    io.display(`Provider type: ${cleanType} (from previous step)`);
+    const addMore = await askConfirm(io, 'Add additional provider types?');
+    if (addMore) {
+      const additional = await askStringArray(
+        io,
+        'Additional provider type(s) (comma-separated): ',
+        { required: true },
+      );
+      types = [cleanType, ...additional];
+    } else {
+      types = [cleanType];
+    }
+  } else {
+    types = await askStringArray(
+      io,
+      'Provider type(s) (comma-separated, e.g., Physician, Nurse Practitioner): ',
+      { required: true },
+    );
+  }
 
-  const licenses = await askOptionalStringArray(
-    io,
-    'License(s) (comma-separated, e.g., MD-TX-A12345):',
-  );
+  // Pre-fill credential as degree if available from NPI lookup
+  let degrees: string[];
+  if (credential) {
+    io.display(`Credential from NPI registry: ${credential}`);
+    const moreDegrees = await askOptionalStringArray(
+      io,
+      'Additional degree(s) (comma-separated, or Enter to keep just the above):',
+    );
+    degrees = moreDegrees.length > 0 ? [credential, ...moreDegrees] : [credential];
+  } else {
+    degrees = await askOptionalStringArray(
+      io,
+      'Degree(s) (comma-separated, e.g., MD, DO, DNP):',
+    );
+  }
+
+  // Pre-fill license from NPI lookup if available
+  let licenses: string[];
+  if (licenseState && licenseNumber) {
+    const prefilled = `${licenseState}-${licenseNumber}`;
+    io.display(`License from NPI registry: ${prefilled}`);
+    const moreLicenses = await askOptionalStringArray(
+      io,
+      'Additional license(s) (comma-separated, or Enter to keep just the above):',
+    );
+    licenses = moreLicenses.length > 0 ? [prefilled, ...moreLicenses] : [prefilled];
+  } else {
+    licenses = await askOptionalStringArray(
+      io,
+      'License(s) (comma-separated, e.g., MD-TX-A12345):',
+    );
+  }
 
   const certifications = await askOptionalStringArray(
     io,
@@ -158,10 +311,28 @@ export async function specialtyStage(
   io.display('');
   io.display('--- Specialty & Organizations ---');
 
-  const specialtyRaw = await askOptionalText(
-    io,
-    'Primary specialty (e.g., Neurosurgery, Internal Medicine):',
-  );
+  // Check if specialty was pre-filled from NPI lookup
+  const existingSpecialty = state.data.provider?.specialty;
+  let specialtyRaw: string | undefined;
+
+  if (existingSpecialty) {
+    io.display(`Specialty from NPI registry: ${existingSpecialty}`);
+    const changeSpecialty = await askConfirm(io, 'Would you like to change this?');
+    if (changeSpecialty) {
+      specialtyRaw = await askOptionalText(
+        io,
+        'Primary specialty (e.g., Neurosurgery, Internal Medicine):',
+      );
+    } else {
+      specialtyRaw = existingSpecialty;
+    }
+  } else {
+    specialtyRaw = await askOptionalText(
+      io,
+      'Primary specialty (e.g., Neurosurgery, Internal Medicine):',
+    );
+  }
+
   const subspecialtyRaw = await askOptionalText(io, 'Subspecialty:');
 
   // Collect primary organization
@@ -334,7 +505,7 @@ export async function scopeStage(
           },
         }
       : {}),
-  };
+  } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.PHILOSOPHY, data: updatedData };
 }

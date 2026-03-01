@@ -7,12 +7,14 @@
 export const completeInterviewResponses: string[] = [
   // Welcome: acknowledge HIPAA warning
   'y',
-  // Identity: name
-  'Dr. Test Provider',
-  // Identity: NPI (optional)
+  // Identity: provider type select (0 = Physician)
+  '0',
+  // Identity: NPI (optional — 10 digits)
   '1234567890',
-  // Credentials: types (comma-separated)
-  'Physician',
+  // Identity: name (manual — NPI lookup returns null without AXON_URL)
+  'Dr. Test Provider',
+  // Credentials: add additional provider types? (n — keep Physician from identity)
+  'n',
   // Credentials: degrees (optional, comma-separated)
   'MD',
   // Credentials: licenses (optional, comma-separated)
@@ -77,12 +79,14 @@ export const completeInterviewResponses: string[] = [
 export const minimalInterviewResponses: string[] = [
   // Welcome: acknowledge HIPAA warning
   'y',
-  // Identity: name
-  'Dr. Minimal Provider',
+  // Identity: provider type select (0 = Physician)
+  '0',
   // Identity: NPI (optional — skip)
   '',
-  // Credentials: types (comma-separated)
-  'Physician',
+  // Identity: name (manual entry)
+  'Dr. Minimal Provider',
+  // Credentials: add additional provider types? (n — keep Physician from identity)
+  'n',
   // Credentials: degrees (optional — skip)
   '',
   // Credentials: licenses (optional — skip)

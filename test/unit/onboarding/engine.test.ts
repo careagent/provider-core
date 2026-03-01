@@ -98,8 +98,9 @@ describe('runSingleStage', () => {
       philosophy: '',
     };
     const io = createMockIO([
-      'Dr. Single Stage',  // name
-      '9876543210',        // NPI
+      '0',                 // provider type select (Physician)
+      '9876543210',        // NPI (optional — lookup returns null without AXON_URL)
+      'Dr. Single Stage',  // name (manual entry)
     ]);
     const newState = await runSingleStage(InterviewStage.IDENTITY, initialState, io);
     expect(newState.data.provider?.name).toBe('Dr. Single Stage');
