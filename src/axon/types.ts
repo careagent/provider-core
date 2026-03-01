@@ -124,6 +124,15 @@ export class AxonClientError extends Error {
 // NPI lookup response (from Axon's NPPES proxy endpoint)
 // ---------------------------------------------------------------------------
 
+/** A single state license from the NPI taxonomy entries. */
+export interface AxonNpiLicense {
+  state: string;
+  number: string;
+  specialty?: string;
+  taxonomy_code?: string;
+  primary: boolean;
+}
+
 /** Structured result from an NPI lookup via Axon. */
 export interface AxonNpiLookupResult {
   npi: string;
@@ -136,8 +145,12 @@ export interface AxonNpiLookupResult {
   organization_name?: string;
   specialty?: string;
   taxonomy_code?: string;
+  /** Primary license state (backward compat — use `licenses` array instead). */
   license_state?: string;
+  /** Primary license number (backward compat — use `licenses` array instead). */
   license_number?: string;
+  /** All state licenses from NPPES taxonomy entries. */
+  licenses?: AxonNpiLicense[];
   practice_state?: string;
   practice_city?: string;
 }

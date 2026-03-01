@@ -3,9 +3,11 @@
  * Each entry maps to an interview question in order.
  *
  * NOTE: Tests run without AXON_URL, so:
+ * - NPI lookups return null → manual name entry
+ * - Org NPI lookups return null → manual org name entry
  * - Credentials stage asks for degrees/licenses/certifications directly
  * - Specialty stage asks for specialties/subspecialties directly
- * - Scope stage falls back to manual permitted_actions + org name
+ * - Scope stage falls back to manual permitted_actions
  */
 
 // Complete interview with ALL questions answered
@@ -14,11 +16,15 @@ export const completeInterviewResponses: string[] = [
   'y',
   // Identity: provider type select (0 = Physician)
   '0',
-  // Identity: NPI (optional — 10 digits)
+  // Identity: NPI (required for Physician — 10 digits)
   '1234567890',
   // Identity: name (manual — NPI lookup returns null without AXON_URL)
   'Dr. Test Provider',
-  // Credentials: add additional provider types? (n — keep Physician from identity)
+  // Identity: organization NPI (required — 10 digits, lookup returns null without AXON_URL)
+  '9876543210',
+  // Identity: organization name (manual — org NPI lookup returns null)
+  'University Medical Center',
+  // Credentials: do you practice in any other roles? (n — keep Physician from identity)
   'n',
   // Credentials: degrees (no AXON_URL → asked here)
   'MD',
@@ -30,27 +36,16 @@ export const completeInterviewResponses: string[] = [
   'Neurosurgery',
   // Specialty: subspecialties (no AXON_URL → asked here)
   'Spine',
-  // Specialty: credential status (0 = active)
-  '0',
+  // (credential_status removed — set automatically to 'pending', verified by background process)
   // Scope: permitted actions (comma-separated, fallback without AXON_URL)
   'chart_operative_note, chart_progress_note, chart_h_and_p',
-  // Scope: organization name (manual fallback without AXON_URL)
-  'University Medical Center',
   // Philosophy: clinical philosophy
   'Evidence-based neurosurgical practice with emphasis on minimally invasive techniques and shared decision-making with patients.',
   // Voice: chart directive (optional)
   'formal, structured templates',
-  // Voice: order directive (optional)
-  'concise',
-  // Voice: charge directive (optional)
-  '',
-  // Voice: perform directive (optional)
-  '',
-  // Voice: interpret directive (optional)
-  '',
   // Voice: educate directive (optional)
   '',
-  // Voice: coordinate directive (optional)
+  // Voice: interpret / documenting results (optional)
   '',
   // Autonomy: chart tier (0 = autonomous)
   '0',
@@ -86,7 +81,11 @@ export const minimalInterviewResponses: string[] = [
   '0000000000',
   // Identity: name (manual — NPI lookup returns null without AXON_URL)
   'Dr. Minimal Provider',
-  // Credentials: add additional provider types? (n — keep Physician from identity)
+  // Identity: organization NPI (required — lookup returns null)
+  '1111111111',
+  // Identity: organization name (manual — org NPI lookup returns null)
+  'Community Clinic',
+  // Credentials: do you practice in any other roles? (n)
   'n',
   // Credentials: degrees (no AXON_URL → asked here, skip)
   '',
@@ -98,27 +97,16 @@ export const minimalInterviewResponses: string[] = [
   '',
   // Specialty: subspecialties (no AXON_URL → asked here, skip)
   '',
-  // Specialty: credential status (0 = active)
-  '0',
+  // (credential_status removed — set automatically to 'pending', verified by background process)
   // Scope: permitted actions (fallback without AXON_URL)
   'chart_progress_note',
-  // Scope: organization name (manual fallback without AXON_URL)
-  'Community Clinic',
   // Philosophy: clinical philosophy
   'Patient-centered care with focus on preventive medicine and chronic disease management.',
   // Voice: chart (optional — skip)
   '',
-  // Voice: order (optional — skip)
-  '',
-  // Voice: charge (optional — skip)
-  '',
-  // Voice: perform (optional — skip)
-  '',
-  // Voice: interpret (optional — skip)
-  '',
   // Voice: educate (optional — skip)
   '',
-  // Voice: coordinate (optional — skip)
+  // Voice: interpret / documenting results (optional — skip)
   '',
   // Autonomy: chart (0 = autonomous)
   '0',

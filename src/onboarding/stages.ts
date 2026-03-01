@@ -186,6 +186,52 @@ export async function identityStage(
     });
   }
 
+  // Step 4: Organization NPI (required for all provider types)
+  let organizationName: string | undefined;
+  let organizationNpi: string | undefined;
+
+  let orgResolved = false;
+  while (!orgResolved) {
+    const orgNpiInput = await askText(io, 'Enter your practice or organization NPI (10 digits):', {
+      required: true,
+      minLength: 10,
+    });
+
+    if (!/^\d{10}$/.test(orgNpiInput)) {
+      io.display('Organization NPI must be exactly 10 digits. Please try again.');
+      continue;
+    }
+
+    const orgLookup = await tryNpiLookup(orgNpiInput, io);
+    if (orgLookup && orgLookup.enumeration_type === 'NPI-2' && orgLookup.organization_name) {
+      io.display('');
+      io.display(`Found: ${orgLookup.organization_name}`);
+      if (orgLookup.practice_city && orgLookup.practice_state) {
+        io.display(`Location: ${orgLookup.practice_city}, ${orgLookup.practice_state}`);
+      }
+      io.display('');
+      const confirmed = await askConfirm(io, 'Is this your practice or organization?');
+      if (confirmed) {
+        organizationNpi = orgNpiInput;
+        organizationName = orgLookup.organization_name;
+        orgResolved = true;
+      } else {
+        io.display('Let\'s try again.');
+      }
+    } else if (orgLookup && orgLookup.enumeration_type === 'NPI-1') {
+      io.display('That NPI belongs to an individual provider, not an organization. Please enter the organization NPI.');
+    } else {
+      // Lookup failed or returned no org name — ask for name manually
+      io.display('Could not find that organization in the NPI registry.');
+      organizationNpi = orgNpiInput;
+      organizationName = await askText(io, 'Enter your organization name:', {
+        required: true,
+        minLength: 2,
+      });
+      orgResolved = true;
+    }
+  }
+
   const updatedData = {
     ...state.data,
     provider: {
@@ -193,6 +239,11 @@ export async function identityStage(
       name,
       ...(npiValue !== undefined ? { npi: npiValue } : {}),
       ...(specialty !== undefined ? { specialty } : {}),
+      organizations: [{
+        name: organizationName!,
+        ...(organizationNpi ? { npi: organizationNpi } : {}),
+        primary: true,
+      }],
     },
     // Carry forward NPI lookup data for later stages to use
     _npiLookup: npiLookup ?? undefined,
@@ -201,6 +252,8 @@ export async function identityStage(
     _credential: credential,
     _licenseState: licenseState,
     _licenseNumber: licenseNumber,
+    _organizationName: organizationName,
+    _organizationNpi: organizationNpi,
   } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.CREDENTIALS, data: updatedData };
@@ -226,7 +279,7 @@ export async function credentialsStage(
     // Clean up display label (e.g., "Advanced Practice Provider (NP, PA, CRNA, CNM)" → "Advanced Practice Provider")
     const cleanType = selectedTypeLabel.replace(/\s*\(.*\)$/, '');
     io.display(`Provider type: ${cleanType} (from previous step)`);
-    const addMore = await askConfirm(io, 'Add additional provider types?');
+    const addMore = await askConfirm(io, 'Do you practice in any other roles?');
     if (addMore) {
       const additional = await askStringArray(
         io,
@@ -329,13 +382,9 @@ export async function specialtyStage(
     subspecialties = subspecialtyRaw ? subspecialtyRaw.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
   }
 
-  const credentialStatusIndex = await askSelect(io, 'Credential status:', [
-    'active',
-    'pending',
-    'expired',
-  ]);
-  const credentialStatusValues = ['active', 'pending', 'expired'] as const;
-  const credentialStatus = credentialStatusValues[credentialStatusIndex];
+  // credential_status is NOT asked during onboarding — it's set to 'pending'
+  // here and updated to 'active' by background license verification.
+  // See: src/credentials/license-verification.ts (stub)
 
   const updatedData = {
     ...state.data,
@@ -343,7 +392,7 @@ export async function specialtyStage(
       ...(state.data.provider ?? {}),
       ...(specialties !== undefined ? { specialties, specialty: specialties[0] } : {}),
       ...(subspecialties !== undefined ? { subspecialties, subspecialty: subspecialties[0] } : {}),
-      credential_status: credentialStatus,
+      credential_status: 'pending' as const,
     },
   } as Partial<CANSDocument>;
 
@@ -393,8 +442,16 @@ function getNpiPrefill(
   if (!key || !npiLookup) return undefined;
   if (key === 'credential') return npiLookup.credential;
   if (key === 'specialty') return npiLookup.specialty;
-  if (key === 'license' && npiLookup.license_state && npiLookup.license_number) {
-    return `${npiLookup.license_state}-${npiLookup.license_number}`;
+  // License pre-fill: handled by special license flow in questionnaire runner.
+  // This fallback is for backward compat when licenses array is not available.
+  if (key === 'license') {
+    if (npiLookup.licenses && npiLookup.licenses.length > 0) {
+      // Multi-license — handled by special flow, return undefined to skip generic pre-fill
+      return undefined;
+    }
+    if (npiLookup.license_state && npiLookup.license_number) {
+      return `${npiLookup.license_state}-${npiLookup.license_number}`;
+    }
   }
   return undefined;
 }
@@ -429,9 +486,68 @@ async function runAxonQuestionnaire(
       continue;
     }
 
-    // Skip practice_name if we already resolved it from NPI lookup
-    if (question.id === 'practice_name' && organizationName) {
-      answers.set(question.id, organizationName);
+    // Skip organization questions — already collected in identity stage
+    if (question.id === 'practice_npi' || question.id === 'practice_name') {
+      // Organization was collected in identity stage; carry forward
+      if (question.id === 'practice_name' && organizationName) {
+        answers.set(question.id, organizationName);
+      }
+      continue;
+    }
+
+    // Special handling: license questions with multi-state NPI data
+    if (question.id === 'has_licenses' && npiLookup?.licenses && npiLookup.licenses.length > 0) {
+      const npiLicenses = npiLookup.licenses;
+      const stateList = npiLicenses.map(l => l.state);
+      const uniqueStates = [...new Set(stateList)];
+
+      // "I see you have licenses to practice in the following states: SC, NC. Is that correct?"
+      io.display(`I see that you have licenses to practice in the following state${uniqueStates.length > 1 ? 's' : ''}: ${uniqueStates.join(', ')}.`);
+      const statesCorrect = await askConfirm(io, 'Is that correct?');
+
+      if (statesCorrect) {
+        answers.set('has_licenses', 'true');
+
+        // Ask about primary practice state if we can infer it from practice address
+        const practiceState = npiLookup.practice_state;
+        if (practiceState && uniqueStates.includes(practiceState)) {
+          await askConfirm(io, `Is ${practiceState} your primary practice state?`);
+          // (informational — we already have it from practice address)
+        } else if (uniqueStates.length > 1) {
+          const primaryIdx = await askSelect(io, 'Which is your primary practice state?', uniqueStates);
+          // Store for reference — practice_state from address may differ
+          answers.set('__primary_practice_state', uniqueStates[primaryIdx]!);
+        }
+
+        // Lock in all license strings
+        const licenseStrings = npiLicenses.map(l => `${l.state}-${l.number}`);
+        licenses.push(...licenseStrings);
+        answers.set('licenses_list', licenseStrings.join(', '));
+        answers.set(`__prefill_confirmed_has_licenses`, licenseStrings.join(', '));
+
+        // Ask for additional licenses not in NPI
+        const hasMore = await askConfirm(io, 'Do you hold any additional state licenses not listed here?');
+        if (hasMore) {
+          const additional = await askOptionalText(io, 'Additional license(s) (comma-separated, e.g., NC-MD-54321):');
+          if (additional) {
+            const extras = additional.split(',').map(s => s.trim()).filter(Boolean);
+            licenses.push(...extras);
+            answers.set('licenses_list', [...licenseStrings, ...extras].join(', '));
+          }
+        }
+      } else {
+        // Provider says NPI license data is wrong — ask manually
+        answers.set('has_licenses', 'true');
+        const manualLicenses = await askText(io, 'List your license(s) (comma-separated, e.g., SC-25231, NC-MD-54321):', { required: true, minLength: 1 });
+        const items = manualLicenses.split(',').map(s => s.trim()).filter(Boolean);
+        licenses.push(...items);
+        answers.set('licenses_list', items.join(', '));
+      }
+      continue;
+    }
+
+    // Skip licenses_list if already handled by the special license flow above
+    if (question.id === 'licenses_list' && answers.has('licenses_list')) {
       continue;
     }
 
@@ -441,12 +557,21 @@ async function runAxonQuestionnaire(
     if (question.answer_type === 'boolean') {
       let answer: boolean;
 
-      // For boolean questions with NPI pre-fill, auto-confirm if we have data
       if (prefillValue) {
-        io.display(`${question.text}`);
-        io.display(`  (Pre-filled from NPI registry: ${prefillValue})`);
-        answer = true;
-        answers.set(question.id, 'true');
+        // NPI pre-fill: confirm what we already know
+        const confirmed = await askConfirm(io, `You are listed as ${prefillValue}; is that correct?`);
+        if (confirmed) {
+          // Lock in the pre-fill value — the follow-up text question will ask
+          // "do you have any additional X?" instead of the full list
+          answers.set(question.id, 'true');
+          answers.set(`__prefill_confirmed_${question.id}`, prefillValue);
+          answer = true;
+        } else {
+          // Provider rejected pre-fill — treat as if no pre-fill existed
+          // The follow-up text question will ask for the full list
+          answers.set(question.id, 'true');
+          answer = true;
+        }
       } else {
         answer = await askConfirm(io, question.text);
         answers.set(question.id, String(answer));
@@ -480,51 +605,54 @@ async function runAxonQuestionnaire(
       const pattern = question.validation?.pattern ? new RegExp(question.validation.pattern) : undefined;
       const minLen = question.validation?.min_length ?? 0;
 
-      // Show pre-fill and ask to modify
-      if (prefillValue) {
-        io.display(`${question.text}`);
-        io.display(`  (From NPI registry: ${prefillValue})`);
-        const keepPrefill = await askConfirm(io, `Keep "${prefillValue}"? (No to enter your own)`);
+      // Check if the parent boolean had a confirmed pre-fill
+      const parentId = question.show_when?.question_id;
+      const confirmedPrefill = parentId ? answers.get(`__prefill_confirmed_${parentId}`) : undefined;
+
+      if (confirmedPrefill) {
+        // Pre-fill was confirmed — lock it in and ask for additions only
+        textValue = confirmedPrefill;
+        const hasMore = await askConfirm(io, `Do you have any additional ${question.cans_field?.split('.').pop() ?? 'entries'}?`);
+        if (hasMore) {
+          const additional = await askOptionalText(io, `Additional (comma-separated):`);
+          if (additional) {
+            textValue = `${confirmedPrefill}, ${additional}`;
+          }
+        }
+      } else if (prefillValue) {
+        // Text-level pre-fill (no parent boolean) — confirm or replace
+        const keepPrefill = await askConfirm(io, `You are listed as ${prefillValue}; is that correct?`);
         if (keepPrefill) {
           textValue = prefillValue;
+          const hasMore = await askConfirm(io, `Do you have any additional ${question.cans_field?.split('.').pop() ?? 'entries'}?`);
+          if (hasMore) {
+            const additional = await askOptionalText(io, `Additional (comma-separated):`);
+            if (additional) {
+              textValue = `${prefillValue}, ${additional}`;
+            }
+          }
+        } else {
+          // Rejected — ask for the full list manually
+          let valid = false;
+          while (!valid) {
+            const raw = isRequired
+              ? await askText(io, question.text, { required: true, minLength: minLen })
+              : (await askOptionalText(io, question.text));
+            if (raw === undefined) { textValue = undefined; valid = true; }
+            else if (pattern && !pattern.test(raw)) { io.display(`Invalid format. Expected: ${question.validation?.pattern}`); }
+            else { textValue = raw; valid = true; }
+          }
         }
-      }
-
-      // If no prefill or user rejected it, ask manually
-      if (textValue === undefined && !prefillValue) {
+      } else {
+        // No pre-fill — ask normally
         let valid = false;
         while (!valid) {
           const raw = isRequired
             ? await askText(io, question.text, { required: true, minLength: minLen })
             : (await askOptionalText(io, question.text));
-
-          if (raw === undefined) {
-            textValue = undefined;
-            valid = true;
-          } else if (pattern && !pattern.test(raw)) {
-            io.display(`Invalid format. Expected: ${question.validation?.pattern}`);
-          } else {
-            textValue = raw;
-            valid = true;
-          }
-        }
-      } else if (textValue === undefined) {
-        // User rejected prefill — ask manually
-        let valid = false;
-        while (!valid) {
-          const raw = isRequired
-            ? await askText(io, question.text, { required: true, minLength: minLen })
-            : (await askOptionalText(io, question.text));
-
-          if (raw === undefined) {
-            textValue = undefined;
-            valid = true;
-          } else if (pattern && !pattern.test(raw)) {
-            io.display(`Invalid format. Expected: ${question.validation?.pattern}`);
-          } else {
-            textValue = raw;
-            valid = true;
-          }
+          if (raw === undefined) { textValue = undefined; valid = true; }
+          else if (pattern && !pattern.test(raw)) { io.display(`Invalid format. Expected: ${question.validation?.pattern}`); }
+          else { textValue = raw; valid = true; }
         }
       }
 
@@ -653,17 +781,22 @@ export async function scopeStage(
     );
   }
 
-  // Build organization from questionnaire or ask manually
+  // Organization is collected in identity stage — use it from state.data
+  // Only ask manually if somehow missing (shouldn't happen with required org NPI)
   let organizations: Array<{ name: string; npi?: string; primary: boolean }> | undefined;
 
-  if (organizationName) {
+  if (state.data.provider?.organizations?.length) {
+    // Already set in identity stage — keep it
+    organizations = undefined; // don't overwrite
+  } else if (organizationName) {
+    // From questionnaire fallback (shouldn't happen with new flow)
     organizations = [{
       name: organizationName,
       ...(organizationNpi !== undefined ? { npi: organizationNpi } : {}),
       primary: true,
     }];
-  } else if (!state.data.provider?.organizations?.length) {
-    // No organization from questionnaire and none from prior stages — ask manually
+  } else {
+    // Last resort fallback
     io.display('');
     const orgName = await askText(io, 'Organization/practice name (e.g., University Medical Center): ', {
       required: true,
@@ -683,6 +816,16 @@ export async function scopeStage(
   const mergedCerts = [...new Set([...existingCerts, ...questionnaireCertifications])];
   const mergedSpecialties = [...new Set([...existingSpecialties, ...questionnaireSpecialties])];
   const mergedSubspecialties = [...new Set([...existingSubspecialties, ...questionnaireSubspecialties])];
+
+  // chart.operative_note is a documentation privilege granted when the provider
+  // has a surgical specialty and documents clinical encounters.
+  const isSurgical = [...mergedSpecialties, ...mergedSubspecialties].some(
+    (s) => /surg/i.test(s),
+  );
+  const chartsEncounters = permittedActions.some((a) => a.startsWith('chart.'));
+  if (isSurgical && chartsEncounters && !permittedActions.includes('chart.operative_note')) {
+    permittedActions.push('chart.operative_note');
+  }
 
   const updatedData = {
     ...state.data,
@@ -736,28 +879,19 @@ export async function voiceStage(
 ): Promise<InterviewState> {
   io.display('');
   io.display('--- Clinical Voice ---');
-  io.display('Configure voice directives for each atomic action.');
-  io.display('These describe how CareAgent should write/communicate for each action type.');
-  io.display('Press Enter to skip any action.');
+  io.display('Configure your preferred writing style for CareAgent documentation.');
+  io.display('Press Enter to skip any category.');
 
   const chart = await askVoiceDirective(io, 'chart');
-  const order = await askVoiceDirective(io, 'order');
-  const charge = await askVoiceDirective(io, 'charge');
-  const perform = await askVoiceDirective(io, 'perform');
-  const interpret = await askVoiceDirective(io, 'interpret');
   const educate = await askVoiceDirective(io, 'educate');
-  const coordinate = await askVoiceDirective(io, 'coordinate');
+  const interpret = await askVoiceDirective(io, 'interpret', 'Documenting results (labs, imaging, EKG, etc.)');
 
   const updatedData = {
     ...state.data,
     voice: {
       ...(chart !== undefined ? { chart } : {}),
-      ...(order !== undefined ? { order } : {}),
-      ...(charge !== undefined ? { charge } : {}),
-      ...(perform !== undefined ? { perform } : {}),
-      ...(interpret !== undefined ? { interpret } : {}),
       ...(educate !== undefined ? { educate } : {}),
-      ...(coordinate !== undefined ? { coordinate } : {}),
+      ...(interpret !== undefined ? { interpret } : {}),
     },
   };
 
@@ -807,36 +941,38 @@ export async function consentStage(
 ): Promise<InterviewState> {
   io.display('');
   io.display('--- Consent ---');
-  io.display('Before we generate your CANS.md, please confirm:');
+  io.display('Before we generate your CANS.md, you must acknowledge each of the following.');
+  io.display('If you do not agree to any of these, onboarding cannot be completed and your CANS.md will not be written.');
+  io.display('');
 
-  let hipaa = false;
-  while (!hipaa) {
-    hipaa = await askConfirm(io, 'I acknowledge this system is NOT HIPAA compliant');
-    if (!hipaa) {
-      io.display('This acknowledgment is required to proceed.');
-    }
+  const hipaa = await askConfirm(io, 'I acknowledge this system is NOT HIPAA compliant.');
+  if (!hipaa) {
+    io.display('');
+    io.display('You must acknowledge that this system is not HIPAA compliant to proceed.');
+    io.display('Onboarding cannot be completed. No CANS.md has been written.');
+    return { ...state, stage: InterviewStage.CONSENT };
   }
 
-  let synthetic = false;
-  while (!synthetic) {
-    synthetic = await askConfirm(
-      io,
-      'I will use synthetic data only — no real patient information',
-    );
-    if (!synthetic) {
-      io.display('This acknowledgment is required to proceed.');
-    }
+  const synthetic = await askConfirm(
+    io,
+    'I will use synthetic data only — no real patient information will be entered.',
+  );
+  if (!synthetic) {
+    io.display('');
+    io.display('You must agree to use synthetic data only to proceed.');
+    io.display('Onboarding cannot be completed. No CANS.md has been written.');
+    return { ...state, stage: InterviewStage.CONSENT };
   }
 
-  let audit = false;
-  while (!audit) {
-    audit = await askConfirm(
-      io,
-      'I consent to all clinical actions being logged to an audit trail',
-    );
-    if (!audit) {
-      io.display('This acknowledgment is required to proceed.');
-    }
+  const audit = await askConfirm(
+    io,
+    'I consent to all clinical actions being logged to an audit trail.',
+  );
+  if (!audit) {
+    io.display('');
+    io.display('You must consent to audit logging to proceed.');
+    io.display('Onboarding cannot be completed. No CANS.md has been written.');
+    return { ...state, stage: InterviewStage.CONSENT };
   }
 
   const updatedData = {

@@ -115,6 +115,7 @@ export async function askAutonomyTier(
 export async function askVoiceDirective(
   io: InterviewIO,
   actionName: string,
+  label?: string,
 ): Promise<string | undefined> {
-  return askOptionalText(io, `Voice directive for ${actionName}:`);
+  return askOptionalText(io, `Voice directive for ${label ?? actionName}:`);
 }
