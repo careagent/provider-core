@@ -220,9 +220,6 @@ export async function credentialsStage(
   // Pre-fill provider type from identity stage selection
   const extra = state.data as Record<string, unknown>;
   const selectedTypeLabel = extra._selectedTypeLabel as string | undefined;
-  const credential = extra._credential as string | undefined;
-  const licenseState = extra._licenseState as string | undefined;
-  const licenseNumber = extra._licenseNumber as string | undefined;
 
   let types: string[];
   if (selectedTypeLabel && selectedTypeLabel !== 'Other') {
@@ -248,52 +245,37 @@ export async function credentialsStage(
     );
   }
 
-  // Pre-fill credential as degree if available from NPI lookup
-  let degrees: string[];
-  if (credential) {
-    io.display(`Credential from NPI registry: ${credential}`);
-    const moreDegrees = await askOptionalStringArray(
-      io,
-      'Additional degree(s) (comma-separated, or Enter to keep just the above):',
-    );
-    degrees = moreDegrees.length > 0 ? [credential, ...moreDegrees] : [credential];
-  } else {
+  // Degrees, licenses, certifications are now handled by the Axon questionnaire
+  // in the scope stage. Only ask here if no questionnaire will run (no AXON_URL).
+  let degrees: string[] = [];
+  let licenses: string[] = [];
+  let certifications: string[] = [];
+
+  if (!process.env.AXON_URL) {
     degrees = await askOptionalStringArray(
       io,
       'Degree(s) (comma-separated, e.g., MD, DO, DNP):',
     );
-  }
-
-  // Pre-fill license from NPI lookup if available
-  let licenses: string[];
-  if (licenseState && licenseNumber) {
-    const prefilled = `${licenseState}-${licenseNumber}`;
-    io.display(`License from NPI registry: ${prefilled}`);
-    const moreLicenses = await askOptionalStringArray(
-      io,
-      'Additional license(s) (comma-separated, or Enter to keep just the above):',
-    );
-    licenses = moreLicenses.length > 0 ? [prefilled, ...moreLicenses] : [prefilled];
-  } else {
     licenses = await askOptionalStringArray(
       io,
       'License(s) (comma-separated, e.g., MD-TX-A12345):',
     );
+    certifications = await askOptionalStringArray(
+      io,
+      'Certification(s) (comma-separated, e.g., ABNS Board Certified):',
+    );
+  } else {
+    io.display('Credentials will be collected via the clinical questionnaire.');
   }
-
-  const certifications = await askOptionalStringArray(
-    io,
-    'Certification(s) (comma-separated, e.g., ABNS Board Certified):',
-  );
 
   const updatedData = {
     ...state.data,
     provider: {
       ...(state.data.provider ?? {}),
       types,
-      degrees,
-      licenses,
-      certifications,
+      ...(degrees.length > 0 ? { degrees } : {}),
+      ...(licenses.length > 0 ? { licenses } : {}),
+      ...(certifications.length > 0 ? { certifications } : {}),
     },
   } as Partial<CANSDocument>;
 
@@ -309,31 +291,43 @@ export async function specialtyStage(
   io: InterviewIO,
 ): Promise<InterviewState> {
   io.display('');
-  io.display('--- Specialty & Credentials ---');
+  io.display('--- Specialty ---');
 
-  // Check if specialty was pre-filled from NPI lookup
-  const existingSpecialty = state.data.provider?.specialty;
-  let specialtyRaw: string | undefined;
-
-  if (existingSpecialty) {
-    io.display(`Specialty from NPI registry: ${existingSpecialty}`);
-    const changeSpecialty = await askConfirm(io, 'Would you like to change this?');
-    if (changeSpecialty) {
-      specialtyRaw = await askOptionalText(
-        io,
-        'Primary specialty (e.g., Neurosurgery, Internal Medicine):',
-      );
-    } else {
-      specialtyRaw = existingSpecialty;
-    }
-  } else {
-    specialtyRaw = await askOptionalText(
-      io,
-      'Primary specialty (e.g., Neurosurgery, Internal Medicine):',
-    );
+  // When AXON_URL is set, the questionnaire handles specialties/subspecialties.
+  // Only ask for credential status here.
+  if (process.env.AXON_URL) {
+    io.display('Specialties will be collected via the clinical questionnaire.');
   }
 
-  const subspecialtyRaw = await askOptionalText(io, 'Subspecialty:');
+  // Check if specialty was pre-filled from NPI lookup (stored as singular during identity stage)
+  const existingSpecialty = state.data.provider?.specialty;
+  let specialties: string[] | undefined;
+  let subspecialties: string[] | undefined;
+
+  if (!process.env.AXON_URL) {
+    if (existingSpecialty) {
+      io.display(`Specialty from NPI registry: ${existingSpecialty}`);
+      const changeSpecialty = await askConfirm(io, 'Would you like to change this?');
+      if (changeSpecialty) {
+        const raw = await askOptionalText(
+          io,
+          'Specialty or specialties (comma-separated, e.g., Neurosurgery, Internal Medicine):',
+        );
+        specialties = raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+      } else {
+        specialties = [existingSpecialty];
+      }
+    } else {
+      const raw = await askOptionalText(
+        io,
+        'Specialty or specialties (comma-separated, e.g., Neurosurgery, Internal Medicine):',
+      );
+      specialties = raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+    }
+
+    const subspecialtyRaw = await askOptionalText(io, 'Subspecialty or subspecialties (comma-separated):');
+    subspecialties = subspecialtyRaw ? subspecialtyRaw.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+  }
 
   const credentialStatusIndex = await askSelect(io, 'Credential status:', [
     'active',
@@ -347,8 +341,8 @@ export async function specialtyStage(
     ...state.data,
     provider: {
       ...(state.data.provider ?? {}),
-      ...(specialtyRaw !== undefined ? { specialty: specialtyRaw } : {}),
-      ...(subspecialtyRaw !== undefined ? { subspecialty: subspecialtyRaw } : {}),
+      ...(specialties !== undefined ? { specialties, specialty: specialties[0] } : {}),
+      ...(subspecialties !== undefined ? { subspecialties, subspecialty: subspecialties[0] } : {}),
       credential_status: credentialStatus,
     },
   } as Partial<CANSDocument>;
@@ -377,25 +371,55 @@ function shouldShowQuestion(
 interface QuestionnaireResult {
   permittedActions: string[];
   practiceSettingValue?: string;
-  subspecialtyValue?: string;
+  subspecialtyValues: string[];
   organizationName?: string;
   organizationNpi?: string;
+  degrees: string[];
+  licenses: string[];
+  certifications: string[];
+  specialties: string[];
+  subspecialties: string[];
+}
+
+/**
+ * Resolve NPI pre-fill value for a question.
+ * Maps `npi_prefill` keys to NPI lookup fields.
+ */
+function getNpiPrefill(
+  key: string | undefined,
+  npiLookup: AxonNpiLookupResult | null | undefined,
+): string | undefined {
+  if (!key || !npiLookup) return undefined;
+  if (key === 'credential') return npiLookup.credential;
+  if (key === 'specialty') return npiLookup.specialty;
+  if (key === 'license' && npiLookup.license_state && npiLookup.license_number) {
+    return `${npiLookup.license_state}-${npiLookup.license_number}`;
+  }
+  return undefined;
 }
 
 /**
  * Run the Axon physician questionnaire over InterviewIO.
  * Returns the collected permitted_actions and any CANS field values.
+ *
+ * @param npiLookup — NPI-1 lookup from the identity stage, used for pre-fill
  */
 async function runAxonQuestionnaire(
   questionnaire: AxonQuestionnaire,
   io: InterviewIO,
+  npiLookup?: AxonNpiLookupResult | null,
 ): Promise<QuestionnaireResult> {
   const permittedActions: string[] = [];
   const answers = new Map<string, string>();
   let practiceSettingValue: string | undefined;
-  let subspecialtyValue: string | undefined;
+  const subspecialtyValues: string[] = [];
   let organizationName: string | undefined;
   let organizationNpi: string | undefined;
+  const degrees: string[] = [];
+  const licenses: string[] = [];
+  const certifications: string[] = [];
+  const specialties: string[] = [];
+  const subspecialties: string[] = [];
 
   for (const question of questionnaire.questions) {
     // Check show_when condition
@@ -403,10 +427,28 @@ async function runAxonQuestionnaire(
       continue;
     }
 
+    // Skip practice_name if we already resolved it from NPI lookup
+    if (question.id === 'practice_name' && organizationName) {
+      answers.set(question.id, organizationName);
+      continue;
+    }
+
+    // Resolve NPI pre-fill value
+    const prefillValue = getNpiPrefill(question.npi_prefill, npiLookup);
+
     if (question.answer_type === 'boolean') {
-      const answer = await askConfirm(io, question.text);
-      const answerStr = String(answer);
-      answers.set(question.id, answerStr);
+      let answer: boolean;
+
+      // For boolean questions with NPI pre-fill, auto-confirm if we have data
+      if (prefillValue) {
+        io.display(`${question.text}`);
+        io.display(`  (Pre-filled from NPI registry: ${prefillValue})`);
+        answer = true;
+        answers.set(question.id, 'true');
+      } else {
+        answer = await askConfirm(io, question.text);
+        answers.set(question.id, String(answer));
+      }
 
       // Process action_assignments
       if (answer && question.action_assignments) {
@@ -425,35 +467,76 @@ async function runAxonQuestionnaire(
       // Map to CANS fields
       if (question.cans_field === 'scope.practice_setting') {
         practiceSettingValue = selectedOption.value;
-      } else if (question.cans_field === 'provider.subspecialty') {
-        subspecialtyValue = selectedOption.value;
+      } else if (question.cans_field === 'provider.subspecialties') {
+        subspecialtyValues.push(selectedOption.label);
+        subspecialties.push(selectedOption.label);
       }
     } else if (question.answer_type === 'text') {
-      // Text input — with optional validation and NPI lookup
+      // Text input — with optional validation, NPI lookup, and pre-fill
       let textValue: string | undefined;
       const isRequired = question.required;
       const pattern = question.validation?.pattern ? new RegExp(question.validation.pattern) : undefined;
       const minLen = question.validation?.min_length ?? 0;
 
-      let valid = false;
-      while (!valid) {
-        const raw = isRequired
-          ? await askText(io, question.text, { required: true, minLength: minLen })
-          : (await askOptionalText(io, question.text));
+      // Show pre-fill and ask to modify
+      if (prefillValue) {
+        io.display(`${question.text}`);
+        io.display(`  (From NPI registry: ${prefillValue})`);
+        const keepPrefill = await askConfirm(io, `Keep "${prefillValue}"? (No to enter your own)`);
+        if (keepPrefill) {
+          textValue = prefillValue;
+        }
+      }
 
-        if (raw === undefined) {
-          // Skipped optional question
-          textValue = undefined;
-          valid = true;
-        } else if (pattern && !pattern.test(raw)) {
-          io.display(`Invalid format. Expected: ${question.validation?.pattern}`);
-        } else {
-          textValue = raw;
-          valid = true;
+      // If no prefill or user rejected it, ask manually
+      if (textValue === undefined && !prefillValue) {
+        let valid = false;
+        while (!valid) {
+          const raw = isRequired
+            ? await askText(io, question.text, { required: true, minLength: minLen })
+            : (await askOptionalText(io, question.text));
+
+          if (raw === undefined) {
+            textValue = undefined;
+            valid = true;
+          } else if (pattern && !pattern.test(raw)) {
+            io.display(`Invalid format. Expected: ${question.validation?.pattern}`);
+          } else {
+            textValue = raw;
+            valid = true;
+          }
+        }
+      } else if (textValue === undefined) {
+        // User rejected prefill — ask manually
+        let valid = false;
+        while (!valid) {
+          const raw = isRequired
+            ? await askText(io, question.text, { required: true, minLength: minLen })
+            : (await askOptionalText(io, question.text));
+
+          if (raw === undefined) {
+            textValue = undefined;
+            valid = true;
+          } else if (pattern && !pattern.test(raw)) {
+            io.display(`Invalid format. Expected: ${question.validation?.pattern}`);
+          } else {
+            textValue = raw;
+            valid = true;
+          }
         }
       }
 
       answers.set(question.id, textValue ?? '');
+
+      // Collect credential/specialty lists from text answers
+      if (textValue) {
+        const items = textValue.split(',').map((s) => s.trim()).filter(Boolean);
+        if (question.cans_field === 'provider.degrees') degrees.push(...items);
+        else if (question.cans_field === 'provider.licenses') licenses.push(...items);
+        else if (question.cans_field === 'provider.certifications') certifications.push(...items);
+        else if (question.cans_field === 'provider.specialties') specialties.push(...items);
+        else if (question.cans_field === 'provider.subspecialties') subspecialties.push(...items);
+      }
 
       // NPI organization lookup
       if (question.npi_lookup && textValue && /^\d{10}$/.test(textValue)) {
@@ -468,7 +551,6 @@ async function runAxonQuestionnaire(
             const confirmed = await askConfirm(io, 'Is this your practice/organization?');
             if (confirmed) {
               organizationName = lookup.organization_name;
-              // Skip the next practice_name question since we have it from NPI
               answers.set('practice_name', organizationName);
             }
           } else if (lookup.enumeration_type === 'NPI-1') {
@@ -477,7 +559,6 @@ async function runAxonQuestionnaire(
           }
         }
       } else if (question.cans_field === 'provider.organizations' && question.id === 'practice_name') {
-        // Manual practice name entry (when NPI wasn't provided or lookup failed)
         if (textValue && !organizationName) {
           organizationName = textValue;
         }
@@ -485,7 +566,18 @@ async function runAxonQuestionnaire(
     }
   }
 
-  return { permittedActions, practiceSettingValue, subspecialtyValue, organizationName, organizationNpi };
+  return {
+    permittedActions,
+    practiceSettingValue,
+    subspecialtyValues,
+    organizationName,
+    organizationNpi,
+    degrees,
+    licenses,
+    certifications,
+    specialties,
+    subspecialties,
+  };
 }
 
 export async function scopeStage(
@@ -500,25 +592,37 @@ export async function scopeStage(
   const axonUrl = process.env.AXON_URL;
   let permittedActions: string[] = [];
   let practiceSettingValue: string | undefined;
-  let subspecialtyValue: string | undefined;
   let organizationName: string | undefined;
   let organizationNpi: string | undefined;
+  let questionnaireDegrees: string[] = [];
+  let questionnaireLicenses: string[] = [];
+  let questionnaireCertifications: string[] = [];
+  let questionnaireSpecialties: string[] = [];
+  let questionnaireSubspecialties: string[] = [];
+
+  // Extract NPI lookup from identity stage (carried on state.data)
+  const extra = state.data as Record<string, unknown>;
+  const npiLookup = extra._npiLookup as AxonNpiLookupResult | null | undefined;
 
   if (axonUrl) {
     try {
       io.display('');
-      io.display('Fetching scope questionnaire from Axon registry...');
+      io.display('Fetching clinical questionnaire from Axon registry...');
       const axonClient = createAxonClient({ baseUrl: axonUrl, timeoutMs: 10_000 });
       const questionnaire = await axonClient.getQuestionnaire('physician');
       io.display(`Loaded: ${questionnaire.display_name} (${questionnaire.questions.length} questions)`);
       io.display('');
 
-      const result = await runAxonQuestionnaire(questionnaire, io);
+      const result = await runAxonQuestionnaire(questionnaire, io, npiLookup);
       permittedActions = result.permittedActions;
       practiceSettingValue = result.practiceSettingValue;
-      subspecialtyValue = result.subspecialtyValue;
       organizationName = result.organizationName;
       organizationNpi = result.organizationNpi;
+      questionnaireDegrees = result.degrees;
+      questionnaireLicenses = result.licenses;
+      questionnaireCertifications = result.certifications;
+      questionnaireSpecialties = result.specialties;
+      questionnaireSubspecialties = [...result.subspecialties, ...result.subspecialtyValues];
 
       if (permittedActions.length > 0) {
         io.display('');
@@ -558,6 +662,19 @@ export async function scopeStage(
     organizations = [{ name: orgName, primary: true }];
   }
 
+  // Merge questionnaire-collected credentials with any existing data from credentials stage
+  const existingDegrees = state.data.provider?.degrees ?? [];
+  const existingLicenses = state.data.provider?.licenses ?? [];
+  const existingCerts = state.data.provider?.certifications ?? [];
+  const existingSpecialties = state.data.provider?.specialties ?? [];
+  const existingSubspecialties = state.data.provider?.subspecialties ?? [];
+
+  const mergedDegrees = [...new Set([...existingDegrees, ...questionnaireDegrees])];
+  const mergedLicenses = [...new Set([...existingLicenses, ...questionnaireLicenses])];
+  const mergedCerts = [...new Set([...existingCerts, ...questionnaireCertifications])];
+  const mergedSpecialties = [...new Set([...existingSpecialties, ...questionnaireSpecialties])];
+  const mergedSubspecialties = [...new Set([...existingSubspecialties, ...questionnaireSubspecialties])];
+
   const updatedData = {
     ...state.data,
     scope: {
@@ -566,7 +683,11 @@ export async function scopeStage(
     },
     provider: {
       ...(state.data.provider ?? {}),
-      ...(subspecialtyValue !== undefined ? { subspecialty: subspecialtyValue } : {}),
+      ...(mergedDegrees.length > 0 ? { degrees: mergedDegrees } : {}),
+      ...(mergedLicenses.length > 0 ? { licenses: mergedLicenses } : {}),
+      ...(mergedCerts.length > 0 ? { certifications: mergedCerts } : {}),
+      ...(mergedSpecialties.length > 0 ? { specialties: mergedSpecialties, specialty: mergedSpecialties[0] } : {}),
+      ...(mergedSubspecialties.length > 0 ? { subspecialties: mergedSubspecialties, subspecialty: mergedSubspecialties[0] } : {}),
       ...(organizations !== undefined ? { organizations } : {}),
     },
   } as Partial<CANSDocument>;

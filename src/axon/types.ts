@@ -69,6 +69,8 @@ export interface AxonQuestion {
   action_assignments?: AxonActionAssignment[];
   validation?: AxonTextValidation;
   npi_lookup?: boolean;
+  /** Key into NPI lookup result to pre-fill this question's value. */
+  npi_prefill?: string;
 }
 
 /** A full questionnaire for a specific provider type. */

@@ -55,6 +55,8 @@ export const ProviderSchema = Type.Object({
   certifications: Type.Array(Type.String({ minLength: 1 })),
   specialty: Type.Optional(Type.String()),
   subspecialty: Type.Optional(Type.String()),
+  specialties: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
+  subspecialties: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),
   organizations: Type.Array(OrganizationSchema, { minItems: 1 }),
   credential_status: Type.Optional(
     Type.Union([

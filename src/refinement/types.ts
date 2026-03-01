@@ -63,6 +63,8 @@ export const CATEGORY_FIELDS: Record<ObservationCategory, string[]> = {
     'provider.npi',
     'provider.specialty',
     'provider.subspecialty',
+    'provider.specialties',
+    'provider.subspecialties',
   ],
 };
 

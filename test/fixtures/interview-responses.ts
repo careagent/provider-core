@@ -1,6 +1,11 @@
 /**
  * Pre-canned interview response sequences for testing.
  * Each entry maps to an interview question in order.
+ *
+ * NOTE: Tests run without AXON_URL, so:
+ * - Credentials stage asks for degrees/licenses/certifications directly
+ * - Specialty stage asks for specialties/subspecialties directly
+ * - Scope stage falls back to manual permitted_actions + org name
  */
 
 // Complete interview with ALL questions answered
@@ -15,15 +20,15 @@ export const completeInterviewResponses: string[] = [
   'Dr. Test Provider',
   // Credentials: add additional provider types? (n — keep Physician from identity)
   'n',
-  // Credentials: degrees (optional, comma-separated)
+  // Credentials: degrees (no AXON_URL → asked here)
   'MD',
-  // Credentials: licenses (optional, comma-separated)
+  // Credentials: licenses (no AXON_URL → asked here)
   'MD-TX-A12345',
-  // Credentials: certifications (optional, comma-separated)
+  // Credentials: certifications (no AXON_URL → asked here)
   'ABNS Board Certified',
-  // Specialty: primary specialty (optional)
+  // Specialty: specialties (no AXON_URL → asked here, comma-separated)
   'Neurosurgery',
-  // Specialty: subspecialty (optional)
+  // Specialty: subspecialties (no AXON_URL → asked here)
   'Spine',
   // Specialty: credential status (0 = active)
   '0',
@@ -83,15 +88,15 @@ export const minimalInterviewResponses: string[] = [
   'Dr. Minimal Provider',
   // Credentials: add additional provider types? (n — keep Physician from identity)
   'n',
-  // Credentials: degrees (optional — skip)
+  // Credentials: degrees (no AXON_URL → asked here, skip)
   '',
-  // Credentials: licenses (optional — skip)
+  // Credentials: licenses (no AXON_URL → asked here, skip)
   '',
-  // Credentials: certifications (optional — skip)
+  // Credentials: certifications (no AXON_URL → asked here, skip)
   '',
-  // Specialty: primary specialty (optional — skip)
+  // Specialty: specialties (no AXON_URL → asked here, skip)
   '',
-  // Specialty: subspecialty (optional — skip)
+  // Specialty: subspecialties (no AXON_URL → asked here, skip)
   '',
   // Specialty: credential status (0 = active)
   '0',

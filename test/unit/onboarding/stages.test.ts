@@ -1,5 +1,10 @@
 /**
  * Tests for individual stage handler functions in src/onboarding/stages.ts.
+ *
+ * NOTE: Tests run without AXON_URL set, so:
+ * - Credentials stage asks for degrees/licenses/certifications directly
+ * - Specialty stage asks for specialties/subspecialties directly
+ * - Scope stage falls back to manual permitted_actions + org name
  */
 
 import { describe, it, expect } from 'vitest';
@@ -112,7 +117,7 @@ describe('identityStage', () => {
 });
 
 // ---------------------------------------------------------------------------
-// credentialsStage
+// credentialsStage (runs without AXON_URL → asks for degrees/licenses/certs)
 // ---------------------------------------------------------------------------
 
 describe('credentialsStage', () => {
@@ -145,20 +150,16 @@ describe('credentialsStage', () => {
     expect(newState.data.provider?.degrees).toEqual(['MD', 'DO']);
   });
 
-  it('pre-fills credential from NPI lookup as degree', async () => {
+  it('collects degrees when no AXON_URL', async () => {
     const io = createMockIO([
       'n',               // add more types? no
-      '',                // additional degrees (none, keep MD from NPI)
+      'MD',              // degrees
       '',                // licenses
       '',                // certifications
     ]);
     const state = makeState({
       stage: InterviewStage.CREDENTIALS,
-      data: {
-        version: '2.0',
-        _selectedTypeLabel: 'Physician',
-        _credential: 'MD',
-      } as Partial<CANSDocument>,
+      data: { version: '2.0', _selectedTypeLabel: 'Physician' } as Partial<CANSDocument>,
     });
     const newState = await credentialsStage(state, io);
     expect(newState.data.provider?.degrees).toEqual(['MD']);
@@ -178,45 +179,45 @@ describe('credentialsStage', () => {
 });
 
 // ---------------------------------------------------------------------------
-// specialtyStage
+// specialtyStage (runs without AXON_URL → asks for specialties/subspecialties)
 // ---------------------------------------------------------------------------
 
 describe('specialtyStage', () => {
-  it('sets specialty and credential status', async () => {
+  it('sets specialties and credential status', async () => {
     const io = createMockIO([
-      'Neurosurgery',   // specialty (optional)
-      '',               // subspecialty (skip)
+      'Neurosurgery',   // specialties
+      '',               // subspecialties (skip)
       '0',              // credential status (active)
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
-    expect(newState.data.provider?.specialty).toBe('Neurosurgery');
+    expect(newState.data.provider?.specialties).toEqual(['Neurosurgery']);
     expect(newState.data.provider?.credential_status).toBe('active');
   });
 
-  it('omits specialty when skipped', async () => {
+  it('omits specialties when skipped', async () => {
     const io = createMockIO([
-      '',    // specialty (skip)
-      '',    // subspecialty (skip)
+      '',    // specialties (skip)
+      '',    // subspecialties (skip)
       '0',   // credential status
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
-    expect(newState.data.provider).not.toHaveProperty('specialty');
+    expect(newState.data.provider).not.toHaveProperty('specialties');
   });
 
-  it('omits subspecialty when skipped', async () => {
+  it('omits subspecialties when skipped', async () => {
     const io = createMockIO([
       'Cardiology',
-      '',    // subspecialty (skip)
+      '',    // subspecialties (skip)
       '0',
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
-    expect(newState.data.provider).not.toHaveProperty('subspecialty');
+    expect(newState.data.provider).not.toHaveProperty('subspecialties');
   });
 
-  it('sets subspecialty when provided', async () => {
+  it('sets subspecialties when provided', async () => {
     const io = createMockIO([
       'Cardiology',
       'Electrophysiology',
@@ -224,7 +225,18 @@ describe('specialtyStage', () => {
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
-    expect(newState.data.provider?.subspecialty).toBe('Electrophysiology');
+    expect(newState.data.provider?.subspecialties).toEqual(['Electrophysiology']);
+  });
+
+  it('handles multiple specialties comma-separated', async () => {
+    const io = createMockIO([
+      'Internal Medicine, Cardiology',
+      '',
+      '0',
+    ]);
+    const state = makeState({ stage: InterviewStage.SPECIALTY });
+    const newState = await specialtyStage(state, io);
+    expect(newState.data.provider?.specialties).toEqual(['Internal Medicine', 'Cardiology']);
   });
 
   it('advances to SCOPE', async () => {
@@ -240,7 +252,7 @@ describe('specialtyStage', () => {
 });
 
 // ---------------------------------------------------------------------------
-// scopeStage
+// scopeStage (runs without AXON_URL → manual fallback)
 // ---------------------------------------------------------------------------
 
 describe('scopeStage', () => {
