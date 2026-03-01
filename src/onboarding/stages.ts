@@ -137,16 +137,16 @@ export async function identityStage(
   if (NPI_ELIGIBLE_TYPES.has(selectedTypeId)) {
     let npiValid = false;
     while (!npiValid) {
-      const npi = await askOptionalText(io, 'Enter your NPI number (10 digits):');
-      if (npi === undefined) {
-        npiValue = undefined;
-        npiValid = true;
-      } else if (/^\d{10}$/.test(npi)) {
+      const npi = await askText(io, 'Enter your NPI number (10 digits):', {
+        required: true,
+        minLength: 10,
+      });
+      if (/^\d{10}$/.test(npi)) {
         npiValue = npi;
         npiValid = true;
         npiLookup = await tryNpiLookup(npi, io);
       } else {
-        io.display('NPI must be exactly 10 digits. Please try again or press Enter to skip.');
+        io.display('NPI must be exactly 10 digits. Please try again.');
       }
     }
   }
@@ -379,6 +379,7 @@ interface QuestionnaireResult {
   certifications: string[];
   specialties: string[];
   subspecialties: string[];
+  deaNumber?: string;
 }
 
 /**
@@ -420,6 +421,7 @@ async function runAxonQuestionnaire(
   const certifications: string[] = [];
   const specialties: string[] = [];
   const subspecialties: string[] = [];
+  let deaNumber: string | undefined;
 
   for (const question of questionnaire.questions) {
     // Check show_when condition
@@ -530,12 +532,16 @@ async function runAxonQuestionnaire(
 
       // Collect credential/specialty lists from text answers
       if (textValue) {
-        const items = textValue.split(',').map((s) => s.trim()).filter(Boolean);
-        if (question.cans_field === 'provider.degrees') degrees.push(...items);
-        else if (question.cans_field === 'provider.licenses') licenses.push(...items);
-        else if (question.cans_field === 'provider.certifications') certifications.push(...items);
-        else if (question.cans_field === 'provider.specialties') specialties.push(...items);
-        else if (question.cans_field === 'provider.subspecialties') subspecialties.push(...items);
+        if (question.cans_field === 'provider.dea_number') {
+          deaNumber = textValue;
+        } else {
+          const items = textValue.split(',').map((s) => s.trim()).filter(Boolean);
+          if (question.cans_field === 'provider.degrees') degrees.push(...items);
+          else if (question.cans_field === 'provider.licenses') licenses.push(...items);
+          else if (question.cans_field === 'provider.certifications') certifications.push(...items);
+          else if (question.cans_field === 'provider.specialties') specialties.push(...items);
+          else if (question.cans_field === 'provider.subspecialties') subspecialties.push(...items);
+        }
       }
 
       // NPI organization lookup
@@ -577,6 +583,7 @@ async function runAxonQuestionnaire(
     certifications,
     specialties,
     subspecialties,
+    deaNumber,
   };
 }
 
@@ -599,6 +606,7 @@ export async function scopeStage(
   let questionnaireCertifications: string[] = [];
   let questionnaireSpecialties: string[] = [];
   let questionnaireSubspecialties: string[] = [];
+  let questionnaireDeaNumber: string | undefined;
 
   // Extract NPI lookup from identity stage (carried on state.data)
   const extra = state.data as Record<string, unknown>;
@@ -623,6 +631,7 @@ export async function scopeStage(
       questionnaireCertifications = result.certifications;
       questionnaireSpecialties = result.specialties;
       questionnaireSubspecialties = [...result.subspecialties, ...result.subspecialtyValues];
+      questionnaireDeaNumber = result.deaNumber;
 
       if (permittedActions.length > 0) {
         io.display('');
@@ -688,6 +697,7 @@ export async function scopeStage(
       ...(mergedCerts.length > 0 ? { certifications: mergedCerts } : {}),
       ...(mergedSpecialties.length > 0 ? { specialties: mergedSpecialties, specialty: mergedSpecialties[0] } : {}),
       ...(mergedSubspecialties.length > 0 ? { subspecialties: mergedSubspecialties, subspecialty: mergedSubspecialties[0] } : {}),
+      ...(questionnaireDeaNumber !== undefined ? { dea_number: questionnaireDeaNumber } : {}),
       ...(organizations !== undefined ? { organizations } : {}),
     },
   } as Partial<CANSDocument>;

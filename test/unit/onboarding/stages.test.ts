@@ -79,16 +79,16 @@ describe('identityStage', () => {
     expect(newState.stage).toBe(InterviewStage.CREDENTIALS);
   });
 
-  it('asks for NPI when NPI-eligible type selected, skips when empty', async () => {
+  it('requires NPI when NPI-eligible type selected', async () => {
     const io = createMockIO([
       '0',                  // provider type: Physician (NPI-eligible)
-      '',                   // NPI: skip
-      'Dr. No NPI',         // name (manual since no NPI)
+      '1234567890',         // NPI (required — lookup returns null without AXON_URL)
+      'Dr. With NPI',       // name (manual since no AXON_URL)
     ]);
     const state = makeState({ stage: InterviewStage.IDENTITY });
     const newState = await identityStage(state, io);
-    expect(newState.data.provider?.name).toBe('Dr. No NPI');
-    expect(newState.data.provider).not.toHaveProperty('npi');
+    expect(newState.data.provider?.name).toBe('Dr. With NPI');
+    expect(newState.data.provider?.npi).toBe('1234567890');
   });
 
   it('does not ask for NPI when non-NPI-eligible type selected', async () => {
@@ -102,16 +102,32 @@ describe('identityStage', () => {
     expect(newState.data.provider).not.toHaveProperty('npi');
   });
 
-  it('re-prompts when NPI is not 10 digits', async () => {
+  it('re-prompts when NPI is too short, then accepts valid NPI', async () => {
     const io = createMockIO([
       '0',                  // provider type: Physician
-      '12345',              // invalid NPI
-      '',                   // skip NPI on retry
-      'Dr. Retry NPI',      // name
+      '12345',              // invalid NPI (too short — askText rejects at minLength)
+      '9876543210',         // valid NPI on retry
+      'Dr. Retry NPI',      // name (manual since no AXON_URL)
     ]);
     const state = makeState({ stage: InterviewStage.IDENTITY });
     const newState = await identityStage(state, io);
     expect(newState.data.provider?.name).toBe('Dr. Retry NPI');
+    expect(newState.data.provider?.npi).toBe('9876543210');
+    // askText rejects short input with "Minimum length" message
+    expect(io.getOutput().some((line) => line.includes('Minimum length'))).toBe(true);
+  });
+
+  it('re-prompts when NPI has letters, then accepts valid NPI', async () => {
+    const io = createMockIO([
+      '0',                  // provider type: Physician
+      'abcdefghij',         // invalid NPI (10 chars but not digits)
+      '9876543210',         // valid NPI on retry
+      'Dr. Letters NPI',    // name
+    ]);
+    const state = makeState({ stage: InterviewStage.IDENTITY });
+    const newState = await identityStage(state, io);
+    expect(newState.data.provider?.name).toBe('Dr. Letters NPI');
+    expect(newState.data.provider?.npi).toBe('9876543210');
     expect(io.getOutput().some((line) => line.includes('10 digits'))).toBe(true);
   });
 });

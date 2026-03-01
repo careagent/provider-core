@@ -53,6 +53,7 @@ export const ProviderSchema = Type.Object({
   degrees: Type.Array(Type.String({ minLength: 1 })),
   licenses: Type.Array(Type.String({ minLength: 1 })),
   certifications: Type.Array(Type.String({ minLength: 1 })),
+  dea_number: Type.Optional(Type.String({ pattern: '^[A-Z]{2}\\d{7}$', description: 'DEA registration number' })),
   specialty: Type.Optional(Type.String()),
   subspecialty: Type.Optional(Type.String()),
   specialties: Type.Optional(Type.Array(Type.String({ minLength: 1 }))),

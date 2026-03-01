@@ -82,9 +82,9 @@ export const minimalInterviewResponses: string[] = [
   'y',
   // Identity: provider type select (0 = Physician)
   '0',
-  // Identity: NPI (optional — skip)
-  '',
-  // Identity: name (manual entry)
+  // Identity: NPI (required for Physician)
+  '0000000000',
+  // Identity: name (manual — NPI lookup returns null without AXON_URL)
   'Dr. Minimal Provider',
   // Credentials: add additional provider types? (n — keep Physician from identity)
   'n',
