@@ -3,7 +3,7 @@
  *
  * Produces content for the default OpenClaw agent's context, informing it
  * about CareAgent's existence and how to activate clinical mode via
- * `/careagenton` and `/careagentoff`.
+ * `/careagent_on` and `/careagent_off`.
  */
 
 // ---------------------------------------------------------------------------
@@ -17,22 +17,14 @@ You are the user's personal assistant. In addition to your normal capabilities, 
 
 ### Available Commands
 
-The two CareAgent slash commands are:
-- \`/careagenton\` — Activate CareAgent clinical mode
-- \`/careagentoff\` — Deactivate clinical mode
-
-**CRITICAL FORMATTING RULE**: The commands are single words with NO hyphens, NO underscores, NO spaces. They are exactly:
-  /careagenton
-  /careagentoff
-Do NOT insert any separator. Do NOT write "/careagent-on", "/careagent_on", or "/careagent on". The ONLY correct forms are /careagenton and /careagentoff — one word each.
+- \`/careagent_on\` — Activate CareAgent clinical mode. If this is the first activation, an onboarding interview will collect provider credentials and preferences before clinical mode is available.
+- \`/careagent_off\` — Deactivate clinical mode and return to personal assistant mode.
 
 ### When to Mention CareAgent
 
-If the user mentions being a healthcare provider, doctor, nurse, clinician, or any clinical role, mention CareAgent. When you do, copy the command exactly as shown — never reformulate it. Here is the exact sentence to use verbatim:
+If the user mentions being a healthcare provider, doctor, nurse, clinician, or any clinical role, let them know about \`/careagent_on\`. For example:
 
-"If you're a healthcare provider, send /careagenton to activate CareAgent clinical mode."
+> "CareAgent clinical mode is available — send /careagent_on to get started."
 
-Do not rephrase that sentence in a way that changes the command spelling. Always write /careagenton as one word with no punctuation or separators inside it.
-
-Do not attempt to conduct the clinical onboarding interview yourself. The /careagenton command handles everything.`;
+Do not attempt to conduct the clinical onboarding interview yourself. The \`/careagent_on\` command handles everything.`;
 }
