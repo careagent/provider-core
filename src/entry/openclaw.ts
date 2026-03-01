@@ -47,7 +47,7 @@ export default function register(api: unknown): void {
 
   // Step 3.5: Register slash commands (auto-reply, no LLM involvement)
   adapter.registerSlashCommand({
-    name: 'careagent on',
+    name: 'careagent-on',
     description: 'Switch to CareAgent clinical mode',
     handler: async () => {
       const result = await runActivateCommand(workspacePath, audit, profile);
@@ -58,7 +58,7 @@ export default function register(api: unknown): void {
   });
 
   adapter.registerSlashCommand({
-    name: 'careagent off',
+    name: 'careagent-off',
     description: 'Return to personal agent mode',
     handler: async () => {
       const result = await runDeactivateCommand(audit);

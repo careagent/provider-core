@@ -280,7 +280,7 @@ export async function runActivateCommand(
   log(`[CareAgent] Clinical mode ACTIVATED for ${cans.provider.name}`);
   log(`[CareAgent] Workspace: ${clinicalWorkspacePath}`);
   log('[CareAgent] Telegram is now routed to the CareAgent.');
-  log('[CareAgent] Use /careagent off to return to your personal agent.');
+  log('[CareAgent] Use /careagent-off to return to your personal agent.');
 
   return { success: true, clinicalWorkspacePath, registered };
 }

@@ -6,8 +6,8 @@
   "configSchema": {},
   "skills": ["skills/chart-skill"],
   "commands": [
-    { "name": "careagent on", "description": "Switch to CareAgent clinical mode" },
-    { "name": "careagent off", "description": "Return to personal agent mode" }
+    { "name": "careagent-on", "description": "Switch to CareAgent clinical mode" },
+    { "name": "careagent-off", "description": "Return to personal agent mode" }
   ],
   "hooks": []
 }

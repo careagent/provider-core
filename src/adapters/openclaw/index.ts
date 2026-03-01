@@ -49,20 +49,35 @@ export function createAdapter(api: unknown): PlatformAdapter {
 
     getWorkspacePath(): string {
       try {
+        // Direct property on API object
         if (typeof raw?.workspaceDir === 'string' && raw.workspaceDir) {
           log('info', `Workspace resolved from api.workspaceDir: ${raw.workspaceDir}`);
           return raw.workspaceDir;
         }
+        // Nested under config (openclaw config shape)
         if (typeof raw?.config?.workspaceDir === 'string' && raw.config.workspaceDir) {
           log('info', `Workspace resolved from api.config.workspaceDir: ${raw.config.workspaceDir}`);
           return raw.config.workspaceDir;
         }
+        // Nested under context
         if (typeof raw?.context?.workspaceDir === 'string' && raw.context.workspaceDir) {
           log('info', `Workspace resolved from api.context.workspaceDir: ${raw.context.workspaceDir}`);
           return raw.context.workspaceDir;
         }
+        // OpenClaw agents.defaults.workspace (gateway config)
+        const agentWorkspace = raw?.config?.agents?.defaults?.workspace;
+        if (typeof agentWorkspace === 'string' && agentWorkspace) {
+          log('info', `Workspace resolved from api.config.agents.defaults.workspace: ${agentWorkspace}`);
+          return agentWorkspace;
+        }
       } catch {
-        // Fall through to cwd
+        // Fall through to env / cwd
+      }
+      // Environment variable override
+      const envWorkspace = process.env['CAREAGENT_WORKSPACE'];
+      if (envWorkspace) {
+        log('info', `Workspace resolved from CAREAGENT_WORKSPACE env: ${envWorkspace}`);
+        return envWorkspace;
       }
       const cwd = process.cwd();
       log('warn', `Workspace not found on API object, falling back to cwd: ${cwd}`);
