@@ -48,6 +48,7 @@ export default function register(api: unknown): void {
 
   // Step 3.5: Register slash commands (auto-reply, no LLM involvement)
   // Telegram bot commands: lowercase letters, digits, underscores only.
+  // Handlers return { text } so OpenClaw sends the reply back to the user on Telegram.
   adapter.registerSlashCommand({
     name: 'careagent_on',
     description: 'Switch to CareAgent clinical mode',
@@ -55,7 +56,9 @@ export default function register(api: unknown): void {
       const result = await runActivateCommand(workspacePath, audit, profile);
       if (!result.success) {
         adapter.log('error', `[CareAgent] Activation failed: ${result.error}`);
+        return { text: `Activation failed: ${result.error}`, isError: true };
       }
+      return { text: result.messages.join('\n') };
     },
   });
 
@@ -66,7 +69,9 @@ export default function register(api: unknown): void {
       const result = await runDeactivateCommand(audit);
       if (!result.success) {
         adapter.log('error', `[CareAgent] Deactivation failed: ${result.error}`);
+        return { text: `Deactivation failed: ${result.error}`, isError: true };
       }
+      return { text: 'CareAgent clinical mode deactivated. You are now in personal agent mode.' };
     },
   });
 

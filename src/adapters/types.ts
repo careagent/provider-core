@@ -45,11 +45,17 @@ export interface ServiceConfig {
   stop?: () => void | Promise<void>;
 }
 
+/** Reply payload returned by a slash command handler (sent back to the user). */
+export interface SlashCommandReply {
+  text?: string;
+  isError?: boolean;
+}
+
 /** Configuration for registering a slash command. */
 export interface SlashCommandConfig {
   name: string;
   description: string;
-  handler: (args: string) => void | Promise<void>;
+  handler: (args: string) => SlashCommandReply | Promise<SlashCommandReply> | void | Promise<void>;
 }
 
 /**

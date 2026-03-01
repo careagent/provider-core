@@ -44,6 +44,8 @@ export interface ActivateResult {
   registered?: boolean;
   error?: string;
   onboarding?: boolean;
+  /** User-facing messages (displayed on Telegram via slash command reply). */
+  messages: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +148,7 @@ function runOnboardingActivation(
   // Ensure agent exists
   const agentResult = ensureAgent(clinicalWorkspacePath, log, audit, traceId, options);
   if (!agentResult.ok) {
-    return { success: false, error: agentResult.error };
+    return { success: false, error: agentResult.error, messages: [] };
   }
 
   // Write BOOTSTRAP.md
@@ -195,11 +197,14 @@ function runOnboardingActivation(
     trace_id: traceId,
   });
 
-  log('[CareAgent] Onboarding mode ACTIVATED');
-  log('[CareAgent] The CareAgent will now conduct your onboarding interview.');
-  log('[CareAgent] Once complete, send /careagent_on again to activate clinical mode.');
+  const messages = [
+    'CareAgent onboarding mode activated.',
+    'I will now conduct your onboarding interview to set up your clinical profile.',
+    'Once complete, send /careagent_on again to activate clinical mode.',
+  ];
+  messages.forEach((m) => log(`[CareAgent] ${m}`));
 
-  return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
+  return { success: true, clinicalWorkspacePath, registered: false, onboarding: true, messages };
 }
 
 // ---------------------------------------------------------------------------
@@ -236,7 +241,7 @@ async function runClinicalActivation(
       details: { step: 'gate_check', reason, errors: activation.errors },
       trace_id: traceId,
     });
-    return { success: false, error: `Cannot activate: ${reason}` };
+    return { success: false, error: `Cannot activate: ${reason}`, messages: [] };
   }
 
   const cans = activation.document;
@@ -244,7 +249,7 @@ async function runClinicalActivation(
   // Ensure agent exists
   const agentResult = ensureAgent(clinicalWorkspacePath, log, audit, traceId, options);
   if (!agentResult.ok) {
-    return { success: false, error: agentResult.error };
+    return { success: false, error: agentResult.error, messages: [] };
   }
 
   // Extract philosophy from CANS.md markdown body
@@ -357,12 +362,14 @@ async function runClinicalActivation(
     trace_id: traceId,
   });
 
-  log(`[CareAgent] Clinical mode ACTIVATED for ${cans.provider.name}`);
-  log(`[CareAgent] Workspace: ${clinicalWorkspacePath}`);
-  log('[CareAgent] Telegram is now routed to the CareAgent.');
-  log('[CareAgent] Use /careagent_off to return to your personal agent.');
+  const messages = [
+    `Clinical mode ACTIVATED for ${cans.provider.name}.`,
+    'Telegram is now routed to the CareAgent.',
+    'Use /careagent_off to return to your personal agent.',
+  ];
+  messages.forEach((m) => log(`[CareAgent] ${m}`));
 
-  return { success: true, clinicalWorkspacePath, registered };
+  return { success: true, clinicalWorkspacePath, registered, messages };
 }
 
 // ---------------------------------------------------------------------------
@@ -406,9 +413,12 @@ export async function runActivateCommand(
 
   // Path 3: BOOTSTRAP.md exists but no CANS.md → onboarding already in progress
   if (existsSync(bootstrapPath) && !existsSync(clinicalCansPath)) {
-    log('[CareAgent] Onboarding is already in progress.');
-    log('[CareAgent] Complete the interview with the CareAgent, then send /careagent_on again.');
-    return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
+    const messages = [
+      'Onboarding is already in progress.',
+      'Complete the interview with the CareAgent, then send /careagent_on again.',
+    ];
+    messages.forEach((m) => log(`[CareAgent] ${m}`));
+    return { success: true, clinicalWorkspacePath, registered: false, onboarding: true, messages };
   }
 
   // Path 4: Nothing exists → start onboarding
