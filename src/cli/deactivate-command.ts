@@ -106,7 +106,7 @@ export async function runDeactivateCommand(
 
   log('[CareAgent] Clinical mode DEACTIVATED');
   log('[CareAgent] Telegram is now routed to your personal agent.');
-  log('[CareAgent] Use /careagent_on to re-enter clinical mode.');
+  log('[CareAgent] Use /careagenton to re-enter clinical mode.');
 
   return { success: true };
 }

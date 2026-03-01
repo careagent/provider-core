@@ -10,7 +10,7 @@
  *    neuron.
  *
  * Exposed as:
- * - `/careagent_on` slash command (auto-reply, no LLM)
+ * - `/careagenton` slash command (auto-reply, no LLM)
  * - `openclaw careagent activate` CLI command (deployment automation)
  */
 
@@ -197,7 +197,7 @@ function runOnboardingActivation(
 
   log('[CareAgent] Onboarding mode ACTIVATED');
   log('[CareAgent] The CareAgent will now conduct your onboarding interview.');
-  log('[CareAgent] Once complete, send /careagent_on again to activate clinical mode.');
+  log('[CareAgent] Once complete, send /careagenton again to activate clinical mode.');
 
   return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
 }
@@ -360,7 +360,7 @@ async function runClinicalActivation(
   log(`[CareAgent] Clinical mode ACTIVATED for ${cans.provider.name}`);
   log(`[CareAgent] Workspace: ${clinicalWorkspacePath}`);
   log('[CareAgent] Telegram is now routed to the CareAgent.');
-  log('[CareAgent] Use /careagent_off to return to your personal agent.');
+  log('[CareAgent] Use /careagentoff to return to your personal agent.');
 
   return { success: true, clinicalWorkspacePath, registered };
 }
@@ -407,7 +407,7 @@ export async function runActivateCommand(
   // Path 3: BOOTSTRAP.md exists but no CANS.md → onboarding already in progress
   if (existsSync(bootstrapPath) && !existsSync(clinicalCansPath)) {
     log('[CareAgent] Onboarding is already in progress.');
-    log('[CareAgent] Complete the interview with the CareAgent, then send /careagent_on again.');
+    log('[CareAgent] Complete the interview with the CareAgent, then send /careagenton again.');
     return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
   }
 

@@ -47,9 +47,9 @@ export default function register(api: unknown): void {
   registerCLI(adapter, workspacePath, audit, profile);
 
   // Step 3.5: Register slash commands (auto-reply, no LLM involvement)
-  // Telegram requires underscores in bot commands (no hyphens allowed).
+  // Telegram bot commands: lowercase letters, digits, underscores only.
   adapter.registerSlashCommand({
-    name: 'careagent_on',
+    name: 'careagenton',
     description: 'Switch to CareAgent clinical mode',
     handler: async () => {
       const result = await runActivateCommand(workspacePath, audit, profile);
@@ -60,7 +60,7 @@ export default function register(api: unknown): void {
   });
 
   adapter.registerSlashCommand({
-    name: 'careagent_off',
+    name: 'careagentoff',
     description: 'Return to personal agent mode',
     handler: async () => {
       const result = await runDeactivateCommand(audit);
@@ -70,7 +70,7 @@ export default function register(api: unknown): void {
     },
   });
 
-  // Step 3.7: Inject default agent instructions (tells default agent about /careagent_on)
+  // Step 3.7: Inject default agent instructions (tells default agent about /careagenton)
   adapter.onAgentBootstrap((context) => {
     context.addFile('CAREAGENT_INFO', generateDefaultAgentInstructions());
   });

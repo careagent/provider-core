@@ -1,7 +1,7 @@
 /**
  * Onboarding BOOTSTRAP.md and CANS-SCHEMA.md content generators.
  *
- * When a provider first activates CareAgent with `/careagent_on` and no
+ * When a provider first activates CareAgent with `/careagenton` and no
  * CANS.md exists, the CareAgent LLM agent is created with these files in
  * its workspace. The LLM reads them and conducts the onboarding interview
  * conversationally, then writes CANS.md in the exact format expected by
@@ -270,7 +270,7 @@ Only include actions that have directives. All 7 actions are valid keys: chart, 
 
 Once you have written CANS.md, tell the provider:
 
-> Your CareAgent configuration has been saved. To activate clinical mode, send \`/careagent_on\`.
+> Your CareAgent configuration has been saved. To activate clinical mode, send \`/careagenton\`.
 
 Do NOT attempt to activate clinical mode yourself. The provider must send the slash command.
 `;

@@ -38,8 +38,8 @@ export async function runInitCommand(
     }
     io.display('Run "careagent status" to verify activation.');
     io.display('');
-    io.display('To enter CareAgent clinical mode, use: /careagent_on');
-    io.display('To return to your personal agent, use: /careagent_off\n');
+    io.display('To enter CareAgent clinical mode, use: /careagenton');
+    io.display('To return to your personal agent, use: /careagentoff\n');
   } finally {
     io.close();
   }

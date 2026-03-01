@@ -55,9 +55,9 @@ describe('generateOnboardingBootstrap', () => {
     }
   });
 
-  it('tells provider to send /careagent_on after writing CANS.md', () => {
+  it('tells provider to send /careagenton after writing CANS.md', () => {
     const content = generateOnboardingBootstrap();
-    expect(content).toContain('/careagent_on');
+    expect(content).toContain('/careagenton');
     expect(content).toContain('After Writing CANS.md');
   });
 
