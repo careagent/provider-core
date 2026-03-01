@@ -25,16 +25,12 @@ export const completeInterviewResponses: string[] = [
   'Neurosurgery',
   // Specialty: subspecialty (optional)
   'Spine',
-  // Specialty: organization name
-  'University Medical Center',
-  // Specialty: department (optional)
-  '',
-  // Specialty: privileges (optional, comma-separated)
-  'neurosurgical procedures, spine surgery',
   // Specialty: credential status (0 = active)
   '0',
-  // Scope: permitted actions (comma-separated)
+  // Scope: permitted actions (comma-separated, fallback without AXON_URL)
   'chart_operative_note, chart_progress_note, chart_h_and_p',
+  // Scope: organization name (manual fallback without AXON_URL)
+  'University Medical Center',
   // Philosophy: clinical philosophy
   'Evidence-based neurosurgical practice with emphasis on minimally invasive techniques and shared decision-making with patients.',
   // Voice: chart directive (optional)
@@ -97,16 +93,12 @@ export const minimalInterviewResponses: string[] = [
   '',
   // Specialty: subspecialty (optional — skip)
   '',
-  // Specialty: organization name
-  'Community Clinic',
-  // Specialty: department (optional — skip)
-  '',
-  // Specialty: privileges (optional — skip)
-  '',
   // Specialty: credential status (0 = active)
   '0',
-  // Scope: permitted actions
+  // Scope: permitted actions (fallback without AXON_URL)
   'chart_progress_note',
+  // Scope: organization name (manual fallback without AXON_URL)
+  'Community Clinic',
   // Philosophy: clinical philosophy
   'Patient-centered care with focus on preventive medicine and chronic disease management.',
   // Voice: chart (optional — skip)

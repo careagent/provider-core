@@ -309,7 +309,7 @@ export async function specialtyStage(
   io: InterviewIO,
 ): Promise<InterviewState> {
   io.display('');
-  io.display('--- Specialty & Organizations ---');
+  io.display('--- Specialty & Credentials ---');
 
   // Check if specialty was pre-filled from NPI lookup
   const existingSpecialty = state.data.provider?.specialty;
@@ -335,25 +335,6 @@ export async function specialtyStage(
 
   const subspecialtyRaw = await askOptionalText(io, 'Subspecialty:');
 
-  // Collect primary organization
-  io.display('');
-  io.display('--- Primary Organization ---');
-  const orgName = await askText(io, 'Organization name (e.g., University Medical Center): ', {
-    required: true,
-  });
-  const departmentRaw = await askOptionalText(io, 'Department:');
-  const orgPrivilegesRaw = await askOptionalStringArray(
-    io,
-    'Privileges at this organization (comma-separated):',
-  );
-
-  const primaryOrg = {
-    name: orgName,
-    ...(departmentRaw !== undefined ? { department: departmentRaw } : {}),
-    ...(orgPrivilegesRaw.length > 0 ? { privileges: orgPrivilegesRaw } : {}),
-    primary: true,
-  };
-
   const credentialStatusIndex = await askSelect(io, 'Credential status:', [
     'active',
     'pending',
@@ -368,7 +349,6 @@ export async function specialtyStage(
       ...(state.data.provider ?? {}),
       ...(specialtyRaw !== undefined ? { specialty: specialtyRaw } : {}),
       ...(subspecialtyRaw !== undefined ? { subspecialty: subspecialtyRaw } : {}),
-      organizations: [primaryOrg],
       credential_status: credentialStatus,
     },
   } as Partial<CANSDocument>;
@@ -393,6 +373,15 @@ function shouldShowQuestion(
   return answers.get(question_id) === equals;
 }
 
+/** Result of running the Axon questionnaire. */
+interface QuestionnaireResult {
+  permittedActions: string[];
+  practiceSettingValue?: string;
+  subspecialtyValue?: string;
+  organizationName?: string;
+  organizationNpi?: string;
+}
+
 /**
  * Run the Axon physician questionnaire over InterviewIO.
  * Returns the collected permitted_actions and any CANS field values.
@@ -400,11 +389,13 @@ function shouldShowQuestion(
 async function runAxonQuestionnaire(
   questionnaire: AxonQuestionnaire,
   io: InterviewIO,
-): Promise<{ permittedActions: string[]; practiceSettingValue?: string; subspecialtyValue?: string }> {
+): Promise<QuestionnaireResult> {
   const permittedActions: string[] = [];
   const answers = new Map<string, string>();
   let practiceSettingValue: string | undefined;
   let subspecialtyValue: string | undefined;
+  let organizationName: string | undefined;
+  let organizationNpi: string | undefined;
 
   for (const question of questionnaire.questions) {
     // Check show_when condition
@@ -437,10 +428,64 @@ async function runAxonQuestionnaire(
       } else if (question.cans_field === 'provider.subspecialty') {
         subspecialtyValue = selectedOption.value;
       }
+    } else if (question.answer_type === 'text') {
+      // Text input — with optional validation and NPI lookup
+      let textValue: string | undefined;
+      const isRequired = question.required;
+      const pattern = question.validation?.pattern ? new RegExp(question.validation.pattern) : undefined;
+      const minLen = question.validation?.min_length ?? 0;
+
+      let valid = false;
+      while (!valid) {
+        const raw = isRequired
+          ? await askText(io, question.text, { required: true, minLength: minLen })
+          : (await askOptionalText(io, question.text));
+
+        if (raw === undefined) {
+          // Skipped optional question
+          textValue = undefined;
+          valid = true;
+        } else if (pattern && !pattern.test(raw)) {
+          io.display(`Invalid format. Expected: ${question.validation?.pattern}`);
+        } else {
+          textValue = raw;
+          valid = true;
+        }
+      }
+
+      answers.set(question.id, textValue ?? '');
+
+      // NPI organization lookup
+      if (question.npi_lookup && textValue && /^\d{10}$/.test(textValue)) {
+        const lookup = await tryNpiLookup(textValue, io);
+        if (lookup) {
+          organizationNpi = textValue;
+          if (lookup.enumeration_type === 'NPI-2' && lookup.organization_name) {
+            io.display(`Found organization: ${lookup.organization_name}`);
+            if (lookup.practice_city && lookup.practice_state) {
+              io.display(`Location: ${lookup.practice_city}, ${lookup.practice_state}`);
+            }
+            const confirmed = await askConfirm(io, 'Is this your practice/organization?');
+            if (confirmed) {
+              organizationName = lookup.organization_name;
+              // Skip the next practice_name question since we have it from NPI
+              answers.set('practice_name', organizationName);
+            }
+          } else if (lookup.enumeration_type === 'NPI-1') {
+            io.display('That NPI belongs to an individual provider, not an organization.');
+            io.display("You'll be asked for your organization name next.");
+          }
+        }
+      } else if (question.cans_field === 'provider.organizations' && question.id === 'practice_name') {
+        // Manual practice name entry (when NPI wasn't provided or lookup failed)
+        if (textValue && !organizationName) {
+          organizationName = textValue;
+        }
+      }
     }
   }
 
-  return { permittedActions, practiceSettingValue, subspecialtyValue };
+  return { permittedActions, practiceSettingValue, subspecialtyValue, organizationName, organizationNpi };
 }
 
 export async function scopeStage(
@@ -456,6 +501,8 @@ export async function scopeStage(
   let permittedActions: string[] = [];
   let practiceSettingValue: string | undefined;
   let subspecialtyValue: string | undefined;
+  let organizationName: string | undefined;
+  let organizationNpi: string | undefined;
 
   if (axonUrl) {
     try {
@@ -470,6 +517,8 @@ export async function scopeStage(
       permittedActions = result.permittedActions;
       practiceSettingValue = result.practiceSettingValue;
       subspecialtyValue = result.subspecialtyValue;
+      organizationName = result.organizationName;
+      organizationNpi = result.organizationNpi;
 
       if (permittedActions.length > 0) {
         io.display('');
@@ -491,20 +540,35 @@ export async function scopeStage(
     );
   }
 
+  // Build organization from questionnaire or ask manually
+  let organizations: Array<{ name: string; npi?: string; primary: boolean }> | undefined;
+
+  if (organizationName) {
+    organizations = [{
+      name: organizationName,
+      ...(organizationNpi !== undefined ? { npi: organizationNpi } : {}),
+      primary: true,
+    }];
+  } else if (!state.data.provider?.organizations?.length) {
+    // No organization from questionnaire and none from prior stages — ask manually
+    io.display('');
+    const orgName = await askText(io, 'Organization/practice name (e.g., University Medical Center): ', {
+      required: true,
+    });
+    organizations = [{ name: orgName, primary: true }];
+  }
+
   const updatedData = {
     ...state.data,
     scope: {
       permitted_actions: permittedActions,
       ...(practiceSettingValue !== undefined ? { practice_setting: practiceSettingValue } : {}),
     },
-    ...(subspecialtyValue !== undefined
-      ? {
-          provider: {
-            ...(state.data.provider ?? {}),
-            subspecialty: subspecialtyValue,
-          },
-        }
-      : {}),
+    provider: {
+      ...(state.data.provider ?? {}),
+      ...(subspecialtyValue !== undefined ? { subspecialty: subspecialtyValue } : {}),
+      ...(organizations !== undefined ? { organizations } : {}),
+    },
   } as Partial<CANSDocument>;
 
   return { ...state, stage: InterviewStage.PHILOSOPHY, data: updatedData };

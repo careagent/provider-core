@@ -50,16 +50,25 @@ export interface AxonActionAssignment {
   grants: string[];
 }
 
+/** Validation constraints for text questions. */
+export interface AxonTextValidation {
+  pattern?: string;
+  min_length?: number;
+  max_length?: number;
+}
+
 /** A single question within a questionnaire. */
 export interface AxonQuestion {
   id: string;
   text: string;
-  answer_type: 'boolean' | 'single_select';
+  answer_type: 'boolean' | 'single_select' | 'text';
   required: boolean;
   options?: AxonQuestionOption[];
   show_when?: AxonQuestionCondition;
   cans_field: string;
   action_assignments?: AxonActionAssignment[];
+  validation?: AxonTextValidation;
+  npi_lookup?: boolean;
 }
 
 /** A full questionnaire for a specific provider type. */

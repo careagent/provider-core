@@ -182,31 +182,23 @@ describe('credentialsStage', () => {
 // ---------------------------------------------------------------------------
 
 describe('specialtyStage', () => {
-  it('sets specialty and organization with privileges', async () => {
+  it('sets specialty and credential status', async () => {
     const io = createMockIO([
-      'Neurosurgery',                               // specialty (optional)
-      '',                                            // subspecialty (skip)
-      'University Medical Center',                   // organization name (required)
-      '',                                            // department (skip)
-      'brain surgery, spine surgery',                // privileges
-      '0',                                           // credential status (active)
+      'Neurosurgery',   // specialty (optional)
+      '',               // subspecialty (skip)
+      '0',              // credential status (active)
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
     expect(newState.data.provider?.specialty).toBe('Neurosurgery');
-    expect(newState.data.provider?.organizations).toEqual([
-      { name: 'University Medical Center', privileges: ['brain surgery', 'spine surgery'], primary: true },
-    ]);
+    expect(newState.data.provider?.credential_status).toBe('active');
   });
 
   it('omits specialty when skipped', async () => {
     const io = createMockIO([
-      '',                           // specialty (skip)
-      '',                           // subspecialty (skip)
-      'Community Clinic',           // organization name
-      '',                           // department (skip)
-      '',                           // privileges (skip)
-      '0',                          // credential status
+      '',    // specialty (skip)
+      '',    // subspecialty (skip)
+      '0',   // credential status
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
     const newState = await specialtyStage(state, io);
@@ -216,10 +208,7 @@ describe('specialtyStage', () => {
   it('omits subspecialty when skipped', async () => {
     const io = createMockIO([
       'Cardiology',
-      '',                           // subspecialty (skip)
-      'Heart Hospital',
-      '',
-      'cardiac procedures',
+      '',    // subspecialty (skip)
       '0',
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
@@ -231,9 +220,6 @@ describe('specialtyStage', () => {
     const io = createMockIO([
       'Cardiology',
       'Electrophysiology',
-      'Heart Hospital',
-      '',
-      'cardiac procedures',
       '0',
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
@@ -245,9 +231,6 @@ describe('specialtyStage', () => {
     const io = createMockIO([
       'Internal Medicine',
       '',
-      'Community Clinic',
-      '',
-      'general care',
       '0',
     ]);
     const state = makeState({ stage: InterviewStage.SPECIALTY });
@@ -264,6 +247,7 @@ describe('scopeStage', () => {
   it('splits permitted_actions', async () => {
     const io = createMockIO([
       'chart_note, chart_h_and_p',  // permitted
+      'Test Clinic',                 // org name (manual fallback)
     ]);
     const state = makeState({ stage: InterviewStage.SCOPE });
     const newState = await scopeStage(state, io);
@@ -273,15 +257,52 @@ describe('scopeStage', () => {
   it('sets single permitted action', async () => {
     const io = createMockIO([
       'chart_note',
+      'Test Clinic',
     ]);
     const state = makeState({ stage: InterviewStage.SCOPE });
     const newState = await scopeStage(state, io);
     expect(newState.data.scope?.permitted_actions).toEqual(['chart_note']);
   });
 
+  it('collects organization name in manual fallback', async () => {
+    const io = createMockIO([
+      'chart_note',
+      'University Medical Center',
+    ]);
+    const state = makeState({ stage: InterviewStage.SCOPE });
+    const newState = await scopeStage(state, io);
+    expect(newState.data.provider?.organizations).toEqual([
+      { name: 'University Medical Center', primary: true },
+    ]);
+  });
+
+  it('skips org prompt when organizations already exist', async () => {
+    const io = createMockIO([
+      'chart_note',
+      // no org name needed — already set in state
+    ]);
+    const state = makeState({
+      stage: InterviewStage.SCOPE,
+      data: {
+        version: '2.0',
+        provider: {
+          name: 'Dr. Test',
+          types: ['Physician'],
+          degrees: [],
+          licenses: [],
+          certifications: [],
+          organizations: [{ name: 'Existing Org', primary: true }],
+        },
+      } as Partial<CANSDocument>,
+    });
+    const newState = await scopeStage(state, io);
+    expect(newState.stage).toBe(InterviewStage.PHILOSOPHY);
+  });
+
   it('advances to PHILOSOPHY', async () => {
     const io = createMockIO([
       'chart_note',
+      'Test Clinic',
     ]);
     const state = makeState({ stage: InterviewStage.SCOPE });
     const newState = await scopeStage(state, io);
