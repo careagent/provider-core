@@ -22,6 +22,7 @@ import { createAuditIntegrityService } from '../audit/integrity-service.js';
 import { registerCLI } from '../cli/commands.js';
 import { runActivateCommand } from '../cli/activate-command.js';
 import { runDeactivateCommand } from '../cli/deactivate-command.js';
+import { generateDefaultAgentInstructions } from '../onboarding/default-agent-content.js';
 import { createCansIntegrityService } from '../activation/integrity-service.js';
 import { createHardeningEngine } from '../hardening/engine.js';
 import { createCredentialValidator } from '../credentials/validator.js';
@@ -66,6 +67,11 @@ export default function register(api: unknown): void {
         adapter.log('error', `[CareAgent] Deactivation failed: ${result.error}`);
       }
     },
+  });
+
+  // Step 3.7: Inject default agent instructions (tells default agent about /careagent-on)
+  adapter.onAgentBootstrap((context) => {
+    context.addFile('CAREAGENT_INFO', generateDefaultAgentInstructions());
   });
 
   // Step 4: Check activation gate

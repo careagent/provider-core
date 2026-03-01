@@ -1,22 +1,29 @@
 /**
- * CareAgent activate command — creates a separate CareAgent agent in
- * OpenClaw's multi-agent system, copies CANS.md to the clinical workspace,
- * supplements workspace files, binds Telegram, and runs neuron registration.
+ * CareAgent activate command — two-path activation:
+ *
+ * 1. **Onboarding path** (no CANS.md): Creates the CareAgent agent with
+ *    BOOTSTRAP.md + CANS-SCHEMA.md so the LLM can conduct the onboarding
+ *    interview conversationally and write CANS.md.
+ *
+ * 2. **Clinical path** (CANS.md exists): Validates, supplements workspace
+ *    files, binds Telegram, cleans up bootstrap files, and registers with
+ *    neuron.
  *
  * Exposed as:
- * - `/careagent on` slash command (auto-reply, no LLM)
+ * - `/careagent-on` slash command (auto-reply, no LLM)
  * - `openclaw careagent activate` CLI command (deployment automation)
  */
 
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { ActivationGate } from '../activation/gate.js';
 import { supplementWorkspaceFiles } from '../onboarding/workspace-writer.js';
 import { openclawProfile } from '../onboarding/workspace-profiles.js';
-import { registerProvider } from '../registration/registration.js';
+import { generateOnboardingBootstrap, generateCansSchemaReference } from '../onboarding/onboarding-bootstrap.js';
 import { loadProviderProfile } from '../credentials/profile.js';
 import { createNeuronClient } from '../neuron/client.js';
+import { registerProvider } from '../registration/registration.js';
 import type { AuditPipeline } from '../audit/pipeline.js';
 import type { WorkspaceProfile } from '../onboarding/workspace-profiles.js';
 
@@ -36,6 +43,7 @@ export interface ActivateResult {
   clinicalWorkspacePath?: string;
   registered?: boolean;
   error?: string;
+  onboarding?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,23 +81,115 @@ function agentExists(log: (msg: string) => void): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Activate command
+// Onboarding activation — no CANS.md, create agent with BOOTSTRAP.md
 // ---------------------------------------------------------------------------
 
-export async function runActivateCommand(
+function runOnboardingActivation(
   workspacePath: string,
   audit: AuditPipeline,
+  traceId: string,
+  log: (msg: string) => void,
+  options?: { model?: string },
+): ActivateResult {
+  const clinicalWorkspacePath = resolve(workspacePath, '..', CLINICAL_WORKSPACE_DIR);
+  mkdirSync(clinicalWorkspacePath, { recursive: true });
+
+  // Create agent if needed
+  if (!agentExists(log)) {
+    try {
+      const modelFlag = options?.model ? ` --model ${options.model}` : '';
+      execCli(
+        `openclaw agents add ${CAREAGENT_ID} --workspace ${clinicalWorkspacePath} --non-interactive${modelFlag}`,
+        log,
+      );
+      audit.log({
+        action: 'careagent_activate',
+        actor: 'system',
+        outcome: 'allowed',
+        details: { step: 'agent_create', agent_id: CAREAGENT_ID, mode: 'onboarding' },
+        trace_id: traceId,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      audit.log({
+        action: 'careagent_activate',
+        actor: 'system',
+        outcome: 'error',
+        details: { step: 'agent_create', error: msg },
+        trace_id: traceId,
+      });
+      return { success: false, error: `Failed to create CareAgent agent: ${msg}` };
+    }
+  }
+
+  // Write BOOTSTRAP.md
+  const axonUrl = process.env['AXON_URL'];
+  const bootstrapContent = generateOnboardingBootstrap(axonUrl ? { axonUrl } : undefined);
+  const bootstrapPath = join(clinicalWorkspacePath, 'BOOTSTRAP.md');
+  writeFileSync(bootstrapPath, bootstrapContent, 'utf-8');
+
+  // Write CANS-SCHEMA.md
+  const schemaContent = generateCansSchemaReference();
+  const schemaPath = join(clinicalWorkspacePath, 'CANS-SCHEMA.md');
+  writeFileSync(schemaPath, schemaContent, 'utf-8');
+
+  // Bind Telegram to CareAgent, unbind from default
+  try {
+    execCli(`openclaw agents bind --agent ${CAREAGENT_ID} --bind telegram`, log);
+    execCli('openclaw agents unbind --agent default --bind telegram', log);
+    audit.log({
+      action: 'careagent_activate',
+      actor: 'system',
+      outcome: 'allowed',
+      details: { step: 'telegram_bind', bound_to: CAREAGENT_ID, mode: 'onboarding' },
+      trace_id: traceId,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    audit.log({
+      action: 'careagent_activate',
+      actor: 'system',
+      outcome: 'error',
+      details: { step: 'telegram_bind', error: msg },
+      trace_id: traceId,
+    });
+    log(`[CareAgent] Warning: Telegram binding failed — ${msg}`);
+  }
+
+  audit.log({
+    action: 'careagent_activate',
+    actor: 'provider',
+    outcome: 'active',
+    details: {
+      step: 'onboarding_started',
+      agent_id: CAREAGENT_ID,
+      clinical_workspace: clinicalWorkspacePath,
+    },
+    trace_id: traceId,
+  });
+
+  log('[CareAgent] Onboarding mode ACTIVATED');
+  log('[CareAgent] The CareAgent will now conduct your onboarding interview.');
+  log('[CareAgent] Once complete, send /careagent-on again to activate clinical mode.');
+
+  return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
+}
+
+// ---------------------------------------------------------------------------
+// Clinical activation — CANS.md exists, full activation
+// ---------------------------------------------------------------------------
+
+async function runClinicalActivation(
+  _workspacePath: string,
+  clinicalWorkspacePath: string,
+  audit: AuditPipeline,
+  traceId: string,
+  log: (msg: string) => void,
   profile?: WorkspaceProfile,
   options?: { model?: string },
 ): Promise<ActivateResult> {
-  const traceId = audit.createTraceId();
-  const log = (msg: string) => console.log(msg);
-
-  // -------------------------------------------------------------------------
-  // Step 1: Validate CANS.md in the onboarding workspace
-  // -------------------------------------------------------------------------
-
-  const gate = new ActivationGate(workspacePath, (entry) =>
+  // Validate CANS.md in the clinical workspace
+  const gate = new ActivationGate(clinicalWorkspacePath, (entry) =>
     audit.log({
       action: entry.action as string,
       actor: 'system',
@@ -106,7 +206,7 @@ export async function runActivateCommand(
       action: 'careagent_activate',
       actor: 'provider',
       outcome: 'denied',
-      details: { step: 'gate_check', reason },
+      details: { step: 'gate_check', reason, errors: activation.errors },
       trace_id: traceId,
     });
     return { success: false, error: `Cannot activate: ${reason}` };
@@ -114,13 +214,7 @@ export async function runActivateCommand(
 
   const cans = activation.document;
 
-  // -------------------------------------------------------------------------
-  // Step 2: Create the CareAgent agent (if it doesn't already exist)
-  // -------------------------------------------------------------------------
-
-  const clinicalWorkspacePath = resolve(workspacePath, '..', CLINICAL_WORKSPACE_DIR);
-  mkdirSync(clinicalWorkspacePath, { recursive: true });
-
+  // Create agent if needed
   if (!agentExists(log)) {
     try {
       const modelFlag = options?.model ? ` --model ${options.model}` : '';
@@ -148,42 +242,30 @@ export async function runActivateCommand(
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Step 3: Copy CANS.md + integrity hash to clinical workspace
-  // -------------------------------------------------------------------------
+  // Extract philosophy from CANS.md markdown body
+  const cansPath = join(clinicalWorkspacePath, 'CANS.md');
+  const cansRaw = readFileSync(cansPath, 'utf-8');
+  const philosophyMatch = cansRaw.match(/## Clinical Philosophy\n\n([\s\S]*?)(?:\n\n##|\n*$)/);
+  const philosophy = philosophyMatch?.[1]?.trim()
+    || (cans.provider.specialty
+      ? `Clinical agent for ${cans.provider.name}, specializing in ${cans.provider.specialty}`
+      : `Clinical agent for ${cans.provider.name}`);
 
-  try {
-    const cansSource = join(workspacePath, 'CANS.md');
-    const cansDest = join(clinicalWorkspacePath, 'CANS.md');
-    copyFileSync(cansSource, cansDest);
-
-    const integrityDir = join(clinicalWorkspacePath, '.careagent');
-    mkdirSync(integrityDir, { recursive: true });
-
-    const integritySource = join(workspacePath, '.careagent', 'cans-integrity.json');
-    if (existsSync(integritySource)) {
-      copyFileSync(integritySource, join(integrityDir, 'cans-integrity.json'));
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, error: `Failed to copy CANS.md: ${msg}` };
-  }
-
-  // -------------------------------------------------------------------------
-  // Step 4: Generate clinical workspace files
-  // -------------------------------------------------------------------------
-
+  // Supplement workspace files
   const resolvedProfile = profile ?? openclawProfile;
-  const philosophy = cans.provider.specialty
-    ? `Clinical agent for ${cans.provider.name}, specializing in ${cans.provider.specialty}`
-    : `Clinical agent for ${cans.provider.name}`;
-
   supplementWorkspaceFiles(clinicalWorkspacePath, cans, philosophy, resolvedProfile);
 
-  // -------------------------------------------------------------------------
-  // Step 5: Bind Telegram to CareAgent, unbind from default
-  // -------------------------------------------------------------------------
+  // Clean up onboarding files
+  const bootstrapPath = join(clinicalWorkspacePath, 'BOOTSTRAP.md');
+  const schemaPath = join(clinicalWorkspacePath, 'CANS-SCHEMA.md');
+  if (existsSync(bootstrapPath)) {
+    unlinkSync(bootstrapPath);
+  }
+  if (existsSync(schemaPath)) {
+    unlinkSync(schemaPath);
+  }
 
+  // Bind Telegram to CareAgent, unbind from default
   try {
     execCli(`openclaw agents bind --agent ${CAREAGENT_ID} --bind telegram`, log);
     execCli('openclaw agents unbind --agent default --bind telegram', log);
@@ -203,14 +285,10 @@ export async function runActivateCommand(
       details: { step: 'telegram_bind', error: msg },
       trace_id: traceId,
     });
-    // Non-fatal: agent was created, binding can be retried
     log(`[CareAgent] Warning: Telegram binding failed — ${msg}`);
   }
 
-  // -------------------------------------------------------------------------
-  // Step 6: Register with neuron (first activation only)
-  // -------------------------------------------------------------------------
-
+  // Register with neuron (first activation only)
   let registered = false;
   const existingProfile = loadProviderProfile(clinicalWorkspacePath);
 
@@ -259,10 +337,7 @@ export async function runActivateCommand(
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Step 7: Confirm activation
-  // -------------------------------------------------------------------------
-
+  // Confirm activation
   audit.log({
     action: 'careagent_activate',
     actor: 'provider',
@@ -283,4 +358,54 @@ export async function runActivateCommand(
   log('[CareAgent] Use /careagent-off to return to your personal agent.');
 
   return { success: true, clinicalWorkspacePath, registered };
+}
+
+// ---------------------------------------------------------------------------
+// Main entry point — routes to onboarding or clinical activation
+// ---------------------------------------------------------------------------
+
+export async function runActivateCommand(
+  workspacePath: string,
+  audit: AuditPipeline,
+  profile?: WorkspaceProfile,
+  options?: { model?: string },
+): Promise<ActivateResult> {
+  const traceId = audit.createTraceId();
+  const log = (msg: string) => console.log(msg);
+
+  const clinicalWorkspacePath = resolve(workspacePath, '..', CLINICAL_WORKSPACE_DIR);
+  const clinicalCansPath = join(clinicalWorkspacePath, 'CANS.md');
+  const onboardingCansPath = join(workspacePath, 'CANS.md');
+  const bootstrapPath = join(clinicalWorkspacePath, 'BOOTSTRAP.md');
+
+  // Path 1: CANS.md exists in clinical workspace → clinical activation
+  if (existsSync(clinicalCansPath)) {
+    return runClinicalActivation(workspacePath, clinicalWorkspacePath, audit, traceId, log, profile, options);
+  }
+
+  // Path 2: CANS.md exists in onboarding workspace → copy to clinical, then activate
+  if (existsSync(onboardingCansPath)) {
+    mkdirSync(clinicalWorkspacePath, { recursive: true });
+    copyFileSync(onboardingCansPath, clinicalCansPath);
+
+    // Copy integrity hash if it exists
+    const integrityDir = join(clinicalWorkspacePath, '.careagent');
+    mkdirSync(integrityDir, { recursive: true });
+    const integritySource = join(workspacePath, '.careagent', 'cans-integrity.json');
+    if (existsSync(integritySource)) {
+      copyFileSync(integritySource, join(integrityDir, 'cans-integrity.json'));
+    }
+
+    return runClinicalActivation(workspacePath, clinicalWorkspacePath, audit, traceId, log, profile, options);
+  }
+
+  // Path 3: BOOTSTRAP.md exists but no CANS.md → onboarding already in progress
+  if (existsSync(bootstrapPath) && !existsSync(clinicalCansPath)) {
+    log('[CareAgent] Onboarding is already in progress.');
+    log('[CareAgent] Complete the interview with the CareAgent, then send /careagent-on again.');
+    return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
+  }
+
+  // Path 4: Nothing exists → start onboarding
+  return runOnboardingActivation(workspacePath, audit, traceId, log, options);
 }
