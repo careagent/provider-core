@@ -18,6 +18,8 @@ import {
 } from '../cli/prompts.js';
 import type { InterviewState } from './engine.js';
 import { InterviewStage } from './engine.js';
+import { createAxonClient } from '../axon/client.js';
+import type { AxonQuestionnaire, AxonQuestion } from '../axon/types.js';
 
 // ---------------------------------------------------------------------------
 // Welcome Stage
@@ -207,6 +209,69 @@ export async function specialtyStage(
 // Scope Stage
 // ---------------------------------------------------------------------------
 
+/**
+ * Evaluate whether a question should be shown based on its show_when condition.
+ * Checks previous answers to determine visibility.
+ */
+function shouldShowQuestion(
+  question: AxonQuestion,
+  answers: Map<string, string>,
+): boolean {
+  if (!question.show_when) return true;
+  const { question_id, equals } = question.show_when;
+  return answers.get(question_id) === equals;
+}
+
+/**
+ * Run the Axon physician questionnaire over InterviewIO.
+ * Returns the collected permitted_actions and any CANS field values.
+ */
+async function runAxonQuestionnaire(
+  questionnaire: AxonQuestionnaire,
+  io: InterviewIO,
+): Promise<{ permittedActions: string[]; practiceSettingValue?: string; subspecialtyValue?: string }> {
+  const permittedActions: string[] = [];
+  const answers = new Map<string, string>();
+  let practiceSettingValue: string | undefined;
+  let subspecialtyValue: string | undefined;
+
+  for (const question of questionnaire.questions) {
+    // Check show_when condition
+    if (!shouldShowQuestion(question, answers)) {
+      continue;
+    }
+
+    if (question.answer_type === 'boolean') {
+      const answer = await askConfirm(io, question.text);
+      const answerStr = String(answer);
+      answers.set(question.id, answerStr);
+
+      // Process action_assignments
+      if (answer && question.action_assignments) {
+        for (const assignment of question.action_assignments) {
+          if (assignment.answer_value === 'true') {
+            permittedActions.push(...assignment.grants);
+          }
+        }
+      }
+    } else if (question.answer_type === 'single_select' && question.options) {
+      const optionLabels = question.options.map((o) => o.label);
+      const selectedIndex = await askSelect(io, question.text, optionLabels);
+      const selectedOption = question.options[selectedIndex];
+      answers.set(question.id, selectedOption.value);
+
+      // Map to CANS fields
+      if (question.cans_field === 'scope.practice_setting') {
+        practiceSettingValue = selectedOption.value;
+      } else if (question.cans_field === 'provider.subspecialty') {
+        subspecialtyValue = selectedOption.value;
+      }
+    }
+  }
+
+  return { permittedActions, practiceSettingValue, subspecialtyValue };
+}
+
 export async function scopeStage(
   state: InterviewState,
   io: InterviewIO,
@@ -215,17 +280,60 @@ export async function scopeStage(
   io.display('--- Scope of Practice ---');
   io.display('Define what CareAgent is permitted to do (whitelist-only model).');
 
-  const permittedActions = await askStringArray(
-    io,
-    'Permitted actions (comma-separated, e.g., chart_operative_note, chart_progress_note): ',
-    { required: true },
-  );
+  // Try to fetch the Axon physician questionnaire
+  const axonUrl = process.env.AXON_URL;
+  let permittedActions: string[] = [];
+  let practiceSettingValue: string | undefined;
+  let subspecialtyValue: string | undefined;
+
+  if (axonUrl) {
+    try {
+      io.display('');
+      io.display('Fetching scope questionnaire from Axon registry...');
+      const axonClient = createAxonClient({ baseUrl: axonUrl, timeoutMs: 10_000 });
+      const questionnaire = await axonClient.getQuestionnaire('physician');
+      io.display(`Loaded: ${questionnaire.display_name} (${questionnaire.questions.length} questions)`);
+      io.display('');
+
+      const result = await runAxonQuestionnaire(questionnaire, io);
+      permittedActions = result.permittedActions;
+      practiceSettingValue = result.practiceSettingValue;
+      subspecialtyValue = result.subspecialtyValue;
+
+      if (permittedActions.length > 0) {
+        io.display('');
+        io.display(`Granted ${permittedActions.length} action(s) based on your answers.`);
+      }
+    } catch {
+      io.display('');
+      io.display('Could not reach Axon registry — falling back to manual scope entry.');
+      permittedActions = [];
+    }
+  }
+
+  // Fallback: manual scope entry if Axon questionnaire didn't produce results
+  if (permittedActions.length === 0) {
+    permittedActions = await askStringArray(
+      io,
+      'Permitted actions (comma-separated, e.g., chart_operative_note, chart_progress_note): ',
+      { required: true },
+    );
+  }
 
   const updatedData = {
     ...state.data,
     scope: {
       permitted_actions: permittedActions,
+      ...(practiceSettingValue !== undefined ? { practice_setting: practiceSettingValue } : {}),
     },
+    ...(subspecialtyValue !== undefined
+      ? {
+          provider: {
+            ...(state.data.provider ?? {}),
+            subspecialty: subspecialtyValue,
+          },
+        }
+      : {}),
   };
 
   return { ...state, stage: InterviewStage.PHILOSOPHY, data: updatedData };
