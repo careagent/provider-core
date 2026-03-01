@@ -10,7 +10,7 @@
  *    neuron.
  *
  * Exposed as:
- * - `/careagent-on` slash command (auto-reply, no LLM)
+ * - `/careagent_on` slash command (auto-reply, no LLM)
  * - `openclaw careagent activate` CLI command (deployment automation)
  */
 
@@ -70,13 +70,62 @@ function execCli(command: string, log: (msg: string) => void): string {
 
 function agentExists(log: (msg: string) => void): boolean {
   try {
-    const output = execCli('openclaw agents list --json 2>/dev/null', log);
-    const agents = JSON.parse(output);
+    const raw = execCli('openclaw agents list --json 2>/dev/null', log);
+    // OpenClaw may emit warnings before the JSON array — extract the JSON
+    const jsonStart = raw.indexOf('[');
+    if (jsonStart === -1) return false;
+    const agents = JSON.parse(raw.slice(jsonStart));
     return Array.isArray(agents)
       ? agents.some((a: { id?: string; name?: string }) => a.id === CAREAGENT_ID || a.name === CAREAGENT_ID)
       : false;
   } catch {
     return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ensure CareAgent agent exists (create if needed, tolerate "already exists")
+// ---------------------------------------------------------------------------
+
+function ensureAgent(
+  clinicalWorkspacePath: string,
+  log: (msg: string) => void,
+  audit: AuditPipeline,
+  traceId: string,
+  options?: { model?: string },
+): { ok: boolean; error?: string } {
+  if (agentExists(log)) return { ok: true };
+
+  try {
+    const modelFlag = options?.model ? ` --model ${options.model}` : '';
+    execCli(
+      `openclaw agents add ${CAREAGENT_ID} --workspace ${clinicalWorkspacePath} --non-interactive${modelFlag}`,
+      log,
+    );
+    audit.log({
+      action: 'careagent_activate',
+      actor: 'system',
+      outcome: 'allowed',
+      details: { step: 'agent_create', agent_id: CAREAGENT_ID },
+      trace_id: traceId,
+    });
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // "already exists" is not a real error — the agentExists() check may
+    // have returned a false negative due to CLI output parsing issues
+    if (msg.includes('already exists')) {
+      log('[CareAgent] Agent already exists (detected via add fallback)');
+      return { ok: true };
+    }
+    audit.log({
+      action: 'careagent_activate',
+      actor: 'system',
+      outcome: 'error',
+      details: { step: 'agent_create', error: msg },
+      trace_id: traceId,
+    });
+    return { ok: false, error: `Failed to create CareAgent agent: ${msg}` };
   }
 }
 
@@ -94,32 +143,10 @@ function runOnboardingActivation(
   const clinicalWorkspacePath = resolve(workspacePath, '..', CLINICAL_WORKSPACE_DIR);
   mkdirSync(clinicalWorkspacePath, { recursive: true });
 
-  // Create agent if needed
-  if (!agentExists(log)) {
-    try {
-      const modelFlag = options?.model ? ` --model ${options.model}` : '';
-      execCli(
-        `openclaw agents add ${CAREAGENT_ID} --workspace ${clinicalWorkspacePath} --non-interactive${modelFlag}`,
-        log,
-      );
-      audit.log({
-        action: 'careagent_activate',
-        actor: 'system',
-        outcome: 'allowed',
-        details: { step: 'agent_create', agent_id: CAREAGENT_ID, mode: 'onboarding' },
-        trace_id: traceId,
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      audit.log({
-        action: 'careagent_activate',
-        actor: 'system',
-        outcome: 'error',
-        details: { step: 'agent_create', error: msg },
-        trace_id: traceId,
-      });
-      return { success: false, error: `Failed to create CareAgent agent: ${msg}` };
-    }
+  // Ensure agent exists
+  const agentResult = ensureAgent(clinicalWorkspacePath, log, audit, traceId, options);
+  if (!agentResult.ok) {
+    return { success: false, error: agentResult.error };
   }
 
   // Write BOOTSTRAP.md
@@ -170,7 +197,7 @@ function runOnboardingActivation(
 
   log('[CareAgent] Onboarding mode ACTIVATED');
   log('[CareAgent] The CareAgent will now conduct your onboarding interview.');
-  log('[CareAgent] Once complete, send /careagent-on again to activate clinical mode.');
+  log('[CareAgent] Once complete, send /careagent_on again to activate clinical mode.');
 
   return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
 }
@@ -214,32 +241,10 @@ async function runClinicalActivation(
 
   const cans = activation.document;
 
-  // Create agent if needed
-  if (!agentExists(log)) {
-    try {
-      const modelFlag = options?.model ? ` --model ${options.model}` : '';
-      execCli(
-        `openclaw agents add ${CAREAGENT_ID} --workspace ${clinicalWorkspacePath} --non-interactive${modelFlag}`,
-        log,
-      );
-      audit.log({
-        action: 'careagent_activate',
-        actor: 'system',
-        outcome: 'allowed',
-        details: { step: 'agent_create', agent_id: CAREAGENT_ID },
-        trace_id: traceId,
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      audit.log({
-        action: 'careagent_activate',
-        actor: 'system',
-        outcome: 'error',
-        details: { step: 'agent_create', error: msg },
-        trace_id: traceId,
-      });
-      return { success: false, error: `Failed to create CareAgent agent: ${msg}` };
-    }
+  // Ensure agent exists
+  const agentResult = ensureAgent(clinicalWorkspacePath, log, audit, traceId, options);
+  if (!agentResult.ok) {
+    return { success: false, error: agentResult.error };
   }
 
   // Extract philosophy from CANS.md markdown body
@@ -355,7 +360,7 @@ async function runClinicalActivation(
   log(`[CareAgent] Clinical mode ACTIVATED for ${cans.provider.name}`);
   log(`[CareAgent] Workspace: ${clinicalWorkspacePath}`);
   log('[CareAgent] Telegram is now routed to the CareAgent.');
-  log('[CareAgent] Use /careagent-off to return to your personal agent.');
+  log('[CareAgent] Use /careagent_off to return to your personal agent.');
 
   return { success: true, clinicalWorkspacePath, registered };
 }
@@ -402,7 +407,7 @@ export async function runActivateCommand(
   // Path 3: BOOTSTRAP.md exists but no CANS.md → onboarding already in progress
   if (existsSync(bootstrapPath) && !existsSync(clinicalCansPath)) {
     log('[CareAgent] Onboarding is already in progress.');
-    log('[CareAgent] Complete the interview with the CareAgent, then send /careagent-on again.');
+    log('[CareAgent] Complete the interview with the CareAgent, then send /careagent_on again.');
     return { success: true, clinicalWorkspacePath, registered: false, onboarding: true };
   }
 
