@@ -36,7 +36,10 @@ export async function runInitCommand(
     } else {
       io.display('No workspace files supplemented (standalone mode).');
     }
-    io.display('Run "careagent status" to verify activation.\n');
+    io.display('Run "careagent status" to verify activation.');
+    io.display('');
+    io.display('To enter CareAgent clinical mode, use: /careagent on');
+    io.display('To return to your personal agent, use: /careagent off\n');
   } finally {
     io.close();
   }

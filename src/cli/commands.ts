@@ -4,6 +4,9 @@ import type { WorkspaceProfile } from '../onboarding/workspace-profiles.js';
 import { createTerminalIO } from './io.js';
 import { runInitCommand } from './init-command.js';
 import { runStatusCommand } from './status-command.js';
+import { runActivateCommand } from './activate-command.js';
+import { runDeactivateCommand } from './deactivate-command.js';
+import { runUninstallCommand } from './uninstall-command.js';
 
 export function registerCLI(
   adapter: PlatformAdapter,
@@ -25,6 +28,30 @@ export function registerCLI(
     description: 'Show CareAgent activation state and system health',
     handler: () => {
       runStatusCommand(workspacePath);
+    },
+  });
+
+  adapter.registerCliCommand({
+    name: 'careagent activate',
+    description: 'Activate CareAgent clinical mode (create agent, bind Telegram, register)',
+    handler: async () => {
+      await runActivateCommand(workspacePath, audit, profile);
+    },
+  });
+
+  adapter.registerCliCommand({
+    name: 'careagent deactivate',
+    description: 'Deactivate CareAgent clinical mode (unbind Telegram, return to personal agent)',
+    handler: async () => {
+      await runDeactivateCommand(audit);
+    },
+  });
+
+  adapter.registerCliCommand({
+    name: 'careagent uninstall',
+    description: 'Remove CareAgent agent and restore default bindings',
+    handler: async () => {
+      await runUninstallCommand(audit);
     },
   });
 }

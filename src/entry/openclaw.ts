@@ -20,6 +20,9 @@ import { ActivationGate } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
 import { createAuditIntegrityService } from '../audit/integrity-service.js';
 import { registerCLI } from '../cli/commands.js';
+import { runActivateCommand } from '../cli/activate-command.js';
+import { runDeactivateCommand } from '../cli/deactivate-command.js';
+import { createCansIntegrityService } from '../activation/integrity-service.js';
 import { createHardeningEngine } from '../hardening/engine.js';
 import { createCredentialValidator } from '../credentials/validator.js';
 import { loadClinicalSkills } from '../skills/loader.js';
@@ -41,6 +44,29 @@ export default function register(api: unknown): void {
 
   // Step 3: Register CLI commands (always available — needed before CANS.md exists)
   registerCLI(adapter, workspacePath, audit, profile);
+
+  // Step 3.5: Register slash commands (auto-reply, no LLM involvement)
+  adapter.registerSlashCommand({
+    name: 'careagent on',
+    description: 'Switch to CareAgent clinical mode',
+    handler: async () => {
+      const result = await runActivateCommand(workspacePath, audit, profile);
+      if (!result.success) {
+        adapter.log('error', `[CareAgent] Activation failed: ${result.error}`);
+      }
+    },
+  });
+
+  adapter.registerSlashCommand({
+    name: 'careagent off',
+    description: 'Return to personal agent mode',
+    handler: async () => {
+      const result = await runDeactivateCommand(audit);
+      if (!result.success) {
+        adapter.log('error', `[CareAgent] Deactivation failed: ${result.error}`);
+      }
+    },
+  });
 
   // Step 4: Check activation gate
   const gate = new ActivationGate(workspacePath, (entry) => audit.log({
@@ -170,4 +196,8 @@ export default function register(api: unknown): void {
   // Step 7: Register audit integrity background service (AUDT-06)
   const integrityService = createAuditIntegrityService(audit, adapter);
   adapter.registerBackgroundService(integrityService);
+
+  // Step 8: Register CANS.md integrity background service
+  const cansIntegrityService = createCansIntegrityService(workspacePath, audit, adapter);
+  adapter.registerBackgroundService(cansIntegrityService);
 }
