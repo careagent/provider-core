@@ -147,7 +147,22 @@ export function createAdapter(api: unknown): PlatformAdapter {
     registerSlashCommand(config: SlashCommandConfig): void {
       try {
         if (typeof raw?.registerCommand === 'function') {
-          raw.registerCommand(config);
+          raw.registerCommand({
+            name: config.name,
+            description: config.description,
+            handler: (ctx: Record<string, unknown> | string | undefined) => {
+              // Normalize: OpenClaw may pass a context object or just args string
+              if (typeof ctx === 'object' && ctx !== null) {
+                return config.handler({
+                  senderId: String(ctx.senderId ?? ctx.from ?? ''),
+                  channel: typeof ctx.channel === 'string' ? ctx.channel : undefined,
+                  args: typeof ctx.args === 'string' ? ctx.args : undefined,
+                });
+              }
+              // Fallback: raw string args (or undefined)
+              return config.handler({ args: typeof ctx === 'string' ? ctx : undefined });
+            },
+          });
           log('info', `Registered slash command: ${config.name}`);
         } else {
           log('warn', `Cannot register slash command '${config.name}': api.registerCommand is not available`);

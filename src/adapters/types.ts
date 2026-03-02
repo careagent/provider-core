@@ -51,11 +51,21 @@ export interface SlashCommandReply {
   isError?: boolean;
 }
 
+/** Context passed to slash command handlers. */
+export interface SlashCommandContext {
+  /** Telegram peer ID (or equivalent sender identifier on other channels). */
+  senderId?: string;
+  /** Channel the command was received on (e.g. "telegram"). */
+  channel?: string;
+  /** Raw argument string after the command name. */
+  args?: string;
+}
+
 /** Configuration for registering a slash command. */
 export interface SlashCommandConfig {
   name: string;
   description: string;
-  handler: (args: string) => SlashCommandReply | Promise<SlashCommandReply> | void | Promise<void>;
+  handler: (context: SlashCommandContext) => SlashCommandReply | Promise<SlashCommandReply> | void | Promise<void>;
 }
 
 /**

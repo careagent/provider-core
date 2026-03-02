@@ -10,9 +10,9 @@
  * Phase 5 wires: Refinement Engine (CANS-08 through CANS-10).
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { detectPlatform } from '../adapters/detect.js';
 import { createAdapter } from '../adapters/openclaw/index.js';
 import { getWorkspaceProfile } from '../onboarding/workspace-profiles.js';
@@ -20,15 +20,23 @@ import { ActivationGate } from '../activation/gate.js';
 import { AuditPipeline } from '../audit/pipeline.js';
 import { createAuditIntegrityService } from '../audit/integrity-service.js';
 import { registerCLI } from '../cli/commands.js';
-import { runActivateCommand } from '../cli/activate-command.js';
-import { runDeactivateCommand } from '../cli/deactivate-command.js';
+import { runClinicalActivation } from '../cli/activate-command.js';
 import { generateDefaultAgentInstructions } from '../onboarding/default-agent-content.js';
+import { generateOnboardingBootstrap, generateCansSchemaReference } from '../onboarding/onboarding-bootstrap.js';
 import { createCansIntegrityService } from '../activation/integrity-service.js';
 import { createHardeningEngine } from '../hardening/engine.js';
 import { createCredentialValidator } from '../credentials/validator.js';
 import { loadClinicalSkills } from '../skills/loader.js';
 import { CHART_SKILL_ID, buildChartSkillInstructions } from '../skills/chart-skill/index.js';
 import { createRefinementEngine } from '../refinement/index.js';
+import {
+  getConfigPath,
+  ensureAgentInConfig,
+  addPeerBinding,
+  removePeerBinding,
+  clearAgentSessions,
+} from '../activation/config-manager.js';
+import type { SlashCommandContext } from '../adapters/types.js';
 
 export default function register(api: unknown): void {
   // Step 0: Detect platform (PORT-02) and resolve workspace profile (PORT-03)
@@ -39,6 +47,57 @@ export default function register(api: unknown): void {
   const adapter = createAdapter(api);
   adapter.log('info', `[CareAgent] Platform detected: ${platform}`);
   const workspacePath = adapter.getWorkspacePath();
+
+  // Step 1.5: Pre-create careagent-provider agent in openclaw.json (filesystem, no CLI)
+  const CAREAGENT_ID = 'careagent-provider';
+  const configPath = getConfigPath();
+  const clinicalWorkspacePath = resolve(workspacePath, '..', 'workspace-clinical');
+
+  try {
+    // Ensure workspace directory exists
+    if (!existsSync(clinicalWorkspacePath)) {
+      mkdirSync(clinicalWorkspacePath, { recursive: true });
+    }
+
+    // Write baseline workspace files (onboarding-ready SOUL.md + IDENTITY.md)
+    writeFileSync(join(clinicalWorkspacePath, 'SOUL.md'), `# CareAgent — Onboarding Mode
+
+You are CareAgent, a clinical AI assistant conducting a provider onboarding interview.
+
+## Your Mission
+
+Read BOOTSTRAP.md in your workspace. It contains your complete interview instructions.
+Follow it exactly. Conduct the onboarding interview one stage at a time.
+
+## Important
+
+- The HIPAA & Synthetic Data warning has already been displayed to the provider.
+- Their first message is their consent response. Process it accordingly.
+- If they agree to all three points, proceed to Stage 2 (Provider Identity).
+- If they decline any point, explain that all three consents are required and stop.
+- Be warm and professional. Ask one section at a time. Do not dump all questions at once.
+- When finished, write CANS.md in the exact format specified in BOOTSTRAP.md.
+`, 'utf-8');
+
+    writeFileSync(join(clinicalWorkspacePath, 'IDENTITY.md'), `# CareAgent Identity
+
+- **Name:** CareAgent
+- **Creature:** Clinical AI Assistant
+- **Vibe:** Professional, warm, thorough
+- **Emoji:** ⚕️
+`, 'utf-8');
+
+    // Add agent to openclaw.json if not already present
+    const added = ensureAgentInConfig(configPath, CAREAGENT_ID, clinicalWorkspacePath);
+    if (added) {
+      adapter.log('info', `[CareAgent] Pre-created ${CAREAGENT_ID} agent in openclaw.json`);
+    } else {
+      adapter.log('info', `[CareAgent] ${CAREAGENT_ID} agent already exists in openclaw.json`);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    adapter.log('warn', `[CareAgent] Failed to pre-create agent: ${msg}`);
+  }
 
   // Step 2: Start audit pipeline (always active, even without CANS.md)
   const audit = new AuditPipeline(workspacePath);
@@ -52,16 +111,79 @@ export default function register(api: unknown): void {
   adapter.registerSlashCommand({
     name: 'careagent_on',
     description: 'Switch to CareAgent clinical mode',
-    handler: async () => {
-      const result = await runActivateCommand(workspacePath, audit, profile);
-      if (!result.success) {
-        adapter.log('error', `[CareAgent] Activation failed: ${result.error}`);
-        return { text: `Activation failed: ${result.error}`, isError: true };
+    handler: async (ctx: SlashCommandContext) => {
+      const peerId = ctx.senderId;
+      if (!peerId) {
+        adapter.log('warn', '[CareAgent] /careagent_on: could not identify sender');
+        return { text: 'Could not identify sender. Please try again.', isError: true };
       }
 
-      // If onboarding started, the slash command reply IS the HIPAA warning.
-      // The provider's response goes to the CareAgent LLM (Telegram is now bound).
-      if (result.onboarding) {
+      const cansPath = join(clinicalWorkspacePath, 'CANS.md');
+      const bootstrapPath = join(clinicalWorkspacePath, 'BOOTSTRAP.md');
+
+      // --- Clinical path: CANS.md exists ---
+      if (existsSync(cansPath)) {
+        try {
+          const result = await runClinicalActivation(
+            workspacePath, clinicalWorkspacePath, audit, peerId, profile,
+          );
+          if (!result.success) {
+            adapter.log('error', `[CareAgent] Clinical activation failed: ${result.error}`);
+            return { text: `Activation failed: ${result.error}`, isError: true };
+          }
+
+          // Add peer-level binding
+          addPeerBinding(configPath, CAREAGENT_ID, 'telegram', peerId);
+
+          return { text: result.messages.join('\n') };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          adapter.log('error', `[CareAgent] Clinical activation error: ${msg}`);
+          return { text: `Activation error: ${msg}`, isError: true };
+        }
+      }
+
+      // --- Already in onboarding: BOOTSTRAP.md exists but no CANS.md ---
+      if (existsSync(bootstrapPath)) {
+        return {
+          text: [
+            'Onboarding is already in progress.',
+            'Complete the interview with the CareAgent, then send /careagent_on again.',
+          ].join('\n'),
+        };
+      }
+
+      // --- Onboarding path: no CANS.md, no BOOTSTRAP.md ---
+      try {
+        // Write BOOTSTRAP.md
+        const axonUrl = process.env['AXON_URL'];
+        const bootstrapContent = generateOnboardingBootstrap(axonUrl ? { axonUrl } : undefined);
+        writeFileSync(bootstrapPath, bootstrapContent, 'utf-8');
+
+        // Write CANS-SCHEMA.md
+        const schemaContent = generateCansSchemaReference();
+        writeFileSync(join(clinicalWorkspacePath, 'CANS-SCHEMA.md'), schemaContent, 'utf-8');
+
+        // Add peer-level binding to route this user to careagent-provider
+        addPeerBinding(configPath, CAREAGENT_ID, 'telegram', peerId);
+
+        // Clear sessions so agent reads fresh workspace files
+        clearAgentSessions(CAREAGENT_ID);
+
+        audit.log({
+          action: 'careagent_activate',
+          actor: 'provider',
+          outcome: 'active',
+          details: {
+            step: 'onboarding_started',
+            peerId,
+            agent_id: CAREAGENT_ID,
+            clinical_workspace: clinicalWorkspacePath,
+          },
+        });
+
+        adapter.log('info', `[CareAgent] Onboarding started for peer ${peerId}`);
+
         return {
           text: [
             '⚕️ *HIPAA & Synthetic Data Disclosure*',
@@ -76,21 +198,38 @@ export default function register(api: unknown): void {
             '3. Consent to audit logging',
           ].join('\n'),
         };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        adapter.log('error', `[CareAgent] Onboarding failed: ${msg}`);
+        return { text: `Activation failed: ${msg}`, isError: true };
       }
-
-      return { text: result.messages.join('\n') };
     },
   });
 
   adapter.registerSlashCommand({
     name: 'careagent_off',
     description: 'Return to personal agent mode',
-    handler: async () => {
-      const result = await runDeactivateCommand(audit);
-      if (!result.success) {
-        adapter.log('error', `[CareAgent] Deactivation failed: ${result.error}`);
-        return { text: `Deactivation failed: ${result.error}`, isError: true };
+    handler: async (ctx: SlashCommandContext) => {
+      const peerId = ctx.senderId;
+
+      // Remove peer-level binding
+      if (peerId) {
+        try {
+          removePeerBinding(configPath, CAREAGENT_ID, peerId);
+          adapter.log('info', `[CareAgent] Removed peer binding for ${peerId}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          adapter.log('warn', `[CareAgent] Failed to remove peer binding: ${msg}`);
+        }
       }
+
+      audit.log({
+        action: 'careagent_deactivate',
+        actor: 'provider',
+        outcome: 'inactive',
+        details: { step: 'complete', agent_id: CAREAGENT_ID, peerId },
+      });
+
       return { text: 'CareAgent clinical mode deactivated. You are now in personal agent mode.' };
     },
   });

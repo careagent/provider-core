@@ -123,7 +123,42 @@ describe('createAdapter', () => {
       const adapter = createAdapter({ registerCommand: registerCommandSpy });
       const config = { name: '/test', description: 'test', handler: vi.fn() };
       adapter.registerSlashCommand(config);
-      expect(registerCommandSpy).toHaveBeenCalledWith(config);
+      expect(registerCommandSpy).toHaveBeenCalledTimes(1);
+      // Adapter wraps the handler to translate context, so the registered
+      // object has the same name/description but a different handler reference
+      const registered = registerCommandSpy.mock.calls[0][0];
+      expect(registered.name).toBe('/test');
+      expect(registered.description).toBe('test');
+      expect(typeof registered.handler).toBe('function');
+    });
+
+    it('passes context through to the handler', () => {
+      let capturedCtx: unknown;
+      const registerCommandSpy = vi.fn();
+      const adapter = createAdapter({ registerCommand: registerCommandSpy });
+      adapter.registerSlashCommand({
+        name: '/test',
+        description: 'test',
+        handler: (ctx) => { capturedCtx = ctx; },
+      });
+      // Simulate OpenClaw calling the registered handler with a context object
+      const registered = registerCommandSpy.mock.calls[0][0];
+      registered.handler({ senderId: 'user123', channel: 'telegram', args: 'hello' });
+      expect(capturedCtx).toEqual({ senderId: 'user123', channel: 'telegram', args: 'hello' });
+    });
+
+    it('handles string args fallback', () => {
+      let capturedCtx: unknown;
+      const registerCommandSpy = vi.fn();
+      const adapter = createAdapter({ registerCommand: registerCommandSpy });
+      adapter.registerSlashCommand({
+        name: '/test',
+        description: 'test',
+        handler: (ctx) => { capturedCtx = ctx; },
+      });
+      const registered = registerCommandSpy.mock.calls[0][0];
+      registered.handler('some args');
+      expect(capturedCtx).toEqual({ args: 'some args' });
     });
 
     it('does not throw when api.registerCommand is missing', () => {
