@@ -20,6 +20,11 @@ export interface OnboardingBootstrapOptions {
 // generateOnboardingBootstrap
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated Use `runProtocolOnboarding()` from `./protocol-onboarding.js` instead.
+ * This function generates the BOOTSTRAP.md interview script for the LLM agent.
+ * It remains as a fallback when `ANTHROPIC_API_KEY` is not set.
+ */
 export function generateOnboardingBootstrap(options?: OnboardingBootstrapOptions): string {
   const axonUrl = options?.axonUrl;
 
@@ -277,6 +282,11 @@ Do NOT attempt to activate clinical mode yourself. The provider must send the sl
 // generateCansSchemaReference
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated Use `runProtocolOnboarding()` from `./protocol-onboarding.js` instead.
+ * This function generates the CANS-SCHEMA.md reference document.
+ * It remains as a fallback when `ANTHROPIC_API_KEY` is not set.
+ */
 export function generateCansSchemaReference(): string {
   return `# CANS.md Schema Reference
 

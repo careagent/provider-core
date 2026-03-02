@@ -29,7 +29,16 @@ provider-core/
       canary.ts          # before_tool_call canary
     neuron/              # Neuron client
     onboarding/          # Provider onboarding wizard (workspace writer, CANS generator)
-    protocol/            # Protocol server (WebSocket)
+      protocol-onboarding.ts  # Protocol-based onboarding (replaces BOOTSTRAP.md)
+    protocol/            # Interaction protocol engine + cross-installation server
+      llm-client.ts      # Direct Anthropic Claude API client (zero OpenClaw context)
+      session.ts         # Session state machine (UUIDv7, answers, status)
+      validator.ts       # Deterministic answer validation (no LLM)
+      question-resolver.ts # Conditional logic and question sequencing
+      prompt-builder.ts  # LLM system prompt + submit_answer tool construction
+      engine.ts          # Protocol engine orchestrator
+      artifact-generator.ts # CANS.md generation from validated answers
+      message-io.ts      # Transport-agnostic I/O (Telegram, mock)
     refinement/          # Usage observation, pattern matching, proposal generation
     skills/              # Clinical skill loader (6-step pipeline)
       chart-skill/       # Built-in chart documentation skill
@@ -118,6 +127,28 @@ A `canary` check runs before each tool call to detect engine health.
 ### Append-Only Audit
 
 `src/audit/pipeline.ts` + `src/audit/writer.ts` -- every activation, hardening decision, skill load, and refinement event is logged. Entries follow the TypeBox `AuditEntrySchema`.
+
+### Interaction Protocol Engine
+
+`src/protocol/` -- replaces the BOOTSTRAP.md approach for provider onboarding. The protocol engine makes its **own** direct Claude API calls with zero OpenClaw context.
+
+**Dual onboarding paths** (selected automatically in `src/entry/openclaw.ts`):
+- **Protocol engine** (preferred): When `ANTHROPIC_API_KEY`, `AXON_URL`, and `TELEGRAM_BOT_TOKEN` are set. The engine communicates with Telegram directly, bypassing OpenClaw's agent loop entirely.
+- **BOOTSTRAP.md** (legacy fallback): When env vars are not set. OpenClaw's LLM reads BOOTSTRAP.md and conducts the interview.
+
+**Required env vars for protocol engine path:**
+- `ANTHROPIC_API_KEY` -- API key for direct Claude API calls
+- `AXON_URL` -- Axon server base URL (e.g., `https://axon.example.com`)
+- `TELEGRAM_BOT_TOKEN` -- Telegram bot token for direct messaging
+- `CAREAGENT_MODEL` -- optional, defaults to `claude-sonnet-4-20250514`
+
+**Architecture:**
+- LLM for conversation, code for validation (deterministic `validateAnswer()`)
+- Session state machine with UUIDv7 IDs
+- `submit_answer` tool use for structured answer extraction
+- Max 3 validation retries per question
+- Runs two questionnaires in sequence: Axon credentialing + provider-core configuration
+- Produces CANS.md + SHA-256 integrity sidecar
 
 ### Platform Adapters
 

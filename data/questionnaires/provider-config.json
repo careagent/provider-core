@@ -1,0 +1,208 @@
+{
+  "id": "provider-config-v1",
+  "provider_type": "any",
+  "version": "1.0.0",
+  "taxonomy_version": "1.0.0",
+  "display_name": "Provider Configuration Questionnaire",
+  "description": "Collects provider-specific configuration not covered by Axon credentialing: clinical philosophy, voice directives, autonomy tiers, and consent.",
+  "authority": "provider-core",
+  "target_type": "provider",
+  "classification": {
+    "domain": "administrative",
+    "sensitivity": "non_sensitive"
+  },
+  "output_artifact": "cans",
+  "llm_system_prompt": "You are CareAgent, a clinical AI assistant helping a healthcare provider configure their agent. Be professional, warm, and concise. Guide them through setting their clinical philosophy, voice preferences, autonomy tiers, and consent acknowledgment.",
+  "completion_criteria": "All required fields collected: philosophy, autonomy tiers for all 7 actions, and consent acknowledgment.",
+  "sections": [
+    {
+      "id": "philosophy",
+      "title": "Clinical Philosophy",
+      "description": "The provider's approach to clinical AI assistance.",
+      "question_ids": ["clinical_philosophy"]
+    },
+    {
+      "id": "voice",
+      "title": "Voice Directives",
+      "description": "Optional per-action instructions for how CareAgent should behave.",
+      "question_ids": ["voice_chart", "voice_educate", "voice_interpret"]
+    },
+    {
+      "id": "autonomy",
+      "title": "Autonomy Configuration",
+      "description": "Per-action autonomy tiers controlling CareAgent's independence.",
+      "question_ids": [
+        "autonomy_chart", "autonomy_order", "autonomy_charge",
+        "autonomy_perform", "autonomy_interpret", "autonomy_educate",
+        "autonomy_coordinate"
+      ]
+    },
+    {
+      "id": "consent",
+      "title": "Consent Acknowledgment",
+      "description": "HIPAA, synthetic data, and audit consent verification.",
+      "question_ids": ["consent_confirm"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "clinical_philosophy",
+      "text": "Describe your clinical philosophy — how should your AI assistant approach clinical work?",
+      "answer_type": "text",
+      "required": true,
+      "validation": {
+        "min_length": 10
+      },
+      "llm_guidance": "Ask the provider to describe in their own words how they want their AI assistant to approach clinical decision-making. Encourage them to mention priorities like evidence-based practice, patient autonomy, conservative vs. aggressive approaches, etc.",
+      "classification": {
+        "domain": "clinical",
+        "sensitivity": "non_sensitive"
+      },
+      "mode": "guided"
+    },
+    {
+      "id": "voice_chart",
+      "text": "Do you have specific instructions for how CareAgent should handle clinical documentation (charting)?",
+      "answer_type": "text",
+      "required": false,
+      "llm_guidance": "This is optional. Examples: 'Use structured SOAP format', 'Always include assessment and plan', 'Keep notes concise'. If the provider says no or skips, that's fine.",
+      "classification": {
+        "domain": "clinical",
+        "sensitivity": "non_sensitive"
+      },
+      "mode": "guided"
+    },
+    {
+      "id": "voice_educate",
+      "text": "Do you have specific instructions for how CareAgent should handle patient education?",
+      "answer_type": "text",
+      "required": false,
+      "llm_guidance": "Optional. Examples: 'Include visual diagrams', 'Write at 6th-grade reading level', 'Always mention lifestyle modifications'.",
+      "classification": {
+        "domain": "clinical",
+        "sensitivity": "non_sensitive"
+      },
+      "mode": "guided"
+    },
+    {
+      "id": "voice_interpret",
+      "text": "Do you have specific instructions for how CareAgent should interpret clinical results?",
+      "answer_type": "text",
+      "required": false,
+      "llm_guidance": "Optional. Examples: 'Always compare to previous results', 'Flag critical values prominently', 'Include reference ranges'.",
+      "classification": {
+        "domain": "clinical",
+        "sensitivity": "non_sensitive"
+      },
+      "mode": "guided"
+    },
+    {
+      "id": "autonomy_chart",
+      "text": "What autonomy level for clinical documentation (charting)?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        {
+          "value": "autonomous",
+          "label": "Autonomous",
+          "description": "CareAgent acts independently, you review afterward"
+        },
+        {
+          "value": "supervised",
+          "label": "Supervised",
+          "description": "CareAgent prepares the work, you approve before execution"
+        },
+        {
+          "value": "manual",
+          "label": "Manual",
+          "description": "You must explicitly initiate, CareAgent only assists when asked"
+        }
+      ],
+      "llm_guidance": "Most providers choose 'autonomous' for charting. Explain the three tiers clearly.",
+      "classification": {
+        "domain": "administrative",
+        "sensitivity": "non_sensitive"
+      }
+    },
+    {
+      "id": "autonomy_order",
+      "text": "What autonomy level for orders (medications, labs, imaging)?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        { "value": "autonomous", "label": "Autonomous", "description": "CareAgent acts independently" },
+        { "value": "supervised", "label": "Supervised", "description": "CareAgent prepares, you approve" },
+        { "value": "manual", "label": "Manual", "description": "You initiate, CareAgent assists" }
+      ],
+      "llm_guidance": "Most providers choose 'supervised' or 'manual' for orders due to safety implications."
+    },
+    {
+      "id": "autonomy_charge",
+      "text": "What autonomy level for billing and coding?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        { "value": "autonomous", "label": "Autonomous", "description": "CareAgent acts independently" },
+        { "value": "supervised", "label": "Supervised", "description": "CareAgent prepares, you approve" },
+        { "value": "manual", "label": "Manual", "description": "You initiate, CareAgent assists" }
+      ]
+    },
+    {
+      "id": "autonomy_perform",
+      "text": "What autonomy level for clinical procedures?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        { "value": "autonomous", "label": "Autonomous", "description": "CareAgent acts independently" },
+        { "value": "supervised", "label": "Supervised", "description": "CareAgent prepares, you approve" },
+        { "value": "manual", "label": "Manual", "description": "You initiate, CareAgent assists" }
+      ],
+      "llm_guidance": "Most providers choose 'manual' for procedures."
+    },
+    {
+      "id": "autonomy_interpret",
+      "text": "What autonomy level for result interpretation?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        { "value": "autonomous", "label": "Autonomous", "description": "CareAgent acts independently" },
+        { "value": "supervised", "label": "Supervised", "description": "CareAgent prepares, you approve" },
+        { "value": "manual", "label": "Manual", "description": "You initiate, CareAgent assists" }
+      ]
+    },
+    {
+      "id": "autonomy_educate",
+      "text": "What autonomy level for patient education?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        { "value": "autonomous", "label": "Autonomous", "description": "CareAgent acts independently" },
+        { "value": "supervised", "label": "Supervised", "description": "CareAgent prepares, you approve" },
+        { "value": "manual", "label": "Manual", "description": "You initiate, CareAgent assists" }
+      ],
+      "llm_guidance": "Most providers choose 'autonomous' for patient education."
+    },
+    {
+      "id": "autonomy_coordinate",
+      "text": "What autonomy level for care coordination (referrals, transitions)?",
+      "answer_type": "single_select",
+      "required": true,
+      "options": [
+        { "value": "autonomous", "label": "Autonomous", "description": "CareAgent acts independently" },
+        { "value": "supervised", "label": "Supervised", "description": "CareAgent prepares, you approve" },
+        { "value": "manual", "label": "Manual", "description": "You initiate, CareAgent assists" }
+      ]
+    },
+    {
+      "id": "consent_confirm",
+      "text": "Do you confirm: (1) HIPAA warning acknowledged, (2) synthetic data only, (3) consent to audit logging?",
+      "answer_type": "boolean",
+      "required": true,
+      "llm_guidance": "This is a final consent confirmation. The provider must agree to all three points. If they decline, the onboarding cannot proceed.",
+      "classification": {
+        "domain": "administrative",
+        "sensitivity": "sensitive"
+      }
+    }
+  ]
+}

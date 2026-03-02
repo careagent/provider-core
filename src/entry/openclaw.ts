@@ -23,6 +23,10 @@ import { registerCLI } from '../cli/commands.js';
 import { runClinicalActivation } from '../cli/activate-command.js';
 import { generateDefaultAgentInstructions } from '../onboarding/default-agent-content.js';
 import { generateOnboardingBootstrap, generateCansSchemaReference } from '../onboarding/onboarding-bootstrap.js';
+import { runProtocolOnboarding } from '../onboarding/protocol-onboarding.js';
+import { createLLMClient } from '../protocol/llm-client.js';
+import { createTelegramTransport } from '../bot/telegram-client.js';
+import { createTelegramMessageIO } from '../protocol/message-io.js';
 import { createCansIntegrityService } from '../activation/integrity-service.js';
 import { createHardeningEngine } from '../hardening/engine.js';
 import { createCredentialValidator } from '../credentials/validator.js';
@@ -177,9 +181,94 @@ The provider is being onboarded. You will learn about them during the interview.
       }
 
       // --- Onboarding path: no CANS.md, no BOOTSTRAP.md ---
+      const anthropicKey = process.env['ANTHROPIC_API_KEY'];
+      const axonUrl = process.env['AXON_URL'];
+      const telegramBotToken = process.env['TELEGRAM_BOT_TOKEN'];
+
+      // --- NEW PATH: Protocol engine + direct Telegram ---
+      if (anthropicKey && axonUrl && telegramBotToken) {
+        try {
+          // Fetch questionnaire from Axon
+          const questionnaireRes = await fetch(`${axonUrl}/api/questionnaires/physician`);
+          if (!questionnaireRes.ok) {
+            throw new Error(`Failed to fetch questionnaire from Axon: ${questionnaireRes.status}`);
+          }
+          const questionnaire = await questionnaireRes.json() as import('@careagent/axon/types').Questionnaire;
+
+          // Create LLM client (direct Anthropic API — zero OpenClaw context)
+          const llmClient = createLLMClient({
+            apiKey: anthropicKey,
+            model: process.env['CAREAGENT_MODEL'] || undefined,
+          });
+
+          // Create Telegram MessageIO for direct communication
+          const transport = createTelegramTransport(telegramBotToken);
+          const chatId = parseInt(peerId, 10);
+          const messageIO = createTelegramMessageIO({ transport, chatId });
+
+          // Add peer binding before starting
+          addPeerBinding(configPath, CAREAGENT_ID, 'telegram', peerId);
+
+          audit.log({
+            action: 'careagent_activate',
+            actor: 'provider',
+            outcome: 'active',
+            details: {
+              step: 'protocol_onboarding_started',
+              peerId,
+              agent_id: CAREAGENT_ID,
+              mode: 'protocol_engine',
+            },
+          });
+
+          adapter.log('info', `[CareAgent] Protocol onboarding started for peer ${peerId}`);
+
+          // Fire-and-forget: run protocol onboarding asynchronously
+          runProtocolOnboarding({
+            llmClient,
+            messageIO,
+            credentialingQuestionnaire: questionnaire,
+            workspacePath: clinicalWorkspacePath,
+            respondent: peerId,
+            audit: (event) => audit.log({
+              action: (event.event as string) ?? 'protocol_event',
+              actor: 'system',
+              outcome: 'active',
+              details: event,
+            }),
+          }).then((result) => {
+            if (result.success) {
+              adapter.log('info', `[CareAgent] Protocol onboarding completed for peer ${peerId}`);
+            } else {
+              adapter.log('error', `[CareAgent] Protocol onboarding failed: ${result.error}`);
+            }
+          }).catch((err) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            adapter.log('error', `[CareAgent] Protocol onboarding error: ${msg}`);
+          });
+
+          // Return HIPAA warning as slash command response
+          return {
+            text: [
+              '⚕️ *HIPAA & Synthetic Data Disclosure*',
+              '',
+              'CareAgent operates on *synthetic data only*. Never input real patient information.',
+              'All interactions are logged to an append-only, hash-chained audit trail.',
+              'By proceeding, you acknowledge these terms.',
+              '',
+              'The onboarding interview will begin shortly via direct message.',
+            ].join('\n'),
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          adapter.log('warn', `[CareAgent] Protocol engine failed, falling back to BOOTSTRAP.md: ${msg}`);
+          // Fall through to legacy path
+        }
+      }
+
+      // --- LEGACY FALLBACK: BOOTSTRAP.md approach (when ANTHROPIC_API_KEY not set) ---
       try {
         // Write BOOTSTRAP.md
-        const axonUrl = process.env['AXON_URL'];
         const bootstrapContent = generateOnboardingBootstrap(axonUrl ? { axonUrl } : undefined);
         writeFileSync(bootstrapPath, bootstrapContent, 'utf-8');
 
@@ -226,7 +315,7 @@ The provider is being onboarded. You will learn about them during the interview.
           },
         });
 
-        adapter.log('info', `[CareAgent] Onboarding started for peer ${peerId}`);
+        adapter.log('info', `[CareAgent] Onboarding started for peer ${peerId} (BOOTSTRAP.md fallback)`);
 
         return {
           text: [
