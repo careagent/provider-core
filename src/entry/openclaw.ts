@@ -49,45 +49,30 @@ export default function register(api: unknown): void {
   // Step 3.5: Register slash commands (auto-reply, no LLM involvement)
   // Telegram bot commands: lowercase letters, digits, underscores only.
   // Handlers return { text } so OpenClaw sends the reply back to the user on Telegram.
-  //
-  // OpenClaw calls the handler with PluginCommandContext (senderId, channel, etc.)
-  // even though our adapter types it as (args: string). We access ctx via the
-  // raw argument to get the chat ID for programmatic Telegram messages.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rawApi = api as any;
-
   adapter.registerSlashCommand({
     name: 'careagent_on',
     description: 'Switch to CareAgent clinical mode',
-    handler: async (ctx: unknown) => {
+    handler: async () => {
       const result = await runActivateCommand(workspacePath, audit, profile);
       if (!result.success) {
         adapter.log('error', `[CareAgent] Activation failed: ${result.error}`);
         return { text: `Activation failed: ${result.error}`, isError: true };
       }
 
-      // If onboarding started, send the HIPAA warning as the CareAgent's first message.
-      // This triggers the provider to respond, which the CareAgent LLM then processes.
-      const cmdCtx = ctx as { senderId?: string; channel?: string } | undefined;
-      if (result.onboarding && cmdCtx?.senderId) {
-        const sendTelegram = rawApi?.runtime?.channel?.telegram?.sendMessageTelegram;
-        if (typeof sendTelegram === 'function') {
-          try {
-            await sendTelegram(cmdCtx.senderId, [
-              '⚕️ *HIPAA & Synthetic Data Disclosure*',
-              '',
-              'CareAgent operates on *synthetic data only*. Never input real patient information.',
-              'All interactions are logged to an append-only, hash-chained audit trail.',
-              'By proceeding, you acknowledge these terms.',
-              '',
-              'Do you agree to all three points? (HIPAA warning, synthetic data only, audit logging)',
-            ].join('\n'));
-            adapter.log('info', '[CareAgent] Sent HIPAA warning to provider');
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            adapter.log('warn', `[CareAgent] Failed to send HIPAA warning: ${msg}`);
-          }
-        }
+      // If onboarding started, the slash command reply IS the HIPAA warning.
+      // The provider's response goes to the CareAgent LLM (Telegram is now bound).
+      if (result.onboarding) {
+        return {
+          text: [
+            '⚕️ HIPAA & Synthetic Data Disclosure',
+            '',
+            'CareAgent operates on synthetic data only. Never input real patient information.',
+            'All interactions are logged to an append-only, hash-chained audit trail.',
+            'By proceeding, you acknowledge these terms.',
+            '',
+            'Do you agree to all three points? (HIPAA warning, synthetic data only, audit logging)',
+          ].join('\n'),
+        };
       }
 
       return { text: result.messages.join('\n') };
