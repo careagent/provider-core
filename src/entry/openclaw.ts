@@ -70,7 +70,7 @@ export default function register(api: unknown): void {
             'All interactions are logged to an append-only, hash-chained audit trail.',
             'By proceeding, you acknowledge these terms.',
             '',
-            'Please confirm each of the following:',
+            'Please confirm each of the following by answering "Yes":',
             '1. HIPAA warning acknowledged',
             '2. Synthetic data only — no real patient data will be processed',
             '3. Consent to audit logging',
