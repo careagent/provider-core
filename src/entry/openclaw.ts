@@ -90,6 +90,26 @@ exactly as BOOTSTRAP.md specifies them.
 - **Emoji:** ⚕️
 `, 'utf-8');
 
+    // Overwrite OpenClaw scaffolded files at startup too (OpenClaw re-creates
+    // them when the agent's first session starts, after our plugin runs)
+    writeFileSync(join(clinicalWorkspacePath, 'AGENTS.md'), `# CareAgent Onboarding Agent
+
+You are conducting an onboarding interview. Your ONLY job right now is to follow BOOTSTRAP.md exactly.
+
+Do not improvise. Do not add questions. Do not skip stages. Follow BOOTSTRAP.md word for word.
+`, 'utf-8');
+    writeFileSync(join(clinicalWorkspacePath, 'USER.md'), `# Provider
+
+The provider is being onboarded. You will learn about them during the interview.
+`, 'utf-8');
+    // Remove scaffolded files that aren't relevant during onboarding
+    for (const f of ['TOOLS.md', 'HEARTBEAT.md']) {
+      const p = join(clinicalWorkspacePath, f);
+      if (existsSync(p)) {
+        try { unlinkSync(p); } catch { /* ignore */ }
+      }
+    }
+
     // Add agent to openclaw.json if not already present
     const added = ensureAgentInConfig(configPath, CAREAGENT_ID, clinicalWorkspacePath);
     if (added) {
