@@ -64,13 +64,16 @@ export default function register(api: unknown): void {
       if (result.onboarding) {
         return {
           text: [
-            '⚕️ HIPAA & Synthetic Data Disclosure',
+            '⚕️ *HIPAA & Synthetic Data Disclosure*',
             '',
-            'CareAgent operates on synthetic data only. Never input real patient information.',
+            'CareAgent operates on *synthetic data only*. Never input real patient information.',
             'All interactions are logged to an append-only, hash-chained audit trail.',
             'By proceeding, you acknowledge these terms.',
             '',
-            'Do you agree to all three points? (HIPAA warning, synthetic data only, audit logging)',
+            'Please confirm each of the following:',
+            '1. HIPAA warning acknowledged',
+            '2. Synthetic data only — no real patient data will be processed',
+            '3. Consent to audit logging',
           ].join('\n'),
         };
       }
