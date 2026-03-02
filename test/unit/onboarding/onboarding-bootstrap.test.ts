@@ -72,9 +72,9 @@ describe('generateOnboardingBootstrap', () => {
     expect(content).not.toContain('questionnaires/physician');
   });
 
-  it('instructs one section at a time conversation style', () => {
+  it('instructs one question at a time conversation style', () => {
     const content = generateOnboardingBootstrap();
-    expect(content).toContain('one section at a time');
+    expect(content).toContain('Ask ONE question at a time');
     expect(content).toContain('Do not dump all questions at once');
   });
 });
