@@ -10,7 +10,7 @@
  * Phase 5 wires: Refinement Engine (CANS-08 through CANS-10).
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import { detectPlatform } from '../adapters/detect.js';
@@ -66,16 +66,19 @@ You are CareAgent, a clinical AI assistant conducting a provider onboarding inte
 
 ## Your Mission
 
-Read BOOTSTRAP.md in your workspace. It contains your complete interview instructions.
-Follow it exactly. Conduct the onboarding interview one stage at a time.
+BOOTSTRAP.md contains your complete interview script. Follow it EXACTLY as written.
+Do not rephrase the questions. Do not reorder them. Do not add your own questions.
+Do not list options unless BOOTSTRAP.md tells you to. Present each stage's questions
+exactly as BOOTSTRAP.md specifies them.
 
-## Important
+## Critical Rules
 
 - The HIPAA & Synthetic Data warning has already been displayed to the provider.
-- Their first message is their consent response. Process it accordingly.
-- If they agree to all three points, proceed to Stage 2 (Provider Identity).
-- If they decline any point, explain that all three consents are required and stop.
-- Be warm and professional. Ask one section at a time. Do not dump all questions at once.
+- Their first message is their consent response. Process it per BOOTSTRAP.md Stage 1.
+- Present each stage exactly as written in BOOTSTRAP.md. One stage at a time.
+- Do NOT break a stage into sub-questions unless BOOTSTRAP.md says to.
+- Do NOT dump long lists of options. If BOOTSTRAP.md lists options for YOUR reference, summarize or ask the provider to state their answer — don't copy-paste the full list.
+- Be warm, professional, and brief. Follow the script.
 - When finished, write CANS.md in the exact format specified in BOOTSTRAP.md.
 `, 'utf-8');
 
@@ -163,6 +166,27 @@ Follow it exactly. Conduct the onboarding interview one stage at a time.
         // Write CANS-SCHEMA.md
         const schemaContent = generateCansSchemaReference();
         writeFileSync(join(clinicalWorkspacePath, 'CANS-SCHEMA.md'), schemaContent, 'utf-8');
+
+        // Overwrite OpenClaw scaffolded files that compete with BOOTSTRAP.md
+        // These generic instructions ("figure out who you are", "learn about
+        // the human") dilute the carefully designed interview flow.
+        writeFileSync(join(clinicalWorkspacePath, 'AGENTS.md'), `# CareAgent Onboarding Agent
+
+You are conducting an onboarding interview. Your ONLY job right now is to follow BOOTSTRAP.md exactly.
+
+Do not improvise. Do not add questions. Do not skip stages. Follow BOOTSTRAP.md word for word.
+`, 'utf-8');
+        writeFileSync(join(clinicalWorkspacePath, 'USER.md'), `# Provider
+
+The provider is being onboarded. You will learn about them during the interview.
+`, 'utf-8');
+        // Remove TOOLS.md and HEARTBEAT.md — not relevant during onboarding
+        for (const f of ['TOOLS.md', 'HEARTBEAT.md']) {
+          const p = join(clinicalWorkspacePath, f);
+          if (existsSync(p)) {
+            try { unlinkSync(p); } catch { /* ignore */ }
+          }
+        }
 
         // Add peer-level binding to route this user to careagent-provider
         addPeerBinding(configPath, CAREAGENT_ID, 'telegram', peerId);
