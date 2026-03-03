@@ -6,6 +6,7 @@ export default defineConfig({
     'src/entry/openclaw.ts',
     'src/entry/standalone.ts',
     'src/entry/core.ts',
+    'src/entry/telegram-bot.ts',
   ],
   format: ['esm'],
   dts: true,
