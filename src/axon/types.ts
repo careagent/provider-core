@@ -84,6 +84,30 @@ export interface AxonQuestionnaire {
 }
 
 // ---------------------------------------------------------------------------
+// Onboarding flow types
+// ---------------------------------------------------------------------------
+
+/** A single step in an onboarding flow. */
+export interface AxonOnboardingFlowStep {
+  /** Questionnaire ID to fetch. May contain {{placeholder}} for dynamic resolution. */
+  questionnaire_id: string;
+  /** Human-readable label for this step. */
+  label: string;
+  /** If true, the answer to `routing_question_id` determines the next step's questionnaire. */
+  routes_to_next?: boolean;
+  /** The question ID whose answer provides the routing value. */
+  routing_question_id?: string;
+}
+
+/** An ordered onboarding flow — a sequence of questionnaire steps. */
+export interface AxonOnboardingFlow {
+  /** Target type this flow applies to (e.g., 'provider'). */
+  target_type: string;
+  /** Ordered steps to execute. */
+  steps: AxonOnboardingFlowStep[];
+}
+
+// ---------------------------------------------------------------------------
 // Error handling
 // ---------------------------------------------------------------------------
 

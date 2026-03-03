@@ -1,12 +1,12 @@
 /**
- * Integration test for protocol-based onboarding (single-questionnaire flow).
+ * Integration test for protocol-based onboarding (flow-driven).
  *
  * Proves the end-to-end flow:
- *   Provider type selection → Axon questionnaire fetch → Protocol Engine → CANS.md
+ *   Onboarding flow fetch → Consent → Provider type selection → Type-specific questionnaire → CANS.md
  *
  * Uses a mock LLM client that extracts question IDs from the system prompt
  * and returns pre-scripted submit_answer tool-use responses. Uses the real
- * physician.json questionnaire from axon.
+ * physician.json questionnaire from axon plus the new meta-questionnaires.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -22,29 +22,65 @@ import { CANSSchema } from '../../src/activation/cans-schema.js';
 import { parseFrontmatter } from '../../src/activation/cans-parser.js';
 import type { LLMClient, LLMChatParams, LLMResponse } from '../../src/protocol/llm-client.js';
 import type { Questionnaire } from '@careagent/axon/types';
+import type { AxonOnboardingFlow } from '../../src/axon/types.js';
 
 // ---------------------------------------------------------------------------
-// Load real questionnaire
+// Load real questionnaires
 // ---------------------------------------------------------------------------
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-function loadQuestionnaire(path: string): Questionnaire {
+function loadQuestionnaireFile(path: string): Questionnaire {
   return JSON.parse(readFileSync(path, 'utf-8')) as Questionnaire;
 }
 
 const axonRoot = resolve(__dirname, '..', '..', '..', 'axon');
 
-const physicianQuestionnaire = loadQuestionnaire(
+const consentQuestionnaire = loadQuestionnaireFile(
+  join(axonRoot, 'data', 'questionnaires', '_universal_consent.json'),
+);
+
+const typeSelectionQuestionnaire = loadQuestionnaireFile(
+  join(axonRoot, 'data', 'questionnaires', '_provider_type_selection.json'),
+);
+
+// Enrich type selection options (normally done by Axon loader)
+const typeQuestion = typeSelectionQuestionnaire.questions.find((q) => q.id === 'provider_type');
+if (typeQuestion) {
+  typeQuestion.options = [
+    { value: 'physician', label: 'Physician (MD, DO)' },
+    { value: 'nursing', label: 'Nursing (RN, LPN)' },
+  ];
+}
+
+const physicianQuestionnaire = loadQuestionnaireFile(
   join(axonRoot, 'data', 'questionnaires', 'physician.json'),
 );
+
+/** The 3-step onboarding flow. */
+const MOCK_FLOW: AxonOnboardingFlow = {
+  target_type: 'provider',
+  steps: [
+    { questionnaire_id: '_universal_consent', label: 'Consent' },
+    { questionnaire_id: '_provider_type_selection', label: 'Provider Type', routes_to_next: true, routing_question_id: 'provider_type' },
+    { questionnaire_id: '{{provider_type}}', label: 'Onboarding Questionnaire' },
+  ],
+};
 
 // ---------------------------------------------------------------------------
 // Pre-scripted answers (question_id → value the mock LLM will submit)
 // ---------------------------------------------------------------------------
 
 const SCRIPTED_ANSWERS: Record<string, unknown> = {
+  // Consent (from _universal_consent)
+  consent_hipaa: true,
+  consent_synthetic: true,
+  consent_audit: true,
+
+  // Provider type selection (from _provider_type_selection)
+  provider_type: 'physician',
+
   // Identity
   individual_npi: '1234567890',
   provider_name: 'Dr. Jane Smith',
@@ -53,7 +89,6 @@ const SCRIPTED_ANSWERS: Record<string, unknown> = {
 
   // Credentials
   has_additional_types: false,
-  // additional_types — skipped (has_additional_types=false)
   has_degrees: true,
   degrees_list: 'MD',
   has_licenses: true,
@@ -65,11 +100,9 @@ const SCRIPTED_ANSWERS: Record<string, unknown> = {
   has_specialty: true,
   specialty_list: 'Neurosurgery',
   has_subspecialty: false,
-  // subspecialty_list — skipped (has_subspecialty=false)
 
   // Scope
   practice_setting: 'private',
-  // supervision_role — skipped (practice_setting != "academic")
   clinical_charting: true,
   prescribing: true,
   dea_number: 'AB1234567',
@@ -97,11 +130,6 @@ const SCRIPTED_ANSWERS: Record<string, unknown> = {
   autonomy_interpret: 'supervised',
   autonomy_educate: 'autonomous',
   autonomy_coordinate: 'supervised',
-
-  // Consent
-  consent_hipaa: true,
-  consent_synthetic: true,
-  consent_audit: true,
 };
 
 // ---------------------------------------------------------------------------
@@ -148,7 +176,7 @@ function createMockLLMClient(): LLMClient {
 }
 
 // ---------------------------------------------------------------------------
-// Count applicable questions (for mock MessageIO response count)
+// Count applicable questions across all 3 questionnaires
 // ---------------------------------------------------------------------------
 
 function countApplicableQuestions(
@@ -163,7 +191,6 @@ function countApplicableQuestions(
       const refAnswer = seen.get(q.show_when.question_id);
       if (refAnswer === undefined) continue;
       const refStr = String(refAnswer);
-      // Support both legacy equals and operator+value format
       if (q.show_when.equals !== undefined && refStr !== q.show_when.equals) continue;
       if (q.show_when.operator === 'equals' && q.show_when.value !== undefined && refStr !== q.show_when.value) continue;
     }
@@ -175,13 +202,24 @@ function countApplicableQuestions(
 }
 
 // ---------------------------------------------------------------------------
-// Mock fetch for Axon questionnaire endpoint
+// Mock fetch for Axon endpoints (routes by URL)
 // ---------------------------------------------------------------------------
 
 function mockAxonFetch(): void {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => physicianQuestionnaire,
+  vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string) => {
+    if (url.includes('/v1/onboarding/flow/')) {
+      return { ok: true, json: async () => MOCK_FLOW };
+    }
+    if (url.includes('/v1/questionnaires/_universal_consent')) {
+      return { ok: true, json: async () => consentQuestionnaire };
+    }
+    if (url.includes('/v1/questionnaires/_provider_type_selection')) {
+      return { ok: true, json: async () => typeSelectionQuestionnaire };
+    }
+    if (url.includes('/v1/questionnaires/physician')) {
+      return { ok: true, json: async () => physicianQuestionnaire };
+    }
+    return { ok: false, status: 404 };
   }));
 }
 
@@ -190,24 +228,25 @@ function mockAxonFetch(): void {
 // ---------------------------------------------------------------------------
 
 function createStandardOnboardingConfig(tmpDir: string) {
-  const questionCount = countApplicableQuestions(physicianQuestionnaire, SCRIPTED_ANSWERS);
+  const consentCount = consentQuestionnaire.questions.length; // 3
+  const typeSelectionCount = typeSelectionQuestionnaire.questions.length; // 1
+  const physicianCount = countApplicableQuestions(physicianQuestionnaire, SCRIPTED_ANSWERS);
 
-  // User responses: 1 for provider type selection + (questionCount - 1) for remaining questions
-  // (Q1 is handled by engine.start(), the rest need user responses to trigger handleMessage)
-  const totalResponses = 1 + (questionCount - 1);
-  const mockResponses = ['1', ...Array.from({ length: questionCount - 1 }, () => 'yes')];
+  // Each step's engine.start() handles the first question, so user messages = (count - 1) per step
+  const totalUserMessages = (consentCount - 1) + (typeSelectionCount - 1) + (physicianCount - 1);
+  const mockResponses = Array.from({ length: totalUserMessages }, () => 'yes');
 
   const messageIO = createMockMessageIO(mockResponses);
   const llmClient = createMockLLMClient();
 
-  return { messageIO, llmClient, questionCount };
+  return { messageIO, llmClient, consentCount, typeSelectionCount, physicianCount };
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('Protocol Onboarding E2E', () => {
+describe('Protocol Onboarding E2E (flow-driven)', () => {
   let tmpDir: string;
 
   beforeEach(() => {
@@ -221,7 +260,7 @@ describe('Protocol Onboarding E2E', () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('produces a valid CANS.md from physician onboarding', async () => {
+  it('produces a valid CANS.md from flow-driven physician onboarding', async () => {
     const { messageIO, llmClient } = createStandardOnboardingConfig(tmpDir);
     const auditEvents: Array<Record<string, unknown>> = [];
 
@@ -361,7 +400,7 @@ describe('Protocol Onboarding E2E', () => {
     expect(actions).toContain('charge.evaluation_management');
   });
 
-  it('CANS.md contains consent and philosophy', async () => {
+  it('CANS.md contains consent from universal consent step and philosophy', async () => {
     const { messageIO, llmClient } = createStandardOnboardingConfig(tmpDir);
 
     await runProtocolOnboarding({
@@ -402,7 +441,7 @@ describe('Protocol Onboarding E2E', () => {
     expect(frontmatter.voice.interpret).toBe('Always compare to previous results and flag critical values');
   });
 
-  it('audit events are emitted during onboarding', async () => {
+  it('audit events are emitted during flow-driven onboarding', async () => {
     const { messageIO, llmClient } = createStandardOnboardingConfig(tmpDir);
     const auditEvents: Array<Record<string, unknown>> = [];
 
@@ -422,9 +461,9 @@ describe('Protocol Onboarding E2E', () => {
     const onboardingCompleted = auditEvents.filter((e) => e.event === 'protocol_onboarding_completed');
 
     expect(typeSelected.length).toBe(1);
-    expect(sessionStarted.length).toBe(1); // single questionnaire
+    expect(sessionStarted.length).toBe(3); // 3 steps = 3 sessions
     expect(answersAccepted.length).toBeGreaterThan(0);
-    expect(sessionCompleted.length).toBe(1);
+    expect(sessionCompleted.length).toBe(3);
     expect(onboardingCompleted.length).toBe(1);
   });
 

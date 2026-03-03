@@ -1,7 +1,13 @@
 /**
- * Protocol-based onboarding — replaces BOOTSTRAP.md approach.
- * Asks provider type first, fetches the appropriate questionnaire from Axon,
- * runs a single unified questionnaire, then generates CANS.md.
+ * Protocol-based onboarding — flow-driven approach.
+ *
+ * Fetches the onboarding flow from Axon, executes each step's questionnaire
+ * via the protocol engine, accumulates answers, then generates CANS.md.
+ *
+ * The flow has 3 steps:
+ * 1. Universal consent (HIPAA, synthetic data, audit)
+ * 2. Provider type selection (routes to next step)
+ * 3. Type-specific questionnaire (resolved via {{provider_type}} placeholder)
  */
 
 import { writeFileSync } from 'node:fs';
@@ -11,8 +17,9 @@ import { createProtocolEngine, type ProtocolEngine } from '../protocol/engine.js
 import { createCANSArtifactGenerator } from '../protocol/artifact-generator.js';
 import type { LLMClient } from '../protocol/llm-client.js';
 import type { MessageIO } from '../protocol/message-io.js';
-import type { Questionnaire } from '@careagent/axon/types';
+import type { Questionnaire, Question } from '@careagent/axon/types';
 import type { CANSDocument } from '../activation/cans-schema.js';
+import type { AxonOnboardingFlow } from '../axon/types.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,49 +41,7 @@ export interface ProtocolOnboardingResult {
 }
 
 // ---------------------------------------------------------------------------
-// Provider type selection
-// ---------------------------------------------------------------------------
-
-const PROVIDER_TYPES = [
-  { id: 'physician', label: 'Physician (MD, DO)' },
-  { id: 'advanced_practice_provider', label: 'Advanced Practice Provider (NP, PA)' },
-  { id: 'nursing', label: 'Nursing (RN, LPN)' },
-  { id: 'pharmacy', label: 'Pharmacy (PharmD, RPh)' },
-  { id: 'dental', label: 'Dental (DDS, DMD)' },
-  { id: 'behavioral_mental_health', label: 'Behavioral/Mental Health (Psychologist, LCSW)' },
-  { id: 'physical_rehabilitation', label: 'Physical Rehabilitation (PT, OT)' },
-  { id: 'other', label: 'Other Healthcare Provider' },
-] as const;
-
-/** Exported for testing. */
-export { PROVIDER_TYPES };
-
-/**
- * Parse a provider type from user input (number, id, or label fragment).
- * Returns the provider type id or undefined if not matched.
- */
-export function parseProviderType(input: string): string | undefined {
-  const trimmed = input.trim().toLowerCase();
-
-  // Try numeric selection (1-8)
-  const num = parseInt(trimmed, 10);
-  if (!isNaN(num) && num >= 1 && num <= PROVIDER_TYPES.length) {
-    return PROVIDER_TYPES[num - 1]!.id;
-  }
-
-  // Try exact id match
-  const byId = PROVIDER_TYPES.find((t) => t.id === trimmed);
-  if (byId) return byId.id;
-
-  // Try label substring match
-  const byLabel = PROVIDER_TYPES.find((t) => t.label.toLowerCase().includes(trimmed));
-  if (byLabel) return byLabel.id;
-
-  return undefined;
-}
-
-// ---------------------------------------------------------------------------
-// runProtocolOnboarding
+// runProtocolOnboarding — flow-driven
 // ---------------------------------------------------------------------------
 
 export async function runProtocolOnboarding(
@@ -92,50 +57,80 @@ export async function runProtocolOnboarding(
   } = config;
 
   try {
-    // Phase 1: Ask provider type
-    const typeList = PROVIDER_TYPES.map((t, i) => `${i + 1}. ${t.label}`).join('\n');
-    await messageIO.send(
-      `Welcome to CareAgent onboarding.\n\nWhat is your provider type?\n\n${typeList}\n\nReply with the number or name.`,
-    );
+    // Step 1: Fetch onboarding flow from Axon
+    const flowRes = await fetch(`${axonUrl}/v1/onboarding/flow/provider`);
+    if (!flowRes.ok) {
+      throw new Error(`Failed to fetch onboarding flow from Axon: ${flowRes.status}`);
+    }
+    const flow = await flowRes.json() as AxonOnboardingFlow;
 
+    // Accumulate answers across all steps
+    const allAnswers: Record<string, unknown> = {};
+    const allQuestions: Question[] = [];
+    let routingValue: string | undefined;
     let providerType: string | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const response = await messageIO.receive();
-      providerType = parseProviderType(response);
-      if (providerType) break;
-      await messageIO.send(
-        'I didn\'t recognize that provider type. Please reply with a number (1-8) or type name.',
-      );
+
+    // Step 2: Execute each step in the flow
+    for (const step of flow.steps) {
+      // Resolve questionnaire ID (substitute {{provider_type}} placeholder)
+      const questionnaireId = resolveQuestionnaireId(step.questionnaire_id, routingValue);
+
+      // Fetch questionnaire from Axon
+      const questionnaireRes = await fetch(`${axonUrl}/v1/questionnaires/${encodeURIComponent(questionnaireId)}`);
+      if (!questionnaireRes.ok) {
+        throw new Error(`Failed to fetch questionnaire '${questionnaireId}' from Axon: ${questionnaireRes.status}`);
+      }
+      const questionnaire = await questionnaireRes.json() as Questionnaire;
+
+      // Run questionnaire via protocol engine
+      const engine = createProtocolEngine({
+        llmClient,
+        questionnaire,
+        authority: questionnaire.authority ?? 'axon',
+        respondent,
+        audit,
+      });
+
+      const stepAnswers = await runQuestionnaire(engine, messageIO);
+
+      // Accumulate answers and questions
+      Object.assign(allAnswers, stepAnswers);
+      allQuestions.push(...questionnaire.questions);
+
+      // Extract routing value if this step routes to next
+      if (step.routes_to_next && step.routing_question_id) {
+        routingValue = String(stepAnswers[step.routing_question_id] ?? '');
+        providerType = routingValue;
+
+        if (audit) {
+          audit({ event: 'provider_type_selected', provider_type: providerType, respondent });
+        }
+      }
+
+      // After consent step: hard-stop if any consent is false
+      if (questionnaire.output_artifact === 'consent') {
+        const consentDenied = questionnaire.questions.some(
+          (q) => q.required && q.answer_type === 'boolean' && stepAnswers[q.id] === false,
+        );
+        if (consentDenied) {
+          await messageIO.send('Consent is required to proceed with onboarding. Please try again with /careagent_on.');
+          return { success: false, error: 'Required consent not granted.' };
+        }
+      }
     }
 
-    if (!providerType) {
-      return { success: false, error: 'Could not determine provider type after 3 attempts.' };
-    }
+    // Step 3: Build merged questionnaire for CANS generation
+    const mergedQuestionnaire: Questionnaire = {
+      provider_type: providerType ?? 'unknown',
+      version: '1.0.0',
+      taxonomy_version: '1.0.0',
+      display_name: 'Merged Onboarding',
+      description: 'Merged questionnaire from onboarding flow steps.',
+      questions: allQuestions,
+    };
 
-    if (audit) {
-      audit({ event: 'provider_type_selected', provider_type: providerType, respondent });
-    }
-
-    // Phase 2: Fetch questionnaire from Axon
-    const questionnaireRes = await fetch(`${axonUrl}/v1/questionnaires/${providerType}`);
-    if (!questionnaireRes.ok) {
-      throw new Error(`Failed to fetch questionnaire from Axon: ${questionnaireRes.status}`);
-    }
-    const questionnaire = await questionnaireRes.json() as Questionnaire;
-
-    // Phase 3: Run unified questionnaire via protocol engine
-    const engine = createProtocolEngine({
-      llmClient,
-      questionnaire,
-      authority: questionnaire.authority ?? 'axon',
-      respondent,
-      audit,
-    });
-
-    const answers = await runQuestionnaire(engine, messageIO);
-
-    // Phase 4: Build CANS.md from answers
-    const cansResult = buildCANSDocument(answers, questionnaire);
+    // Step 4: Build CANS.md from accumulated answers
+    const cansResult = buildCANSDocument(allAnswers, mergedQuestionnaire, providerType);
 
     if (!cansResult.success || !cansResult.content) {
       return {
@@ -144,7 +139,7 @@ export async function runProtocolOnboarding(
       };
     }
 
-    // Phase 5: Write CANS.md + integrity sidecar
+    // Step 5: Write CANS.md + integrity sidecar
     const cansPath = join(workspacePath, 'CANS.md');
     writeFileSync(cansPath, cansResult.content, 'utf-8');
 
@@ -181,6 +176,18 @@ export async function runProtocolOnboarding(
 }
 
 // ---------------------------------------------------------------------------
+// resolveQuestionnaireId — substitute {{placeholder}} with routing value
+// ---------------------------------------------------------------------------
+
+function resolveQuestionnaireId(templateId: string, routingValue: string | undefined): string {
+  if (!templateId.includes('{{')) return templateId;
+  if (routingValue === undefined) {
+    throw new Error(`Questionnaire ID '${templateId}' contains a placeholder but no routing value is available.`);
+  }
+  return templateId.replace(/\{\{(\w+)\}\}/g, () => routingValue);
+}
+
+// ---------------------------------------------------------------------------
 // runQuestionnaire — drives a single protocol engine to completion
 // ---------------------------------------------------------------------------
 
@@ -205,12 +212,13 @@ async function runQuestionnaire(
 }
 
 // ---------------------------------------------------------------------------
-// buildCANSDocument — build CANS from unified questionnaire answers
+// buildCANSDocument — build CANS from merged answers + merged questionnaire
 // ---------------------------------------------------------------------------
 
 function buildCANSDocument(
   answers: Record<string, unknown>,
   questionnaire: Questionnaire,
+  providerType: string | undefined,
 ): { success: boolean; content?: string; errors?: Array<{ path: string; message: string }> } {
   // Extract philosophy (no cans_field — goes in markdown body)
   const philosophy = (answers['clinical_philosophy'] as string) ?? '';
@@ -222,12 +230,14 @@ function buildCANSDocument(
     primary: true,
   }];
 
-  // Build base document — the artifact generator will overlay cans_field values
+  // Build base document — all field values come from questionnaire answers via cans_field.
+  // No hardcoded autonomy defaults or consent defaults — those are provided by
+  // the universal consent and type-specific questionnaires.
   const baseDoc: Partial<CANSDocument> = {
     version: '2.0',
     provider: {
       name: (answers['provider_name'] as string) ?? '',
-      types: [questionnaire.provider_type],
+      types: [providerType ?? questionnaire.provider_type],
       degrees: [],
       licenses: [],
       certifications: [],
@@ -235,15 +245,7 @@ function buildCANSDocument(
       ...((answers['individual_npi'] as string) ? { npi: answers['individual_npi'] as string } : {}),
     },
     scope: { permitted_actions: [] },
-    autonomy: {
-      chart: 'supervised',
-      order: 'supervised',
-      charge: 'supervised',
-      perform: 'manual',
-      interpret: 'supervised',
-      educate: 'supervised',
-      coordinate: 'supervised',
-    } as CANSDocument['autonomy'],
+    autonomy: {} as CANSDocument['autonomy'],
     consent: {
       hipaa_warning_acknowledged: false,
       synthetic_data_only: false,
