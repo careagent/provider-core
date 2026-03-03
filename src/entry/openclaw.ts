@@ -199,8 +199,10 @@ The provider is being onboarded. You will learn about them during the interview.
           const chatId = parseInt(peerId, 10);
           const messageIO = createTelegramMessageIO({ transport, chatId });
 
-          // Add peer binding before starting
-          addPeerBinding(configPath, CAREAGENT_ID, 'telegram', peerId);
+          // NOTE: Do NOT add peer binding here — it would route messages
+          // to the careagent-provider agent (OpenClaw's LLM), competing with
+          // the protocol engine's direct Telegram polling. Binding is added
+          // after onboarding completes successfully.
 
           audit.log({
             action: 'careagent_activate',
@@ -232,6 +234,8 @@ The provider is being onboarded. You will learn about them during the interview.
           }).then((result) => {
             if (result.success) {
               adapter.log('info', `[CareAgent] Protocol onboarding completed for peer ${peerId}`);
+              // Now that CANS.md exists, bind peer to clinical agent
+              addPeerBinding(configPath, CAREAGENT_ID, 'telegram', peerId);
             } else {
               adapter.log('error', `[CareAgent] Protocol onboarding failed: ${result.error}`);
             }
