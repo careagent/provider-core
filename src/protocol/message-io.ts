@@ -24,11 +24,13 @@ export interface TelegramMessageIOConfig {
   transport: TelegramTransport;
   chatId: number;
   pollTimeoutMs?: number;
+  /** Starting offset to avoid re-processing already-handled updates. */
+  initialOffset?: number;
 }
 
 export function createTelegramMessageIO(config: TelegramMessageIOConfig): MessageIO {
-  const { transport, chatId, pollTimeoutMs = 120_000 } = config;
-  let currentOffset = 0;
+  const { transport, chatId, pollTimeoutMs = 120_000, initialOffset = 0 } = config;
+  let currentOffset = initialOffset;
   const pendingUpdates: TelegramUpdate[] = [];
 
   return {
