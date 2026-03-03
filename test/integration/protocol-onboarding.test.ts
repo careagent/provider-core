@@ -227,19 +227,64 @@ function mockAxonFetch(): void {
 // Helper to run onboarding with standard setup
 // ---------------------------------------------------------------------------
 
+/**
+ * Create a scripted mock IO that provides the correct answer for each question.
+ *
+ * For structured mode questions, the engine sends the exact question text in the
+ * message. We match the question text against all known questions and return the
+ * scripted answer value. For guided mode questions (where the LLM produces the
+ * response), we fall back to "yes" as a generic user message that triggers the LLM.
+ */
+function createScriptedMockIO(
+  answers: Record<string, unknown>,
+  questionnaires: Questionnaire[],
+): ReturnType<typeof createMockMessageIO> {
+  const sent: string[] = [];
+  const questionsByText = new Map<string, { id: string; answer_type: string }>();
+
+  for (const q of questionnaires) {
+    for (const question of q.questions) {
+      questionsByText.set(question.text, { id: question.id, answer_type: question.answer_type });
+    }
+  }
+
+  return {
+    async send(text: string): Promise<void> {
+      sent.push(text);
+    },
+
+    async receive(): Promise<string> {
+      const lastSent = sent[sent.length - 1];
+      if (!lastSent) return 'yes';
+
+      // Match structured question text in the sent message
+      for (const [text, { id }] of questionsByText) {
+        if (lastSent.includes(text)) {
+          const answer = answers[id];
+          if (answer !== undefined) {
+            return String(answer);
+          }
+        }
+      }
+
+      // Fallback for guided mode (LLM display_text doesn't contain question text)
+      return 'yes';
+    },
+
+    getSentMessages(): string[] {
+      return [...sent];
+    },
+  };
+}
+
 function createStandardOnboardingConfig(tmpDir: string) {
-  const consentCount = consentQuestionnaire.questions.length; // 3
-  const typeSelectionCount = typeSelectionQuestionnaire.questions.length; // 1
-  const physicianCount = countApplicableQuestions(physicianQuestionnaire, SCRIPTED_ANSWERS);
-
-  // Each step's engine.start() handles the first question, so user messages = (count - 1) per step
-  const totalUserMessages = (consentCount - 1) + (typeSelectionCount - 1) + (physicianCount - 1);
-  const mockResponses = Array.from({ length: totalUserMessages }, () => 'yes');
-
-  const messageIO = createMockMessageIO(mockResponses);
+  const messageIO = createScriptedMockIO(
+    SCRIPTED_ANSWERS,
+    [consentQuestionnaire, typeSelectionQuestionnaire, physicianQuestionnaire],
+  );
   const llmClient = createMockLLMClient();
 
-  return { messageIO, llmClient, consentCount, typeSelectionCount, physicianCount };
+  return { messageIO, llmClient };
 }
 
 // ---------------------------------------------------------------------------

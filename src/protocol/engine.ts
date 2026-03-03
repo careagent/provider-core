@@ -72,6 +72,96 @@ export function createProtocolEngine(config: ProtocolEngineConfig): ProtocolEngi
     return questionnaire.questions.findIndex((q) => q.id === question.id);
   }
 
+  // -------------------------------------------------------------------------
+  // Structured mode — deterministic, no LLM
+  // -------------------------------------------------------------------------
+
+  function isStructuredMode(question: Question): boolean {
+    return question.mode === 'structured';
+  }
+
+  function formatStructuredQuestion(question: Question): string {
+    const idx = getQuestionIndex(question);
+    const total = countApplicableQuestions();
+    const progress = `[${idx + 1}/${total}]`;
+    let text = `${progress} ${question.text}`;
+
+    switch (question.answer_type) {
+      case 'boolean':
+        text += '\n\nPlease answer: yes or no';
+        break;
+      case 'single_select':
+        if (question.options && question.options.length > 0) {
+          text += '\n';
+          for (const opt of question.options) {
+            const desc = opt.description ? ` — ${opt.description}` : '';
+            text += `\n- ${opt.label}${desc}`;
+          }
+        }
+        break;
+      // text, number, date — question text is sufficient
+    }
+
+    return text;
+  }
+
+  async function handleStructuredAnswer(userInput: string): Promise<string | null> {
+    if (!currentQuestion) return null;
+
+    const result = validateAnswer(currentQuestion, userInput);
+
+    if (!result.valid) {
+      validationRetries++;
+
+      logAudit({
+        event: 'answer_rejected',
+        question_id: currentQuestion.id,
+        error: result.error,
+        retry: validationRetries,
+      });
+
+      if (validationRetries >= MAX_VALIDATION_RETRIES) {
+        failSession(session, `Max retries exceeded for question "${currentQuestion.id}"`);
+        logAudit({ event: 'session_failed', reason: 'max_retries' });
+        throw new Error(`Max validation retries (${MAX_VALIDATION_RETRIES}) exceeded for question "${currentQuestion.id}"`);
+      }
+
+      return `Invalid answer: ${result.error}\n\n${formatStructuredQuestion(currentQuestion)}`;
+    }
+
+    // Valid answer — record it
+    advanceSession(session, currentQuestion.id, result.value);
+    validationRetries = 0;
+
+    logAudit({
+      event: 'answer_accepted',
+      question_id: currentQuestion.id,
+      answer_type: currentQuestion.answer_type,
+    });
+
+    // Advance to next question
+    const nextQ = resolveNextQuestion(questionnaire, session);
+    if (!nextQ) {
+      completeSession(session);
+      logAudit({ event: 'session_completed' });
+      return null;
+    }
+
+    currentQuestion = nextQ;
+    session.current_question_id = nextQ.id;
+
+    if (isStructuredMode(nextQ)) {
+      return formatStructuredQuestion(nextQ);
+    }
+
+    // Next question uses guided mode — prompt the LLM to present it
+    return await promptLLM(nextQ);
+  }
+
+  // -------------------------------------------------------------------------
+  // Guided mode — LLM-driven
+  // -------------------------------------------------------------------------
+
   async function promptLLM(question: Question, userMessage?: string): Promise<string> {
     // Build system prompt
     const systemPrompt = buildSystemPrompt({
@@ -231,6 +321,10 @@ export function createProtocolEngine(config: ProtocolEngineConfig): ProtocolEngi
       session.current_question_id = currentQuestion.id;
       logAudit({ event: 'session_started', questionnaire_id: session.questionnaire_id });
 
+      if (isStructuredMode(currentQuestion)) {
+        return formatStructuredQuestion(currentQuestion);
+      }
+
       return promptLLM(currentQuestion);
     },
 
@@ -245,6 +339,10 @@ export function createProtocolEngine(config: ProtocolEngineConfig): ProtocolEngi
           return null;
         }
         session.current_question_id = currentQuestion.id;
+      }
+
+      if (isStructuredMode(currentQuestion)) {
+        return handleStructuredAnswer(text);
       }
 
       return promptLLM(currentQuestion, text);

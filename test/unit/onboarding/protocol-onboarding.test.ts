@@ -58,7 +58,7 @@ const MOCK_FLOW: AxonOnboardingFlow = {
   ],
 };
 
-/** Universal consent questionnaire (3 boolean questions). */
+/** Universal consent questionnaire (3 boolean questions, structured mode). */
 function makeConsentQuestionnaire(): Questionnaire {
   return {
     id: 'universal-consent-v1',
@@ -69,14 +69,14 @@ function makeConsentQuestionnaire(): Questionnaire {
     description: 'Consent questions.',
     output_artifact: 'consent',
     questions: [
-      { id: 'consent_hipaa', text: 'HIPAA acknowledged?', answer_type: 'boolean', required: true, cans_field: 'consent.hipaa_warning_acknowledged' },
-      { id: 'consent_synthetic', text: 'Synthetic data confirmed?', answer_type: 'boolean', required: true, cans_field: 'consent.synthetic_data_only' },
-      { id: 'consent_audit', text: 'Audit consent?', answer_type: 'boolean', required: true, cans_field: 'consent.audit_consent' },
+      { id: 'consent_hipaa', text: 'HIPAA acknowledged?', answer_type: 'boolean', required: true, cans_field: 'consent.hipaa_warning_acknowledged', mode: 'structured' },
+      { id: 'consent_synthetic', text: 'Synthetic data confirmed?', answer_type: 'boolean', required: true, cans_field: 'consent.synthetic_data_only', mode: 'structured' },
+      { id: 'consent_audit', text: 'Audit consent?', answer_type: 'boolean', required: true, cans_field: 'consent.audit_consent', mode: 'structured' },
     ],
   } as Questionnaire;
 }
 
-/** Provider type selection questionnaire (1 single_select question). */
+/** Provider type selection questionnaire (1 single_select question, structured mode). */
 function makeTypeSelectionQuestionnaire(): Questionnaire {
   return {
     id: 'provider-type-selection-v1',
@@ -96,6 +96,7 @@ function makeTypeSelectionQuestionnaire(): Questionnaire {
           { value: 'physician', label: 'Physician' },
           { value: 'nursing', label: 'Nursing' },
         ],
+        mode: 'structured',
       },
     ],
   } as Questionnaire;
@@ -167,33 +168,32 @@ describe('Protocol Onboarding (flow-driven)', () => {
   it('runs 3-step flow-driven onboarding', async () => {
     mockFetchForFlow();
 
-    // 3 consent + 1 type selection + 10 physician = 14 LLM responses
+    // Consent (structured) + type selection (structured) = 0 LLM calls
+    // Physician (guided) = 10 LLM responses
     const llmResponses: LLMResponse[] = [
-      // Consent
-      makeToolUseResponse(true, 'HIPAA ack', 'tu_1'),
-      makeToolUseResponse(true, 'Synthetic confirmed', 'tu_2'),
-      makeToolUseResponse(true, 'Audit consent', 'tu_3'),
-      // Type selection
-      makeToolUseResponse('physician', 'Selected physician', 'tu_4'),
-      // Physician questionnaire
-      makeToolUseResponse('Dr. Test', 'Name recorded', 'tu_5'),
-      makeToolUseResponse('Test Clinic', 'Org recorded', 'tu_6'),
-      makeToolUseResponse(true, 'Charting: yes', 'tu_7'),
-      makeToolUseResponse('autonomous', 'Chart: autonomous', 'tu_8'),
-      makeToolUseResponse('supervised', 'Order: supervised', 'tu_9'),
-      makeToolUseResponse('supervised', 'Charge: supervised', 'tu_10'),
-      makeToolUseResponse('manual', 'Perform: manual', 'tu_11'),
-      makeToolUseResponse('supervised', 'Interpret: supervised', 'tu_12'),
-      makeToolUseResponse('autonomous', 'Educate: autonomous', 'tu_13'),
-      makeToolUseResponse('supervised', 'Coordinate: supervised', 'tu_14'),
+      // Physician questionnaire only (consent + type selection are structured mode)
+      makeToolUseResponse('Dr. Test', 'Name recorded', 'tu_1'),
+      makeToolUseResponse('Test Clinic', 'Org recorded', 'tu_2'),
+      makeToolUseResponse(true, 'Charting: yes', 'tu_3'),
+      makeToolUseResponse('autonomous', 'Chart: autonomous', 'tu_4'),
+      makeToolUseResponse('supervised', 'Order: supervised', 'tu_5'),
+      makeToolUseResponse('supervised', 'Charge: supervised', 'tu_6'),
+      makeToolUseResponse('manual', 'Perform: manual', 'tu_7'),
+      makeToolUseResponse('supervised', 'Interpret: supervised', 'tu_8'),
+      makeToolUseResponse('autonomous', 'Educate: autonomous', 'tu_9'),
+      makeToolUseResponse('supervised', 'Coordinate: supervised', 'tu_10'),
     ];
 
-    // User responses: (questionCount - 1) per step for handleMessage calls
-    // Consent: 3 questions → start() handles Q1, so 2 user messages
-    // Type selection: 1 question → start() handles Q1, so 0 user messages
-    // Physician: 10 questions → start() handles Q1, so 9 user messages
-    // Total user messages: 2 + 0 + 9 = 11
-    const userResponses = Array.from({ length: 11 }, () => 'yes');
+    // User responses for handleMessage calls:
+    // Consent (structured): 3 questions → start() presents Q1, 3 user answers needed
+    // Type selection (structured): 1 question → start() presents Q1, 1 user answer needed
+    // Physician (guided): 10 questions → start() + LLM handles Q1, 9 user messages needed
+    // Total user messages: 3 + 1 + 9 = 13
+    const userResponses = [
+      'yes', 'yes', 'yes',  // consent
+      'physician',           // type selection
+      ...Array.from({ length: 9 }, () => 'yes'),  // physician
+    ];
 
     const mockIO = createMockMessageIO(userResponses);
 
@@ -211,25 +211,27 @@ describe('Protocol Onboarding (flow-driven)', () => {
   it('calls audit with provider_type_selected event from routing step', async () => {
     mockFetchForFlow();
 
+    // Only physician questions use LLM (consent + type selection are structured)
     const llmResponses: LLMResponse[] = [
-      makeToolUseResponse(true, 'HIPAA', 'tu_1'),
-      makeToolUseResponse(true, 'Synth', 'tu_2'),
-      makeToolUseResponse(true, 'Audit', 'tu_3'),
-      makeToolUseResponse('physician', 'Type', 'tu_4'),
-      makeToolUseResponse('Dr. Audit', 'Name', 'tu_5'),
-      makeToolUseResponse('Clinic', 'Org', 'tu_6'),
-      makeToolUseResponse(true, 'Chart', 'tu_7'),
-      makeToolUseResponse('supervised', 'A1', 'tu_8'),
-      makeToolUseResponse('supervised', 'A2', 'tu_9'),
-      makeToolUseResponse('supervised', 'A3', 'tu_10'),
-      makeToolUseResponse('manual', 'A4', 'tu_11'),
-      makeToolUseResponse('supervised', 'A5', 'tu_12'),
-      makeToolUseResponse('supervised', 'A6', 'tu_13'),
-      makeToolUseResponse('supervised', 'A7', 'tu_14'),
+      makeToolUseResponse('Dr. Audit', 'Name', 'tu_1'),
+      makeToolUseResponse('Clinic', 'Org', 'tu_2'),
+      makeToolUseResponse(true, 'Chart', 'tu_3'),
+      makeToolUseResponse('supervised', 'A1', 'tu_4'),
+      makeToolUseResponse('supervised', 'A2', 'tu_5'),
+      makeToolUseResponse('supervised', 'A3', 'tu_6'),
+      makeToolUseResponse('manual', 'A4', 'tu_7'),
+      makeToolUseResponse('supervised', 'A5', 'tu_8'),
+      makeToolUseResponse('supervised', 'A6', 'tu_9'),
+      makeToolUseResponse('supervised', 'A7', 'tu_10'),
     ];
 
     const auditFn = vi.fn();
-    const mockIO = createMockMessageIO(Array.from({ length: 11 }, () => 'yes'));
+    const userResponses = [
+      'yes', 'yes', 'yes',  // consent (structured)
+      'physician',           // type selection (structured)
+      ...Array.from({ length: 9 }, () => 'yes'),  // physician (guided)
+    ];
+    const mockIO = createMockMessageIO(userResponses);
 
     await runProtocolOnboarding({
       llmClient: createSequenceMockLLM(llmResponses),
@@ -249,17 +251,11 @@ describe('Protocol Onboarding (flow-driven)', () => {
   it('stops onboarding when consent is denied', async () => {
     mockFetchForFlow();
 
-    // Consent step: first question answered false
-    const llmResponses: LLMResponse[] = [
-      makeToolUseResponse(false, 'HIPAA denied', 'tu_1'),
-      makeToolUseResponse(true, 'Synth', 'tu_2'),
-      makeToolUseResponse(true, 'Audit', 'tu_3'),
-    ];
-
-    const mockIO = createMockMessageIO(['no', 'yes']);
+    // No LLM needed — consent is structured mode
+    const mockIO = createMockMessageIO(['no', 'yes', 'yes']);
 
     const result = await runProtocolOnboarding({
-      llmClient: createSequenceMockLLM(llmResponses),
+      llmClient: { async chat() { throw new Error('LLM should not be called for consent'); } },
       messageIO: mockIO,
       axonUrl: 'http://axon.test',
       workspacePath: tmpDir,
@@ -320,7 +316,12 @@ describe('Protocol Onboarding (flow-driven)', () => {
       async chat() { throw new Error('LLM connection refused'); },
     };
 
-    const mockIO = createMockMessageIO(['anything']);
+    // Consent (3 structured) + type selection (1 structured) pass without LLM
+    // LLM failure triggers when physician questionnaire starts
+    const mockIO = createMockMessageIO([
+      'yes', 'yes', 'yes',  // consent (structured, no LLM)
+      'physician',           // type selection (structured, no LLM)
+    ]);
 
     const result = await runProtocolOnboarding({
       llmClient: failingLLM,
