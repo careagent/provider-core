@@ -1,13 +1,13 @@
 /**
- * Tests for protocol-based onboarding — full flow with mock LLM + mock MessageIO.
+ * Unit tests for protocol-based onboarding — single-questionnaire flow.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { runProtocolOnboarding } from '../../../src/onboarding/protocol-onboarding.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { runProtocolOnboarding, parseProviderType } from '../../../src/onboarding/protocol-onboarding.js';
 import { createMockMessageIO } from '../../../src/protocol/message-io.js';
 import type { LLMClient, LLMResponse, LLMContentBlock } from '../../../src/protocol/llm-client.js';
 import type { Questionnaire } from '@careagent/axon/types';
-import { mkdtempSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -45,170 +45,240 @@ function createSequenceMockLLM(responses: LLMResponse[]): LLMClient {
   };
 }
 
-function makeMinimalCredentialQuestionnaire(): Questionnaire {
+/** Minimal questionnaire that produces a valid CANS document. */
+function makeMinimalQuestionnaire(): Questionnaire {
   return {
-    id: 'test-credential',
+    id: 'test-minimal',
     provider_type: 'physician',
     version: '1.0.0',
     taxonomy_version: '1.0.0',
-    display_name: 'Test Credentialing',
-    description: 'Minimal credentialing questionnaire',
+    display_name: 'Test Minimal',
+    description: 'Minimal questionnaire for testing',
     questions: [
       {
-        id: 'has_degrees',
-        text: 'Do you hold medical degrees?',
+        id: 'provider_name',
+        text: 'What is your name?',
+        answer_type: 'text',
+        required: true,
+        cans_field: 'provider.name',
+      },
+      {
+        id: 'organization_name',
+        text: 'Organization name?',
+        answer_type: 'text',
+        required: true,
+        cans_field: 'provider.organizations',
+      },
+      {
+        id: 'clinical_charting',
+        text: 'Do you chart?',
         answer_type: 'boolean',
         required: true,
-        cans_field: 'provider.degrees',
+        cans_field: 'scope.permitted_actions',
+        action_assignments: [
+          { answer_value: 'true', grants: ['chart.progress_note'] },
+        ],
+      },
+      {
+        id: 'consent_hipaa',
+        text: 'HIPAA acknowledged?',
+        answer_type: 'boolean',
+        required: true,
+        cans_field: 'consent.hipaa_warning_acknowledged',
+      },
+      {
+        id: 'consent_synthetic',
+        text: 'Synthetic data confirmed?',
+        answer_type: 'boolean',
+        required: true,
+        cans_field: 'consent.synthetic_data_only',
+      },
+      {
+        id: 'consent_audit',
+        text: 'Audit consent?',
+        answer_type: 'boolean',
+        required: true,
+        cans_field: 'consent.audit_consent',
       },
     ],
   } as Questionnaire;
+}
+
+/** Mock fetch to return a questionnaire for any /v1/questionnaires/ URL. */
+function mockFetchForQuestionnaire(questionnaire: Questionnaire): void {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => questionnaire,
+  }));
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('Protocol Onboarding', () => {
-  it('runs onboarding and receives messages via MessageIO', async () => {
-    const credentialQ = makeMinimalCredentialQuestionnaire();
+describe('parseProviderType', () => {
+  it('parses numeric selection', () => {
+    expect(parseProviderType('1')).toBe('physician');
+    expect(parseProviderType('3')).toBe('nursing');
+    expect(parseProviderType('8')).toBe('other');
+  });
 
-    // Mock LLM responses:
-    // 1. Credentialing: answer has_degrees = true
-    // 2. Config: clinical_philosophy
-    // 3. Config: voice_chart (skip)
-    // 4. Config: voice_educate (skip)
-    // 5. Config: voice_interpret (skip)
-    // 6-12. Config: 7 autonomy questions
-    // 13. Config: consent_confirm
+  it('parses exact id', () => {
+    expect(parseProviderType('physician')).toBe('physician');
+    expect(parseProviderType('nursing')).toBe('nursing');
+  });
+
+  it('parses label substring', () => {
+    expect(parseProviderType('Physician')).toBe('physician');
+    expect(parseProviderType('pharmacy')).toBe('pharmacy');
+    expect(parseProviderType('Mental Health')).toBe('behavioral_mental_health');
+  });
+
+  it('returns undefined for invalid input', () => {
+    expect(parseProviderType('99')).toBeUndefined();
+    expect(parseProviderType('xyz')).toBeUndefined();
+    expect(parseProviderType('0')).toBeUndefined();
+  });
+});
+
+describe('Protocol Onboarding', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'protocol-onboarding-'));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('runs single-questionnaire onboarding flow', async () => {
+    const questionnaire = makeMinimalQuestionnaire();
+    mockFetchForQuestionnaire(questionnaire);
+
+    // 6 questions → 6 LLM responses
     const llmResponses: LLMResponse[] = [
-      // Credential questionnaire — 1 question
-      makeToolUseResponse('true', 'You have degrees!', 'tu_1'),
-      // Config questionnaire — philosophy
-      makeToolUseResponse(
-        'Evidence-based practice with patient autonomy',
-        'Great philosophy!',
-        'tu_2',
-      ),
-      // voice_chart (optional, skip with empty text answer)
-      makeToolUseResponse('Use SOAP format', 'Got it, SOAP format', 'tu_3'),
-      // voice_educate (optional)
-      makeToolUseResponse('', "No voice directives for education", 'tu_4'),
-      // voice_interpret (optional)
-      makeToolUseResponse('', "No voice directives for interpretation", 'tu_5'),
-      // 7 autonomy questions
-      makeToolUseResponse('autonomous', 'Chart: autonomous', 'tu_6'),
-      makeToolUseResponse('supervised', 'Order: supervised', 'tu_7'),
-      makeToolUseResponse('supervised', 'Charge: supervised', 'tu_8'),
-      makeToolUseResponse('manual', 'Perform: manual', 'tu_9'),
-      makeToolUseResponse('supervised', 'Interpret: supervised', 'tu_10'),
-      makeToolUseResponse('autonomous', 'Educate: autonomous', 'tu_11'),
-      makeToolUseResponse('supervised', 'Coordinate: supervised', 'tu_12'),
-      // consent
-      makeToolUseResponse('true', 'Consent confirmed!', 'tu_13'),
+      makeToolUseResponse('Dr. Test', 'Name recorded', 'tu_1'),
+      makeToolUseResponse('Test Clinic', 'Org recorded', 'tu_2'),
+      makeToolUseResponse(true, 'Charting: yes', 'tu_3'),
+      makeToolUseResponse(true, 'HIPAA ack', 'tu_4'),
+      makeToolUseResponse(true, 'Synthetic confirmed', 'tu_5'),
+      makeToolUseResponse(true, 'Audit consent', 'tu_6'),
     ];
 
-    const mockLLM = createSequenceMockLLM(llmResponses);
-
-    // MessageIO: simulate user responses for each question
+    // User responses: 1 for provider type + 5 for remaining questions (Q1 handled by start())
     const userResponses = [
-      // Credential Q1 response
-      'Yes, I have an MD',
-      // Config: philosophy
-      'Evidence-based practice with patient autonomy',
-      // Config: voice_chart
-      'Use SOAP format',
-      // Config: voice_educate
-      'skip',
-      // Config: voice_interpret
-      'skip',
-      // Config: 7 autonomy answers
-      'autonomous', 'supervised', 'supervised', 'manual', 'supervised', 'autonomous', 'supervised',
-      // Config: consent
-      'yes',
+      '1', // provider type = physician
+      'Dr. Test', 'Test Clinic', 'yes', 'yes', 'yes', 'yes',
     ];
 
     const mockIO = createMockMessageIO(userResponses);
-    const tmpDir = mkdtempSync(join(tmpdir(), 'protocol-onboarding-'));
 
     const result = await runProtocolOnboarding({
-      llmClient: mockLLM,
+      llmClient: createSequenceMockLLM(llmResponses),
       messageIO: mockIO,
-      credentialingQuestionnaire: credentialQ,
+      axonUrl: 'http://axon.test',
       workspacePath: tmpDir,
     });
 
-    // Verify messages were sent via MessageIO
-    const sentMessages = mockIO.getSentMessages();
-    expect(sentMessages.length).toBeGreaterThan(0);
-
-    // Verify the first message contains something (from the engine start)
-    expect(sentMessages[0]).toBeTruthy();
+    // Verify messages were sent
+    const sent = mockIO.getSentMessages();
+    expect(sent.length).toBeGreaterThan(0);
+    // First message should be provider type prompt
+    expect(sent[0]).toContain('What is your provider type');
   });
 
-  it('calls audit function during onboarding', async () => {
-    const credentialQ = makeMinimalCredentialQuestionnaire();
+  it('calls audit function with provider_type_selected event', async () => {
+    const questionnaire = makeMinimalQuestionnaire();
+    mockFetchForQuestionnaire(questionnaire);
+
     const auditFn = vi.fn();
 
     const llmResponses: LLMResponse[] = [
-      makeToolUseResponse('true', 'Degrees confirmed!', 'tu_1'),
-      makeToolUseResponse('Conservative medicine', 'Philosophy noted', 'tu_2'),
-      makeToolUseResponse('', 'Skipped', 'tu_3'),
-      makeToolUseResponse('', 'Skipped', 'tu_4'),
-      makeToolUseResponse('', 'Skipped', 'tu_5'),
-      makeToolUseResponse('autonomous', 'Chart: auto', 'tu_6'),
-      makeToolUseResponse('supervised', 'Order: sup', 'tu_7'),
-      makeToolUseResponse('supervised', 'Charge: sup', 'tu_8'),
-      makeToolUseResponse('manual', 'Perform: man', 'tu_9'),
-      makeToolUseResponse('supervised', 'Interpret: sup', 'tu_10'),
-      makeToolUseResponse('autonomous', 'Educate: auto', 'tu_11'),
-      makeToolUseResponse('supervised', 'Coord: sup', 'tu_12'),
-      makeToolUseResponse('true', 'Consent confirmed', 'tu_13'),
+      makeToolUseResponse('Dr. Audit', 'Name', 'tu_1'),
+      makeToolUseResponse('Clinic', 'Org', 'tu_2'),
+      makeToolUseResponse(true, 'Chart', 'tu_3'),
+      makeToolUseResponse(true, 'HIPAA', 'tu_4'),
+      makeToolUseResponse(true, 'Synth', 'tu_5'),
+      makeToolUseResponse(true, 'Audit', 'tu_6'),
     ];
 
     const mockIO = createMockMessageIO([
-      'yes', 'Conservative', 'skip', 'skip', 'skip',
-      'autonomous', 'supervised', 'supervised', 'manual', 'supervised', 'autonomous', 'supervised',
-      'yes',
+      '1', 'Dr. Audit', 'Clinic', 'yes', 'yes', 'yes', 'yes',
     ]);
-    const tmpDir = mkdtempSync(join(tmpdir(), 'protocol-audit-'));
 
     await runProtocolOnboarding({
       llmClient: createSequenceMockLLM(llmResponses),
       messageIO: mockIO,
-      credentialingQuestionnaire: credentialQ,
+      axonUrl: 'http://axon.test',
       workspacePath: tmpDir,
       audit: auditFn,
     });
 
-    // Audit should have been called
-    expect(auditFn).toHaveBeenCalled();
+    const typeEvent = auditFn.mock.calls.find(
+      (call: [Record<string, unknown>]) => call[0].event === 'provider_type_selected',
+    );
+    expect(typeEvent).toBeDefined();
+    expect(typeEvent![0].provider_type).toBe('physician');
+  });
+
+  it('retries provider type selection up to 3 times', async () => {
+    mockFetchForQuestionnaire(makeMinimalQuestionnaire());
+
+    // User gives 3 bad responses
+    const mockIO = createMockMessageIO(['xyz', 'abc', '999']);
+
+    const result = await runProtocolOnboarding({
+      llmClient: { async chat() { throw new Error('should not reach LLM'); } },
+      messageIO: mockIO,
+      axonUrl: 'http://axon.test',
+      workspacePath: tmpDir,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Could not determine provider type');
   });
 
   it('handles LLM failure gracefully', async () => {
-    const credentialQ = makeMinimalCredentialQuestionnaire();
+    mockFetchForQuestionnaire(makeMinimalQuestionnaire());
 
     const failingLLM: LLMClient = {
-      async chat() {
-        throw new Error('LLM connection refused');
-      },
+      async chat() { throw new Error('LLM connection refused'); },
     };
 
-    const mockIO = createMockMessageIO(['yes']);
-    const tmpDir = mkdtempSync(join(tmpdir(), 'protocol-fail-'));
+    const mockIO = createMockMessageIO(['1', 'anything']);
 
     const result = await runProtocolOnboarding({
       llmClient: failingLLM,
       messageIO: mockIO,
-      credentialingQuestionnaire: credentialQ,
+      axonUrl: 'http://axon.test',
       workspacePath: tmpDir,
     });
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('LLM connection refused');
 
-    // Should send error message to user
     const sent = mockIO.getSentMessages();
     expect(sent.some((m) => m.includes('Onboarding failed'))).toBe(true);
+  });
+
+  it('handles Axon fetch failure gracefully', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    }));
+
+    const mockIO = createMockMessageIO(['1']);
+
+    const result = await runProtocolOnboarding({
+      llmClient: { async chat() { throw new Error('should not reach LLM'); } },
+      messageIO: mockIO,
+      axonUrl: 'http://axon.test',
+      workspacePath: tmpDir,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Failed to fetch questionnaire from Axon');
   });
 });

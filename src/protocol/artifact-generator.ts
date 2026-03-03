@@ -85,6 +85,20 @@ function mergeAnswersIntoDocument(
     doc.scope.permitted_actions = [...new Set([...existing, ...permittedActions])];
   }
 
+  // Ensure the base provider type is preserved in types array
+  // (additional_types via cans_field would overwrite with only the additional ones)
+  if (doc.provider && base.provider) {
+    const baseType = base.provider.types?.[0];
+    if (baseType && Array.isArray(doc.provider.types) && !doc.provider.types.includes(baseType)) {
+      doc.provider.types.unshift(baseType);
+    }
+  }
+
+  // Remove empty voice section (voice is optional in CANS schema)
+  if (doc.voice && typeof doc.voice === 'object' && Object.keys(doc.voice).length === 0) {
+    delete (doc as Record<string, unknown>).voice;
+  }
+
   return doc;
 }
 

@@ -1,13 +1,12 @@
 /**
  * Protocol-based onboarding — replaces BOOTSTRAP.md approach.
- * Runs two questionnaires in sequence via the protocol engine,
- * then merges answers into a CANS.md artifact.
+ * Asks provider type first, fetches the appropriate questionnaire from Axon,
+ * runs a single unified questionnaire, then generates CANS.md.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { createProtocolEngine, type ProtocolEngine } from '../protocol/engine.js';
 import { createCANSArtifactGenerator } from '../protocol/artifact-generator.js';
 import type { LLMClient } from '../protocol/llm-client.js';
@@ -22,7 +21,7 @@ import type { CANSDocument } from '../activation/cans-schema.js';
 export interface ProtocolOnboardingConfig {
   llmClient: LLMClient;
   messageIO: MessageIO;
-  credentialingQuestionnaire: Questionnaire;
+  axonUrl: string;
   workspacePath: string;
   respondent?: string;
   audit?: (event: Record<string, unknown>) => void;
@@ -35,29 +34,45 @@ export interface ProtocolOnboardingResult {
 }
 
 // ---------------------------------------------------------------------------
-// Constants
+// Provider type selection
 // ---------------------------------------------------------------------------
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const PROVIDER_TYPES = [
+  { id: 'physician', label: 'Physician (MD, DO)' },
+  { id: 'advanced_practice_provider', label: 'Advanced Practice Provider (NP, PA)' },
+  { id: 'nursing', label: 'Nursing (RN, LPN)' },
+  { id: 'pharmacy', label: 'Pharmacy (PharmD, RPh)' },
+  { id: 'dental', label: 'Dental (DDS, DMD)' },
+  { id: 'behavioral_mental_health', label: 'Behavioral/Mental Health (Psychologist, LCSW)' },
+  { id: 'physical_rehabilitation', label: 'Physical Rehabilitation (PT, OT)' },
+  { id: 'other', label: 'Other Healthcare Provider' },
+] as const;
 
-// ---------------------------------------------------------------------------
-// loadProviderConfigQuestionnaire
-// ---------------------------------------------------------------------------
+/** Exported for testing. */
+export { PROVIDER_TYPES };
 
-function loadProviderConfigQuestionnaire(): Questionnaire {
-  // Walk up from src/onboarding/ to find data/questionnaires/
-  let current = __dirname;
-  for (let i = 0; i < 5; i++) {
-    const candidate = resolve(current, 'data', 'questionnaires', 'provider-config.json');
-    try {
-      const content = readFileSync(candidate, 'utf-8');
-      return JSON.parse(content) as Questionnaire;
-    } catch {
-      current = dirname(current);
-    }
+/**
+ * Parse a provider type from user input (number, id, or label fragment).
+ * Returns the provider type id or undefined if not matched.
+ */
+export function parseProviderType(input: string): string | undefined {
+  const trimmed = input.trim().toLowerCase();
+
+  // Try numeric selection (1-8)
+  const num = parseInt(trimmed, 10);
+  if (!isNaN(num) && num >= 1 && num <= PROVIDER_TYPES.length) {
+    return PROVIDER_TYPES[num - 1]!.id;
   }
-  throw new Error('Could not locate provider-config.json questionnaire');
+
+  // Try exact id match
+  const byId = PROVIDER_TYPES.find((t) => t.id === trimmed);
+  if (byId) return byId.id;
+
+  // Try label substring match
+  const byLabel = PROVIDER_TYPES.find((t) => t.label.toLowerCase().includes(trimmed));
+  if (byLabel) return byLabel.id;
+
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,43 +85,57 @@ export async function runProtocolOnboarding(
   const {
     llmClient,
     messageIO,
-    credentialingQuestionnaire,
+    axonUrl,
     workspacePath,
     respondent,
     audit,
   } = config;
 
   try {
-    // Phase 1: Run Axon credentialing questionnaire
-    const credentialEngine = createProtocolEngine({
-      llmClient,
-      questionnaire: credentialingQuestionnaire,
-      authority: 'axon',
-      respondent,
-      audit,
-    });
-
-    const credentialAnswers = await runQuestionnaire(credentialEngine, messageIO);
-
-    // Phase 2: Run provider-core configuration questionnaire
-    const configQuestionnaire = loadProviderConfigQuestionnaire();
-    const configEngine = createProtocolEngine({
-      llmClient,
-      questionnaire: configQuestionnaire,
-      authority: 'provider-core',
-      respondent,
-      audit,
-    });
-
-    const configAnswers = await runQuestionnaire(configEngine, messageIO);
-
-    // Phase 3: Merge answers into CANS.md
-    const cansResult = buildCANSDocument(
-      credentialAnswers,
-      configAnswers,
-      credentialingQuestionnaire,
-      configQuestionnaire,
+    // Phase 1: Ask provider type
+    const typeList = PROVIDER_TYPES.map((t, i) => `${i + 1}. ${t.label}`).join('\n');
+    await messageIO.send(
+      `Welcome to CareAgent onboarding.\n\nWhat is your provider type?\n\n${typeList}\n\nReply with the number or name.`,
     );
+
+    let providerType: string | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await messageIO.receive();
+      providerType = parseProviderType(response);
+      if (providerType) break;
+      await messageIO.send(
+        'I didn\'t recognize that provider type. Please reply with a number (1-8) or type name.',
+      );
+    }
+
+    if (!providerType) {
+      return { success: false, error: 'Could not determine provider type after 3 attempts.' };
+    }
+
+    if (audit) {
+      audit({ event: 'provider_type_selected', provider_type: providerType, respondent });
+    }
+
+    // Phase 2: Fetch questionnaire from Axon
+    const questionnaireRes = await fetch(`${axonUrl}/v1/questionnaires/${providerType}`);
+    if (!questionnaireRes.ok) {
+      throw new Error(`Failed to fetch questionnaire from Axon: ${questionnaireRes.status}`);
+    }
+    const questionnaire = await questionnaireRes.json() as Questionnaire;
+
+    // Phase 3: Run unified questionnaire via protocol engine
+    const engine = createProtocolEngine({
+      llmClient,
+      questionnaire,
+      authority: questionnaire.authority ?? 'axon',
+      respondent,
+      audit,
+    });
+
+    const answers = await runQuestionnaire(engine, messageIO);
+
+    // Phase 4: Build CANS.md from answers
+    const cansResult = buildCANSDocument(answers, questionnaire);
 
     if (!cansResult.success || !cansResult.content) {
       return {
@@ -115,7 +144,7 @@ export async function runProtocolOnboarding(
       };
     }
 
-    // Phase 4: Write CANS.md + integrity sidecar
+    // Phase 5: Write CANS.md + integrity sidecar
     const cansPath = join(workspacePath, 'CANS.md');
     writeFileSync(cansPath, cansResult.content, 'utf-8');
 
@@ -176,80 +205,54 @@ async function runQuestionnaire(
 }
 
 // ---------------------------------------------------------------------------
-// buildCANSDocument — merge credential + config answers into CANS
+// buildCANSDocument — build CANS from unified questionnaire answers
 // ---------------------------------------------------------------------------
 
 function buildCANSDocument(
-  credentialAnswers: Record<string, unknown>,
-  configAnswers: Record<string, unknown>,
-  credentialQuestionnaire: Questionnaire,
-  _configQuestionnaire: Questionnaire,
+  answers: Record<string, unknown>,
+  questionnaire: Questionnaire,
 ): { success: boolean; content?: string; errors?: Array<{ path: string; message: string }> } {
-  // Extract philosophy
-  const philosophy = (configAnswers['clinical_philosophy'] as string) ?? '';
+  // Extract philosophy (no cans_field — goes in markdown body)
+  const philosophy = (answers['clinical_philosophy'] as string) ?? '';
 
-  // Build autonomy from config answers
-  const autonomy = {
-    chart: (configAnswers['autonomy_chart'] as string) ?? 'supervised',
-    order: (configAnswers['autonomy_order'] as string) ?? 'supervised',
-    charge: (configAnswers['autonomy_charge'] as string) ?? 'supervised',
-    perform: (configAnswers['autonomy_perform'] as string) ?? 'manual',
-    interpret: (configAnswers['autonomy_interpret'] as string) ?? 'supervised',
-    educate: (configAnswers['autonomy_educate'] as string) ?? 'supervised',
-    coordinate: (configAnswers['autonomy_coordinate'] as string) ?? 'supervised',
-  };
-
-  // Build voice from config answers (optional fields)
-  const voice: Record<string, string> = {};
-  if (configAnswers['voice_chart']) voice.chart = configAnswers['voice_chart'] as string;
-  if (configAnswers['voice_educate']) voice.educate = configAnswers['voice_educate'] as string;
-  if (configAnswers['voice_interpret']) voice.interpret = configAnswers['voice_interpret'] as string;
-
-  // Build consent
-  const consent = {
-    hipaa_warning_acknowledged: configAnswers['consent_confirm'] === true,
-    synthetic_data_only: configAnswers['consent_confirm'] === true,
-    audit_consent: configAnswers['consent_confirm'] === true,
-    acknowledged_at: new Date().toISOString(),
-  };
-
-  // Build provider identity from credential answers
-  const providerName = (credentialAnswers['provider_name'] as string) ?? '';
-  const practiceName = (credentialAnswers['practice_name'] as string) ?? 'Unknown';
-  const practiceNpi = credentialAnswers['practice_npi'] as string | undefined;
-
+  // Build organizations from answers
+  const orgName = (answers['organization_name'] as string) ?? 'Unknown';
   const organizations: CANSDocument['provider']['organizations'] = [{
-    name: practiceName,
+    name: orgName,
     primary: true,
   }];
 
-  // Build base document from credential answers using artifact generator
-  const generator = createCANSArtifactGenerator();
+  // Build base document — the artifact generator will overlay cans_field values
   const baseDoc: Partial<CANSDocument> = {
     version: '2.0',
     provider: {
-      name: providerName,
-      types: [credentialQuestionnaire.provider_type],
+      name: (answers['provider_name'] as string) ?? '',
+      types: [questionnaire.provider_type],
       degrees: [],
       licenses: [],
       certifications: [],
       organizations,
-      ...(practiceNpi ? { npi: practiceNpi } : {}),
+      ...((answers['individual_npi'] as string) ? { npi: answers['individual_npi'] as string } : {}),
     },
     scope: { permitted_actions: [] },
-    autonomy: autonomy as CANSDocument['autonomy'],
-    consent,
+    autonomy: {
+      chart: 'supervised',
+      order: 'supervised',
+      charge: 'supervised',
+      perform: 'manual',
+      interpret: 'supervised',
+      educate: 'supervised',
+      coordinate: 'supervised',
+    } as CANSDocument['autonomy'],
+    consent: {
+      hipaa_warning_acknowledged: false,
+      synthetic_data_only: false,
+      audit_consent: false,
+      acknowledged_at: new Date().toISOString(),
+    },
     skills: { authorized: [] },
   };
 
-  if (Object.keys(voice).length > 0) {
-    (baseDoc as Record<string, unknown>).voice = voice;
-  }
-
-  return generator.generate(
-    credentialAnswers,
-    credentialQuestionnaire,
-    baseDoc,
-    philosophy,
-  );
+  const generator = createCANSArtifactGenerator();
+  return generator.generate(answers, questionnaire, baseDoc, philosophy);
 }

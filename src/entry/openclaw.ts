@@ -188,13 +188,6 @@ The provider is being onboarded. You will learn about them during the interview.
       // --- NEW PATH: Protocol engine + direct Telegram ---
       if (anthropicKey && axonUrl && telegramBotToken) {
         try {
-          // Fetch questionnaire from Axon
-          const questionnaireRes = await fetch(`${axonUrl}/v1/questionnaires/physician`);
-          if (!questionnaireRes.ok) {
-            throw new Error(`Failed to fetch questionnaire from Axon: ${questionnaireRes.status}`);
-          }
-          const questionnaire = await questionnaireRes.json() as import('@careagent/axon/types').Questionnaire;
-
           // Create LLM client (direct Anthropic API — zero OpenClaw context)
           const llmClient = createLLMClient({
             apiKey: anthropicKey,
@@ -227,7 +220,7 @@ The provider is being onboarded. You will learn about them during the interview.
           runProtocolOnboarding({
             llmClient,
             messageIO,
-            credentialingQuestionnaire: questionnaire,
+            axonUrl,
             workspacePath: clinicalWorkspacePath,
             respondent: peerId,
             audit: (event) => audit.log({
