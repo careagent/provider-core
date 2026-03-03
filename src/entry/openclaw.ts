@@ -189,7 +189,7 @@ The provider is being onboarded. You will learn about them during the interview.
       if (anthropicKey && axonUrl && telegramBotToken) {
         try {
           // Fetch questionnaire from Axon
-          const questionnaireRes = await fetch(`${axonUrl}/api/questionnaires/physician`);
+          const questionnaireRes = await fetch(`${axonUrl}/v1/questionnaires/physician`);
           if (!questionnaireRes.ok) {
             throw new Error(`Failed to fetch questionnaire from Axon: ${questionnaireRes.status}`);
           }

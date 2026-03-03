@@ -65,10 +65,10 @@ function mergeAnswersIntoDocument(
     const cansField = question.cans_field;
     if (!cansField) continue;
 
-    // Handle action_assignments — boolean questions that grant permitted actions
-    if (question.action_assignments && answer === true) {
+    // Handle action_assignments — match answer against assignment.answer_value
+    if (question.action_assignments) {
       for (const assignment of question.action_assignments) {
-        if (assignment.answer_value === 'true') {
+        if (String(answer) === assignment.answer_value) {
           permittedActions.push(...assignment.grants);
         }
       }
@@ -104,6 +104,15 @@ function setFieldByPath(
   const [section, field] = parts;
   if (!section || !field) return;
 
+  // Skip paths that need complex object construction (handled by caller)
+  if (path === 'provider.organizations') return;
+
+  // Skip scope.permitted_actions — handled separately via action_assignments
+  if (path === 'scope.permitted_actions') return;
+
+  // Don't overwrite array fields with boolean gate values
+  if (isArrayField(path) && typeof value === 'boolean') return;
+
   // Ensure section exists
   if (!(section in doc) || typeof doc[section] !== 'object' || doc[section] === null) {
     doc[section] = {};
@@ -120,9 +129,6 @@ function setFieldByPath(
     }
     return;
   }
-
-  // Skip scope.permitted_actions — handled separately via action_assignments
-  if (path === 'scope.permitted_actions') return;
 
   sectionObj[field] = value;
 }

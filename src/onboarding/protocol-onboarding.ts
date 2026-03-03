@@ -213,17 +213,28 @@ function buildCANSDocument(
     acknowledged_at: new Date().toISOString(),
   };
 
+  // Build provider identity from credential answers
+  const providerName = (credentialAnswers['provider_name'] as string) ?? '';
+  const practiceName = (credentialAnswers['practice_name'] as string) ?? 'Unknown';
+  const practiceNpi = credentialAnswers['practice_npi'] as string | undefined;
+
+  const organizations: CANSDocument['provider']['organizations'] = [{
+    name: practiceName,
+    primary: true,
+  }];
+
   // Build base document from credential answers using artifact generator
   const generator = createCANSArtifactGenerator();
   const baseDoc: Partial<CANSDocument> = {
     version: '2.0',
     provider: {
-      name: '',
-      types: [],
+      name: providerName,
+      types: [credentialQuestionnaire.provider_type],
       degrees: [],
       licenses: [],
       certifications: [],
-      organizations: [{ name: 'Unknown' }],
+      organizations,
+      ...(practiceNpi ? { npi: practiceNpi } : {}),
     },
     scope: { permitted_actions: [] },
     autonomy: autonomy as CANSDocument['autonomy'],
