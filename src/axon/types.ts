@@ -61,7 +61,7 @@ export interface AxonTextValidation {
 export interface AxonQuestion {
   id: string;
   text: string;
-  answer_type: 'boolean' | 'single_select' | 'text';
+  answer_type: 'boolean' | 'single_select' | 'multi_select' | 'text' | 'number' | 'date';
   required: boolean;
   options?: AxonQuestionOption[];
   show_when?: AxonQuestionCondition;
@@ -71,6 +71,8 @@ export interface AxonQuestion {
   npi_lookup?: boolean;
   /** Key into NPI lookup result to pre-fill this question's value. */
   npi_prefill?: string;
+  /** Question delivery mode — deterministic (form engine) or guided (LLM). */
+  mode?: 'deterministic' | 'guided';
 }
 
 /** A full questionnaire for a specific provider type. */
@@ -81,6 +83,57 @@ export interface AxonQuestionnaire {
   display_name: string;
   description: string;
   questions: AxonQuestion[];
+}
+
+// ---------------------------------------------------------------------------
+// Form engine types (deterministic questionnaire runner)
+// ---------------------------------------------------------------------------
+
+/** A rendered question from the Axon form engine. */
+export interface AxonRenderedQuestion {
+  id: string;
+  text: string;
+  answer_type: 'boolean' | 'single_select' | 'multi_select' | 'text' | 'number' | 'date';
+  required: boolean;
+  options?: AxonQuestionOption[];
+  validation?: AxonTextValidation;
+  classification: { domain: string; sensitivity: string };
+  mode: 'deterministic' | 'guided';
+  llm_guidance?: string;
+  pagination?: { page: number; total_pages: number; has_more: boolean };
+  repeat_instance?: { index: number; total: number; is_primary: boolean };
+}
+
+/** Response from POST /v1/forms/next. */
+export interface AxonFormNext {
+  status: 'question' | 'completed' | 'hard_stop';
+  question?: AxonRenderedQuestion;
+  hard_stop?: { message: string };
+  progress: { current: number; total: number; section?: string };
+  artifacts?: Record<string, unknown>;
+}
+
+/** State payload sent to POST /v1/forms/next. */
+export interface AxonFormState {
+  questionnaire_id: string;
+  answers: Record<string, string | number | boolean | string[]>;
+  context: Record<string, unknown>;
+  page?: number;
+}
+
+/** Request payload for POST /v1/forms/validate. */
+export interface AxonFormValidateRequest {
+  questionnaire_id: string;
+  question_id: string;
+  value: string;
+  context?: Record<string, unknown>;
+}
+
+/** Response from POST /v1/forms/validate. */
+export interface AxonFormValidateResult {
+  valid: boolean;
+  value?: string | number | boolean | string[];
+  error?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,4 +255,10 @@ export interface AxonClient {
 
   /** Health check — verify the Axon server is reachable. */
   checkHealth(): Promise<{ status: string; version: string }>;
+
+  /** Get the next question from the deterministic form engine. */
+  postFormNext(state: AxonFormState): Promise<AxonFormNext>;
+
+  /** Validate a raw answer against form engine rules. */
+  postFormValidate(req: AxonFormValidateRequest): Promise<AxonFormValidateResult>;
 }

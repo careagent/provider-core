@@ -69,9 +69,9 @@ function makeConsentQuestionnaire(): Questionnaire {
     description: 'Consent questions.',
     output_artifact: 'consent',
     questions: [
-      { id: 'consent_hipaa', text: 'HIPAA acknowledged?', answer_type: 'boolean', required: true, cans_field: 'consent.hipaa_warning_acknowledged', mode: 'structured' },
-      { id: 'consent_synthetic', text: 'Synthetic data confirmed?', answer_type: 'boolean', required: true, cans_field: 'consent.synthetic_data_only', mode: 'structured' },
-      { id: 'consent_audit', text: 'Audit consent?', answer_type: 'boolean', required: true, cans_field: 'consent.audit_consent', mode: 'structured' },
+      { id: 'consent_hipaa', text: 'HIPAA acknowledged?', answer_type: 'boolean', required: true, cans_field: 'consent.hipaa_warning_acknowledged', mode: 'deterministic' },
+      { id: 'consent_synthetic', text: 'Synthetic data confirmed?', answer_type: 'boolean', required: true, cans_field: 'consent.synthetic_data_only', mode: 'deterministic' },
+      { id: 'consent_audit', text: 'Audit consent?', answer_type: 'boolean', required: true, cans_field: 'consent.audit_consent', mode: 'deterministic' },
     ],
   } as Questionnaire;
 }
@@ -96,7 +96,7 @@ function makeTypeSelectionQuestionnaire(): Questionnaire {
           { value: 'physician', label: 'Physician' },
           { value: 'nursing', label: 'Nursing' },
         ],
-        mode: 'structured',
+        mode: 'deterministic',
       },
     ],
   } as Questionnaire;

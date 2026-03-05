@@ -342,7 +342,7 @@ describe('Protocol Engine', () => {
   describe('structured mode', () => {
     it('presents boolean question text directly without LLM', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'Do you acknowledge HIPAA?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'Do you acknowledge HIPAA?', answer_type: 'boolean', required: true, mode: 'deterministic' },
       ]);
 
       // LLM should never be called — use a mock that throws
@@ -360,7 +360,7 @@ describe('Protocol Engine', () => {
 
     it('validates structured boolean answer and completes', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'deterministic' },
       ]);
 
       const mockClient: LLMClient = {
@@ -378,9 +378,9 @@ describe('Protocol Engine', () => {
 
     it('advances through multiple structured questions without LLM', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'HIPAA?', answer_type: 'boolean', required: true, mode: 'structured' },
-        { id: 'q2', text: 'Synthetic?', answer_type: 'boolean', required: true, mode: 'structured' },
-        { id: 'q3', text: 'Audit?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'HIPAA?', answer_type: 'boolean', required: true, mode: 'deterministic' },
+        { id: 'q2', text: 'Synthetic?', answer_type: 'boolean', required: true, mode: 'deterministic' },
+        { id: 'q3', text: 'Audit?', answer_type: 'boolean', required: true, mode: 'deterministic' },
       ]);
 
       const mockClient: LLMClient = {
@@ -415,7 +415,7 @@ describe('Protocol Engine', () => {
     it('presents single_select options as a list', async () => {
       const q = makeQuestionnaire([
         {
-          id: 'q1', text: 'Provider type?', answer_type: 'single_select', required: true, mode: 'structured',
+          id: 'q1', text: 'Provider type?', answer_type: 'single_select', required: true, mode: 'deterministic',
           options: [
             { value: 'physician', label: 'Physician', description: 'MD/DO' },
             { value: 'nursing', label: 'Nursing' },
@@ -438,7 +438,7 @@ describe('Protocol Engine', () => {
 
     it('rejects invalid structured answer and re-presents question', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'deterministic' },
       ]);
 
       const mockClient: LLMClient = {
@@ -461,7 +461,7 @@ describe('Protocol Engine', () => {
 
     it('fails after max retries in structured mode', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'deterministic' },
       ]);
 
       const mockClient: LLMClient = {
@@ -479,7 +479,7 @@ describe('Protocol Engine', () => {
 
     it('transitions from structured to guided mode', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'deterministic' },
         { id: 'q2', text: 'Name?', answer_type: 'text', required: true },
       ]);
 
@@ -500,7 +500,7 @@ describe('Protocol Engine', () => {
 
     it('emits audit events for structured questions', async () => {
       const q = makeQuestionnaire([
-        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'structured' },
+        { id: 'q1', text: 'Consent?', answer_type: 'boolean', required: true, mode: 'deterministic' },
       ]);
 
       const auditFn = vi.fn();

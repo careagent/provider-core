@@ -225,6 +225,8 @@ The provider is being onboarded. You will learn about them during the interview.
             axonUrl,
             workspacePath: clinicalWorkspacePath,
             respondent: peerId,
+            transport,
+            chatId,
             audit: (event) => audit.log({
               action: (event.event as string) ?? 'protocol_event',
               actor: 'system',

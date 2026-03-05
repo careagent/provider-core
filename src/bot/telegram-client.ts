@@ -6,6 +6,7 @@
 export interface TelegramTransport {
   sendMessage(chatId: number, text: string, replyMarkup?: InlineKeyboardMarkup): Promise<TelegramSendMessageResponse>;
   getUpdates(offset?: number, timeout?: number): Promise<TelegramUpdate[]>;
+  answerCallbackQuery(callbackQueryId: string): Promise<void>;
 }
 
 export interface TelegramUser {
@@ -90,6 +91,16 @@ export function createTelegramTransport(botToken: string): TelegramTransport {
       if (!data.ok) throw new Error(`Telegram getUpdates failed: ${JSON.stringify(data)}`);
       return data.result;
     },
+
+    async answerCallbackQuery(callbackQueryId: string): Promise<void> {
+      const res = await fetch(`${baseUrl}/answerCallbackQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callback_query_id: callbackQueryId }),
+      });
+      const data = await res.json() as { ok: boolean };
+      if (!data.ok) throw new Error(`Telegram answerCallbackQuery failed: ${JSON.stringify(data)}`);
+    },
   };
 }
 
@@ -124,6 +135,10 @@ export function createMockTransport(): TelegramTransport & {
       calls.push({ method: 'getUpdates', args: [offset, timeout] });
       const batch = pendingUpdates.splice(0, pendingUpdates.length);
       return batch;
+    },
+
+    async answerCallbackQuery(callbackQueryId: string): Promise<void> {
+      calls.push({ method: 'answerCallbackQuery', args: [callbackQueryId] });
     },
   };
 }

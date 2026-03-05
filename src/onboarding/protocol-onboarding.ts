@@ -15,8 +15,11 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { createProtocolEngine, type ProtocolEngine } from '../protocol/engine.js';
 import { createCANSArtifactGenerator } from '../protocol/artifact-generator.js';
+import { runDeterministicQuestionnaire } from '../protocol/form-runner.js';
+import { createAxonClient } from '../axon/client.js';
 import type { LLMClient } from '../protocol/llm-client.js';
 import type { MessageIO } from '../protocol/message-io.js';
+import type { TelegramTransport } from '../bot/telegram-client.js';
 import type { Questionnaire, Question } from '@careagent/axon/types';
 import type { CANSDocument } from '../activation/cans-schema.js';
 import type { AxonOnboardingFlow } from '../axon/types.js';
@@ -32,6 +35,10 @@ export interface ProtocolOnboardingConfig {
   workspacePath: string;
   respondent?: string;
   audit?: (event: Record<string, unknown>) => void;
+  /** Telegram transport for inline keyboard rendering (deterministic form runner). */
+  transport?: TelegramTransport;
+  /** Telegram chat ID for the current user (required with transport). */
+  chatId?: number;
 }
 
 export interface ProtocolOnboardingResult {
@@ -54,6 +61,8 @@ export async function runProtocolOnboarding(
     workspacePath,
     respondent,
     audit,
+    transport,
+    chatId,
   } = config;
 
   try {
@@ -82,16 +91,38 @@ export async function runProtocolOnboarding(
       }
       const questionnaire = await questionnaireRes.json() as Questionnaire;
 
-      // Run questionnaire via protocol engine
-      const engine = createProtocolEngine({
-        llmClient,
-        questionnaire,
-        authority: questionnaire.authority ?? 'axon',
-        respondent,
-        audit,
-      });
+      // Check if all questions in this step are deterministic mode
+      const allDeterministic = questionnaire.questions.every(
+        (q: { mode?: string }) => q.mode === 'deterministic',
+      );
 
-      const stepAnswers = await runQuestionnaire(engine, messageIO);
+      let stepAnswers: Record<string, unknown>;
+
+      if (allDeterministic && transport && chatId !== undefined) {
+        // Deterministic path: Axon form engine + Telegram inline keyboards
+        const result = await runDeterministicQuestionnaire({
+          axonClient: createAxonClient({ baseUrl: axonUrl }),
+          transport,
+          chatId,
+          questionnaireId: questionnaireId,
+          context: { ...allAnswers },
+          audit,
+        });
+        if (!result.success) {
+          throw new Error(result.error ?? 'Form runner failed');
+        }
+        stepAnswers = result.answers;
+      } else {
+        // Guided path: protocol engine + LLM + submit_answer tool
+        const engine = createProtocolEngine({
+          llmClient,
+          questionnaire,
+          authority: questionnaire.authority ?? 'axon',
+          respondent,
+          audit,
+        });
+        stepAnswers = await runQuestionnaire(engine, messageIO);
+      }
 
       // Accumulate answers and questions
       Object.assign(allAnswers, stepAnswers);

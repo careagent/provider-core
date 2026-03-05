@@ -12,6 +12,10 @@ import type {
   AxonProviderType,
   AxonQuestionnaire,
   AxonNpiLookupResult,
+  AxonFormState,
+  AxonFormNext,
+  AxonFormValidateRequest,
+  AxonFormValidateResult,
 } from './types.js';
 import { AxonClientError } from './types.js';
 
@@ -89,6 +93,72 @@ export function createAxonClient(config: AxonClientConfig): AxonClient {
     }
   }
 
+  /**
+   * Internal helper — POST JSON to an Axon endpoint with timeout
+   * and structured error handling.
+   */
+  async function postJson<T>(path: string, body: unknown): Promise<T> {
+    const url = `${baseUrl}${path}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw new AxonClientError(
+            `${LAYER_NAME}: request to ${url} timed out after ${timeoutMs}ms`,
+            'TIMEOUT',
+            { cause: err },
+          );
+        }
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new AxonClientError(
+          `${LAYER_NAME}: connection to ${url} failed — ${detail}`,
+          'CONNECTION_FAILED',
+          { cause: err },
+        );
+      }
+
+      if (!response.ok) {
+        let responseBody = '';
+        try {
+          responseBody = await response.text();
+        } catch {
+          // body unreadable — proceed without it
+        }
+        throw new AxonClientError(
+          `${LAYER_NAME}: ${url} returned HTTP ${response.status}${responseBody ? ` — ${responseBody}` : ''}`,
+          'HTTP_ERROR',
+          { statusCode: response.status, cause: responseBody },
+        );
+      }
+
+      try {
+        return (await response.json()) as T;
+      } catch (err: unknown) {
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new AxonClientError(
+          `${LAYER_NAME}: invalid JSON from ${url} — ${detail}`,
+          'INVALID_RESPONSE',
+          { cause: err },
+        );
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   return {
     async getProviderTypes(): Promise<AxonProviderType[]> {
       const result = await fetchJson<{ provider_types: AxonProviderType[] }>(
@@ -123,6 +193,14 @@ export function createAxonClient(config: AxonClientConfig): AxonClient {
 
     async checkHealth(): Promise<{ status: string; version: string }> {
       return fetchJson<{ status: string; version: string }>('/health');
+    },
+
+    async postFormNext(state: AxonFormState): Promise<AxonFormNext> {
+      return postJson<AxonFormNext>('/v1/forms/next', state);
+    },
+
+    async postFormValidate(req: AxonFormValidateRequest): Promise<AxonFormValidateResult> {
+      return postJson<AxonFormValidateResult>('/v1/forms/validate', req);
     },
   };
 }

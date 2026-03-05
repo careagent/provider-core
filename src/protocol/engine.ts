@@ -77,7 +77,7 @@ export function createProtocolEngine(config: ProtocolEngineConfig): ProtocolEngi
   // -------------------------------------------------------------------------
 
   function isStructuredMode(question: Question): boolean {
-    return question.mode === 'structured';
+    return question.mode === 'deterministic';
   }
 
   function formatStructuredQuestion(question: Question): string {
